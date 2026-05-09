@@ -1,0 +1,92 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-neutral-white text-neutral-black font-ui text-base font-normal leading-[1.38] antialiased;
+  }
+
+  h1 {
+    @apply font-display font-bold text-display-xl max-md:text-[2rem] max-md:leading-tight max-md:tracking-tight;
+  }
+
+  h2 {
+    @apply font-display font-bold text-display-lg max-md:text-[1.75rem] max-md:tracking-tight;
+  }
+
+  h3 {
+    @apply font-display font-bold text-display-md max-md:text-xl max-md:tracking-tight;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .hero-bg {
+    background: radial-gradient(
+        ellipse 60% 50% at 80% 20%,
+        rgba(113, 50, 245, 0.12) 0%,
+        transparent 70%
+      ),
+      radial-gradient(
+        ellipse 40% 40% at 20% 80%,
+        rgba(87, 65, 216, 0.08) 0%,
+        transparent 60%
+      );
+  }
+
+  .hero-dark {
+    background:
+      radial-gradient(ellipse 80% 60% at 25% 50%, rgba(113, 50, 245, 0.45) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 50% at 80% 20%, rgba(87, 65, 216, 0.25) 0%, transparent 55%),
+      radial-gradient(ellipse 40% 40% at 70% 80%, rgba(91, 30, 207, 0.12) 0%, transparent 50%),
+      #07040f;
+  }
+
+  .bg-grid {
+    background-image: linear-gradient(
+        rgba(113, 50, 245, 0.04) 1px,
+        transparent 1px
+      ),
+      linear-gradient(
+        90deg,
+        rgba(113, 50, 245, 0.04) 1px,
+        transparent 1px
+      );
+    background-size: 40px 40px;
+  }
+
+  .bg-grid-dark {
+    background-image: linear-gradient(
+        rgba(255, 255, 255, 0.03) 1px,
+        transparent 1px
+      ),
+      linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0.03) 1px,
+        transparent 1px
+      );
+    background-size: 44px 44px;
+  }
+
+  .section-divider {
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      #dedee5,
+      transparent
+    );
+  }
+
+  .card-purple-glow {
+    box-shadow: 0 8px 32px rgba(113, 50, 245, 0.15);
+  }
+}
