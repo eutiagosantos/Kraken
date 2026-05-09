@@ -426,7 +426,7 @@ export function UploadWizard() {
     initial: { opacity: 0, x: 20 },
     animate: { opacity: 1, x: 0 },
     exit: { opacity: 0, x: -20 },
-    transition: { duration: 0.22, ease: [0.4, 0, 0.2, 1] },
+    transition: { duration: 0.22, ease: [0.4, 0, 0.2, 1] as const },
   };
 
   return (

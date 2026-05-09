@@ -35,7 +35,11 @@ export function StatsRow() {
       {mockStats.map((s) => {
         const Icon = icons[s.icon];
         return (
-          <motion.div key={s.label} variants={item} transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}>
+          <motion.div
+            key={s.label}
+            variants={item}
+            transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] as const }}
+          >
             <StatCard
               label={s.label}
               value={s.value}

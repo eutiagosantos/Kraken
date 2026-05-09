@@ -43,7 +43,7 @@ export function Sidebar() {
         animate={{
           width: ready ? (collapsed ? widthCollapsed : widthExpanded) : widthExpanded,
         }}
-        transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+        transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] as const }}
         className={cn(
           "fixed left-0 top-0 z-40 hidden h-screen flex-col border-r border-[rgba(255,255,255,0.06)] bg-[#101114] md:flex",
           "transition-[width] duration-300 ease-in-out"
@@ -152,7 +152,7 @@ export function Sidebar() {
               initial={{ y: "100%" }}
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
-              transition={{ duration: 0.28, ease: [0.4, 0, 0.2, 1] }}
+              transition={{ duration: 0.28, ease: [0.4, 0, 0.2, 1] as const }}
               className="fixed bottom-0 left-0 right-0 z-50 max-h-[72vh] rounded-t-2xl border border-dashboard-border bg-[#101114] p-4 pb-8 shadow-[0_-8px_40px_rgba(0,0,0,0.35)] md:hidden"
             >
               <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-[rgba(255,255,255,0.15)]" />
