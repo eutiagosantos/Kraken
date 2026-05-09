@@ -1,17 +1,19 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { CheckCircle, Layers, Upload, Users, Zap } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { BadgeCheck, FolderKanban, Images, Megaphone, Upload, Users } from "lucide-react";
 import { StatCard } from "@/components/app/ui/StatCard";
-import { mockHomeCreativesCampaignStats, type MockStat } from "@/lib/mock-data";
+import { mockHomeCreativesCampaignStats, type MockStat, type StatIconKey } from "@/lib/mock-data";
 
-const icons = {
-  zap: Zap,
+const icons: Record<StatIconKey, LucideIcon> = {
+  megaphone: Megaphone,
+  folderKanban: FolderKanban,
+  images: Images,
+  badgeCheck: BadgeCheck,
   users: Users,
   upload: Upload,
-  checkCircle: CheckCircle,
-  layers: Layers,
-} as const;
+};
 
 const container = {
   hidden: {},
@@ -38,7 +40,7 @@ export function StatsRow({ stats = mockHomeCreativesCampaignStats }: StatsRowPro
       animate="visible"
     >
       {stats.map((s) => {
-        const Icon = icons[s.icon];
+        const Icon = s.icon ? icons[s.icon] : undefined;
         return (
           <motion.div
             key={s.label}

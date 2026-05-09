@@ -4,11 +4,13 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   Building2,
   Check,
+  ChevronDown,
   DollarSign,
   ImageIcon,
   Layers,
   Play,
   Shield,
+  Target,
   UploadCloud,
   Users,
   X,
@@ -517,18 +519,36 @@ export function UploadWizard() {
                   <label htmlFor={`${baseId}-obj`} className="text-sm font-semibold text-neutral-black">
                     Objetivo da campanha
                   </label>
-                  <select
-                    id={`${baseId}-obj`}
-                    value={config.objective}
-                    onChange={(e) => setConfig((c) => ({ ...c, objective: e.target.value }))}
-                    className="mt-1.5 w-full rounded-lg border border-dashboard-border bg-dashboard-surface px-3 py-2.5 text-sm outline-none focus:border-brand-purple focus:ring-2 focus:ring-brand-purple/20"
-                  >
-                    {campaignObjectives.map((o) => (
-                      <option key={o} value={o}>
-                        {o}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="relative mt-1.5">
+                    <select
+                      id={`${baseId}-obj`}
+                      value={config.objective}
+                      onChange={(e) => setConfig((c) => ({ ...c, objective: e.target.value }))}
+                      className={cn(
+                        "relative z-0 w-full cursor-pointer appearance-none rounded-lg border border-dashboard-border bg-neutral-white py-2.5 pl-10 pr-10 font-ui text-base text-neutral-black outline-none transition-[border-color,box-shadow]",
+                        "hover:border-dashboard-border-strong hover:shadow-micro",
+                        "focus:border-brand-purple focus:ring-2 focus:ring-brand-purple/20"
+                      )}
+                    >
+                      {campaignObjectives.map((o) => (
+                        <option key={o} value={o}>
+                          {o}
+                        </option>
+                      ))}
+                    </select>
+                    <span
+                      className="pointer-events-none absolute inset-y-0 left-3 z-[1] flex items-center text-neutral-silver"
+                      aria-hidden
+                    >
+                      <Target className="h-4 w-4 shrink-0" strokeWidth={2} />
+                    </span>
+                    <span
+                      className="pointer-events-none absolute inset-y-0 right-3 z-[1] flex items-center text-neutral-silver"
+                      aria-hidden
+                    >
+                      <ChevronDown className="h-4 w-4 shrink-0" strokeWidth={2} />
+                    </span>
+                  </div>
                 </div>
                 <div>
                   <label htmlFor={`${baseId}-budget`} className="text-sm font-semibold text-neutral-black">

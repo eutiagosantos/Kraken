@@ -16,12 +16,21 @@ export const mockAccounts: MockAccount[] = [
 
 export type StatDeltaType = "positive" | "neutral" | "negative";
 
+/** Chaves de ícone para KPIs; omitir `icon` para card só com faixa lateral de acento. */
+export type StatIconKey =
+  | "megaphone"
+  | "folderKanban"
+  | "images"
+  | "badgeCheck"
+  | "users"
+  | "upload";
+
 export type MockStat = {
   label: string;
   value: string;
   delta: string;
   deltaType: StatDeltaType;
-  icon: "zap" | "users" | "upload" | "checkCircle" | "layers";
+  icon?: StatIconKey;
   iconBg: string;
   iconColor: string;
 };
@@ -33,7 +42,7 @@ export const mockStats: MockStat[] = [
     value: "12.847",
     delta: "+342 hoje",
     deltaType: "positive",
-    icon: "zap",
+    icon: "megaphone",
     iconBg: "rgba(133, 91, 251, 0.16)",
     iconColor: "#7132f5",
   },
@@ -60,7 +69,7 @@ export const mockStats: MockStat[] = [
     value: "98.2%",
     delta: "+0.4% vs mês anterior",
     deltaType: "positive",
-    icon: "checkCircle",
+    icon: "badgeCheck",
     iconBg: "rgba(20, 158, 97, 0.16)",
     iconColor: "#149e61",
   },
@@ -72,7 +81,7 @@ export const mockHomeCreativesCampaignStats: MockStat[] = [
     value: "12.847",
     delta: "+342 nas últimas 24h",
     deltaType: "positive",
-    icon: "zap",
+    icon: "megaphone",
     iconBg: "rgba(133, 91, 251, 0.16)",
     iconColor: "#7132f5",
   },
@@ -81,7 +90,7 @@ export const mockHomeCreativesCampaignStats: MockStat[] = [
     value: "1.284",
     delta: "+18 esta semana",
     deltaType: "positive",
-    icon: "layers",
+    icon: "folderKanban",
     iconBg: "rgba(87, 65, 216, 0.14)",
     iconColor: "#5741d8",
   },
@@ -90,7 +99,7 @@ export const mockHomeCreativesCampaignStats: MockStat[] = [
     value: "312",
     delta: "12 novos este mês",
     deltaType: "positive",
-    icon: "upload",
+    icon: "images",
     iconBg: "rgba(133, 91, 251, 0.16)",
     iconColor: "#7132f5",
   },
@@ -99,7 +108,7 @@ export const mockHomeCreativesCampaignStats: MockStat[] = [
     value: "98.2%",
     delta: "+0.4% vs mês anterior",
     deltaType: "positive",
-    icon: "checkCircle",
+    icon: "badgeCheck",
     iconBg: "rgba(20, 158, 97, 0.16)",
     iconColor: "#149e61",
   },
