@@ -3,7 +3,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { BarChart2, Copy, Upload, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { mockQuickActionsMeta } from "@/lib/mock-data";
 
@@ -17,10 +17,6 @@ const icons = {
 export function QuickActions() {
   const router = useRouter();
   const [dupOpen, setDupOpen] = useState(false);
-
-  const scrollWizard = useCallback(() => {
-    document.getElementById("upload-wizard")?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, []);
 
   return (
     <>
@@ -37,7 +33,7 @@ export function QuickActions() {
                 whileHover={{ y: -1 }}
                 transition={{ duration: 0.18, ease: [0.4, 0, 0.2, 1] as const }}
                 onClick={() => {
-                  if (action.key === "upload") scrollWizard();
+                  if (action.key === "upload") router.push("/upload");
                   else if (action.key === "duplicate") setDupOpen(true);
                   else if (action.href) router.push(action.href);
                 }}

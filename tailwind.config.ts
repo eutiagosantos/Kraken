@@ -34,7 +34,8 @@ const config: Config = {
         dashboard: {
           base: "#f7f7fb",
           surface: "#ffffff",
-          sidebar: "#101114",
+          sidebar: "#ffffff",
+          "sidebar-ghost": "#f4f4f8",
           border: "#e8e8f0",
           "border-strong": "#dedee5",
           muted: "#9497a9",
@@ -74,6 +75,7 @@ const config: Config = {
       },
       boxShadow: {
         subtle: "0px 4px 24px rgba(0, 0, 0, 0.03)",
+        sidebar: "0 4px 24px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04)",
         micro: "0px 1px 4px rgba(16, 24, 40, 0.04)",
         card: "0px 8px 32px rgba(113, 50, 245, 0.10)",
         "card-hover": "0px 12px 40px rgba(113, 50, 245, 0.18)",

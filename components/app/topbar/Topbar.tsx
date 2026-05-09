@@ -56,7 +56,7 @@ export function Topbar({ pathname }: { pathname: string }) {
         </ol>
       </nav>
 
-      <div className="relative mx-auto hidden max-w-md flex-1 md:block">
+      <div className="relative mx-auto max-w-md flex-1 md:hidden">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-dashboard-muted" />
         <input
           type="search"

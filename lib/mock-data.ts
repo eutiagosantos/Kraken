@@ -225,3 +225,16 @@ export const mockUser = {
   name: "João Silva",
   email: "joao@empresa.com.br",
 };
+
+export type MockWorkspace = {
+  id: string;
+  name: string;
+  plan: string;
+  membersLabel?: string;
+};
+
+export const mockWorkspaces: MockWorkspace[] = [
+  { id: "ws1", name: "DirectAds BR", plan: "Plano Pro", membersLabel: "12 membros" },
+  { id: "ws2", name: "Agência Alpha", plan: "Team", membersLabel: "4,5k membros" },
+  { id: "ws3", name: "Loja Beta", plan: "Gratuito", membersLabel: "2 membros" },
+];
