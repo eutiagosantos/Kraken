@@ -1,15 +1,16 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { CheckCircle, Upload, Users, Zap } from "lucide-react";
+import { CheckCircle, Layers, Upload, Users, Zap } from "lucide-react";
 import { StatCard } from "@/components/app/ui/StatCard";
-import { mockStats } from "@/lib/mock-data";
+import { mockHomeCreativesCampaignStats, type MockStat } from "@/lib/mock-data";
 
 const icons = {
   zap: Zap,
   users: Users,
   upload: Upload,
   checkCircle: CheckCircle,
+  layers: Layers,
 } as const;
 
 const container = {
@@ -24,7 +25,11 @@ const item = {
   visible: { opacity: 1, y: 0 },
 };
 
-export function StatsRow() {
+type StatsRowProps = {
+  stats?: MockStat[];
+};
+
+export function StatsRow({ stats = mockHomeCreativesCampaignStats }: StatsRowProps) {
   return (
     <motion.div
       className="grid gap-4 sm:grid-cols-2 sm:gap-5 xl:grid-cols-4"
@@ -32,7 +37,7 @@ export function StatsRow() {
       initial="hidden"
       animate="visible"
     >
-      {mockStats.map((s) => {
+      {stats.map((s) => {
         const Icon = icons[s.icon];
         return (
           <motion.div

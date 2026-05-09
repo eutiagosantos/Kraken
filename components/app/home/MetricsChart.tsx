@@ -50,8 +50,8 @@ export function MetricsChart() {
     <div className="rounded-card border border-dashboard-border bg-dashboard-surface p-5 shadow-subtle md:p-6">
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h3 className="font-display text-lg font-bold text-neutral-black">Performance</h3>
-          <p className="text-sm text-dashboard-muted">Uploads e gasto estimado por período</p>
+          <h3 className="font-display text-lg font-bold text-neutral-black">Campanhas e gasto</h3>
+          <p className="text-sm text-dashboard-muted">Publicações concluídas e gasto estimado por período</p>
         </div>
         <div className="flex items-center gap-1 rounded-lg border border-dashboard-border bg-dashboard-base p-1">
           {PERIODS.map((p) => (
@@ -133,7 +133,7 @@ export function MetricsChart() {
               yAxisId="right"
               type="monotone"
               dataKey="uploads"
-              name="Uploads"
+              name="Publicações"
               stroke="#149e61"
               strokeWidth={2}
               fill="url(#fillUploads)"

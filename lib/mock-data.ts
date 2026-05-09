@@ -21,11 +21,12 @@ export type MockStat = {
   value: string;
   delta: string;
   deltaType: StatDeltaType;
-  icon: "zap" | "users" | "upload" | "checkCircle";
+  icon: "zap" | "users" | "upload" | "checkCircle" | "layers";
   iconBg: string;
   iconColor: string;
 };
 
+/** KPIs genéricos do produto (ex.: relatórios); a home usa `mockHomeCreativesCampaignStats`. */
 export const mockStats: MockStat[] = [
   {
     label: "Anúncios Criados",
@@ -56,6 +57,45 @@ export const mockStats: MockStat[] = [
   },
   {
     label: "Taxa de Aprovação",
+    value: "98.2%",
+    delta: "+0.4% vs mês anterior",
+    deltaType: "positive",
+    icon: "checkCircle",
+    iconBg: "rgba(20, 158, 97, 0.16)",
+    iconColor: "#149e61",
+  },
+];
+
+export const mockHomeCreativesCampaignStats: MockStat[] = [
+  {
+    label: "Anúncios ativos",
+    value: "12.847",
+    delta: "+342 nas últimas 24h",
+    deltaType: "positive",
+    icon: "zap",
+    iconBg: "rgba(133, 91, 251, 0.16)",
+    iconColor: "#7132f5",
+  },
+  {
+    label: "Campanhas ativas",
+    value: "1.284",
+    delta: "+18 esta semana",
+    deltaType: "positive",
+    icon: "layers",
+    iconBg: "rgba(87, 65, 216, 0.14)",
+    iconColor: "#5741d8",
+  },
+  {
+    label: "Criativos na biblioteca",
+    value: "312",
+    delta: "12 novos este mês",
+    deltaType: "positive",
+    icon: "upload",
+    iconBg: "rgba(133, 91, 251, 0.16)",
+    iconColor: "#7132f5",
+  },
+  {
+    label: "Aprovação de criativos",
     value: "98.2%",
     delta: "+0.4% vs mês anterior",
     deltaType: "positive",
@@ -107,6 +147,11 @@ export const mockActivities: MockActivity[] = [
   },
 ];
 
+/** Feed da home: só eventos ligados a campanhas e criativos. */
+export const mockHomeActivities: MockActivity[] = mockActivities.filter(
+  (a) => a.account !== "Sistema"
+);
+
 export type UploadJobStatus = "processing" | "completed" | "error";
 
 export type MockActiveUpload = {
@@ -134,6 +179,47 @@ export const mockActiveUploads: MockActiveUpload[] = [
     done: 50,
     status: "completed",
     startedAt: "13:10",
+  },
+];
+
+export type CreativeLibraryStatus = "aprovado" | "pendente" | "rejeitado";
+
+export type MockCreativeLibraryItem = {
+  id: string;
+  name: string;
+  format: string;
+  status: CreativeLibraryStatus;
+  campaignsCount: number;
+};
+
+export const mockCreativeLibraryItems: MockCreativeLibraryItem[] = [
+  {
+    id: "CR_001",
+    name: "Black Friday — vídeo 15s",
+    format: "Vídeo 9:16",
+    status: "aprovado",
+    campaignsCount: 24,
+  },
+  {
+    id: "CR_002",
+    name: "Carrinho — estático feed",
+    format: "Imagem 1:1",
+    status: "aprovado",
+    campaignsCount: 18,
+  },
+  {
+    id: "CR_003",
+    name: "Lançamento — carrossel",
+    format: "Carrossel",
+    status: "pendente",
+    campaignsCount: 0,
+  },
+  {
+    id: "CR_004",
+    name: "Remarketing — story",
+    format: "Vídeo 4:5",
+    status: "rejeitado",
+    campaignsCount: 2,
   },
 ];
 

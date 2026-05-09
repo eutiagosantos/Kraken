@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { mockActivities, type ActivityType } from "@/lib/mock-data";
+import { mockHomeActivities, type ActivityType } from "@/lib/mock-data";
 
 function dotClass(type: ActivityType) {
   switch (type) {
@@ -19,7 +19,7 @@ function dotClass(type: ActivityType) {
 export function ActivityFeed() {
   const inner = (
     <ul className="max-h-[min(420px,55vh)] space-y-0 overflow-y-auto xl:max-h-[520px]">
-      {mockActivities.map((a, i) => (
+      {mockHomeActivities.map((a, i) => (
         <li
           key={`${a.message}-${i}`}
           className={cn(

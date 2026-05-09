@@ -83,7 +83,7 @@ export function SidebarProfileMenu({ collapsed }: Props) {
           aria-hidden
         />
       </button>
-        {open ? <ProfileDropdown id={menuId} className="left-2 right-2 top-full mt-1" onClose={close} /> : null}
+        {open ? <ProfileDropdown id={menuId} className="left-2 right-2 bottom-full mb-1" onClose={close} /> : null}
     </div>
   );
 }
