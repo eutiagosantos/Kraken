@@ -54,13 +54,16 @@ export function RegisterForm() {
   }
 
   const inputClass =
-    "border-[#d4d4e8] bg-white focus:border-[#6B46E5] focus:ring-[#6B46E5]/25";
+    "border-[#d4d4e8] bg-white py-2 text-[15px] focus:border-[#6B46E5] focus:ring-[#6B46E5]/25";
+
+  const eyeButtonClass =
+    "rounded-md p-1.5 text-neutral-gray transition-colors hover:bg-black/[0.06] hover:text-neutral-black";
 
   return (
-    <form className="space-y-4" onSubmit={handleSubmit} noValidate>
+    <form className="space-y-3" onSubmit={handleSubmit} noValidate>
       {notice ? (
         <p
-          className="rounded-lg border border-[rgba(20,158,97,0.24)] bg-[rgba(20,158,97,0.10)] px-3 py-2.5 text-sm text-[#026b3f]"
+          className="rounded-lg border border-[rgba(20,158,97,0.24)] bg-[rgba(20,158,97,0.10)] px-3 py-2 text-xs text-[#026b3f]"
           role="status"
         >
           {notice}
@@ -104,14 +107,14 @@ export function RegisterForm() {
         suffix={
           <button
             type="button"
-            className="rounded-md p-2 text-neutral-gray transition-colors hover:bg-black/[0.06] hover:text-neutral-black"
+            className={eyeButtonClass}
             onClick={() => setShowPassword((v) => !v)}
             aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
           >
             {showPassword ? (
-              <EyeOff className="h-5 w-5" aria-hidden />
+              <EyeOff className="h-[18px] w-[18px]" aria-hidden />
             ) : (
-              <Eye className="h-5 w-5" aria-hidden />
+              <Eye className="h-[18px] w-[18px]" aria-hidden />
             )}
           </button>
         }
@@ -130,21 +133,21 @@ export function RegisterForm() {
         suffix={
           <button
             type="button"
-            className="rounded-md p-2 text-neutral-gray transition-colors hover:bg-black/[0.06] hover:text-neutral-black"
+            className={eyeButtonClass}
             onClick={() => setShowConfirm((v) => !v)}
             aria-label={showConfirm ? "Ocultar senha" : "Mostrar senha"}
           >
             {showConfirm ? (
-              <EyeOff className="h-5 w-5" aria-hidden />
+              <EyeOff className="h-[18px] w-[18px]" aria-hidden />
             ) : (
-              <Eye className="h-5 w-5" aria-hidden />
+              <Eye className="h-[18px] w-[18px]" aria-hidden />
             )}
           </button>
         }
       />
 
-      <div className="pt-1">
-        <label className="flex cursor-pointer items-start gap-3 text-sm leading-snug text-neutral-gray">
+      <div>
+        <label className="flex cursor-pointer items-start gap-2.5 text-xs leading-snug text-neutral-gray">
           <input
             type="checkbox"
             name="terms"
@@ -176,7 +179,7 @@ export function RegisterForm() {
           </span>
         </label>
         {errors.terms ? (
-          <p id="terms-error" className="mt-1.5 text-sm text-red-600" role="alert">
+          <p id="terms-error" className="mt-1 text-xs text-red-600" role="alert">
             {errors.terms}
           </p>
         ) : null}
@@ -184,14 +187,14 @@ export function RegisterForm() {
 
       <button
         type="submit"
-        className="w-full rounded-[10px] bg-[#6B46E5] py-3 text-base font-semibold text-white shadow-none transition-colors hover:bg-[#5b21e6]"
+        className="w-full rounded-[10px] bg-[#6B46E5] py-2.5 text-[15px] font-semibold text-white shadow-none transition-colors hover:bg-[#5b21e6]"
       >
         Criar conta
       </button>
 
-      <div className="relative py-2">
+      <div className="relative py-1">
         <div className="section-divider absolute inset-x-0 top-1/2 -translate-y-1/2 opacity-70" />
-        <span className="relative mx-auto block w-fit bg-white px-3 text-center text-sm text-neutral-gray">
+        <span className="relative mx-auto block w-fit bg-white px-3 text-center text-xs text-neutral-gray">
           Ou
         </span>
       </div>
@@ -199,21 +202,11 @@ export function RegisterForm() {
       <button
         type="button"
         onClick={handleMetaSignup}
-        className="flex w-full items-center justify-center gap-2.5 rounded-[10px] border border-neutral-border bg-white py-3 text-base font-semibold text-neutral-black shadow-subtle transition-colors hover:bg-neutral-white"
+        className="flex w-full items-center justify-center gap-2.5 rounded-[10px] border border-neutral-border bg-white py-2.5 text-[15px] font-semibold text-neutral-black shadow-subtle transition-colors hover:bg-neutral-white"
       >
-        <Image src="/meta-symbol.svg" alt="" width={24} height={24} className="shrink-0" />
+        <Image src="/meta-symbol.svg" alt="" width={20} height={20} className="shrink-0" />
         Continuar com Meta
       </button>
-
-      <p className="pt-3 text-center text-sm leading-relaxed text-neutral-gray">
-        Já tem uma conta?{" "}
-        <Link
-          href="/login"
-          className="font-semibold text-[#6B46E5] underline-offset-2 hover:underline"
-        >
-          Entrar
-        </Link>
-      </p>
     </form>
   );
 }

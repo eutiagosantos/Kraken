@@ -9,14 +9,21 @@ import { cn } from "@/lib/utils";
 type KrakenLoginHeaderProps = {
   ctaLabel?: string;
   ctaHref?: string;
+  compact?: boolean;
 };
 
 export function KrakenLoginHeader({
   ctaLabel = "Criar conta",
   ctaHref = "/cadastro",
+  compact = false,
 }: KrakenLoginHeaderProps = {}) {
   return (
-    <header className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-6 sm:px-6 lg:px-8">
+    <header
+      className={cn(
+        "mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-4 px-4 sm:px-6 lg:px-8",
+        compact ? "py-3 sm:py-4" : "py-6"
+      )}
+    >
       <Link
         href="/"
         className="flex items-center gap-2.5 text-[#5741CF] transition-opacity hover:opacity-90"
