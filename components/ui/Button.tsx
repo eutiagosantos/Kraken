@@ -1,7 +1,14 @@
 import { forwardRef, type ButtonHTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 
-export type ButtonVariant = "primary" | "outlined" | "subtle" | "white" | "secondary";
+export type ButtonVariant =
+  | "primary"
+  | "outlined"
+  | "subtle"
+  | "white"
+  | "secondary"
+  | "ghost"
+  | "danger";
 
 export const buttonVariantClasses: Record<ButtonVariant, string> = {
   primary:
@@ -14,6 +21,10 @@ export const buttonVariantClasses: Record<ButtonVariant, string> = {
     "bg-neutral-white text-neutral-black rounded-[10px] px-4 py-[13px] font-semibold text-base shadow-subtle hover:shadow-micro transition-shadow",
   secondary:
     "rounded-btn bg-[rgba(148,151,169,0.08)] px-4 py-[13px] text-base font-semibold text-neutral-black transition-colors hover:bg-[rgba(148,151,169,0.12)]",
+  ghost:
+    "rounded-btn bg-transparent px-4 py-[13px] text-base font-semibold text-neutral-gray transition-colors hover:bg-[rgba(148,151,169,0.08)] hover:text-neutral-black",
+  danger:
+    "rounded-btn bg-semantic-red px-4 py-[13px] text-base font-semibold text-neutral-white transition-colors hover:bg-[#c53030]",
 };
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
