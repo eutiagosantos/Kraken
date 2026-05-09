@@ -20,7 +20,7 @@ export function ProgressBar({
       aria-valuemax={100}
     >
       <div
-        className="h-full rounded-full bg-gradient-to-r from-brand-purple to-[#9b72ff] transition-[width] duration-500 ease-out"
+        className="h-full rounded-full bg-brand-purple transition-[width] duration-500 ease-out"
         style={{ width: `${pct}%` }}
       />
     </div>

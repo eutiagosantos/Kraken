@@ -23,23 +23,28 @@ export function StatCard({
 }) {
   return (
     <div
-      className="flex gap-3.5 rounded-xl border border-dashboard-border bg-dashboard-surface p-5"
-      style={{ borderTopColor: iconColor, borderTopWidth: 3 }}
+      className={cn(
+        "flex gap-4 rounded-card border border-neutral-border bg-neutral-white p-5 shadow-subtle",
+        "transition-shadow duration-200 hover:shadow-micro"
+      )}
+      style={{ borderTopWidth: 3, borderTopColor: iconColor }}
     >
       <div
-        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px]"
+        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px]"
         style={{ backgroundColor: iconBg }}
       >
         <Icon className="h-5 w-5" style={{ color: iconColor }} aria-hidden />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium text-neutral-gray">{label}</p>
-        <p className="mt-0.5 font-display text-[1.625rem] font-bold leading-none tracking-tight text-neutral-black">{value}</p>
+        <p className="font-ui text-sm font-medium leading-snug text-neutral-silver">{label}</p>
+        <p className="mt-1 font-display text-[1.625rem] font-bold leading-none tracking-[-0.02em] text-neutral-black md:text-[1.75rem]">
+          {value}
+        </p>
         <p
           className={cn(
-            "mt-1 text-sm font-medium",
-            deltaType === "positive" && "text-semantic-green",
-            deltaType === "neutral" && "text-dashboard-muted",
+            "mt-1.5 font-ui text-sm font-medium leading-normal",
+            deltaType === "positive" && "text-semantic-green-dark",
+            deltaType === "neutral" && "text-neutral-silver",
             deltaType === "negative" && "text-semantic-red"
           )}
         >

@@ -33,7 +33,7 @@ export const mockStats: MockStat[] = [
     delta: "+342 hoje",
     deltaType: "positive",
     icon: "zap",
-    iconBg: "rgba(113,50,245,0.12)",
+    iconBg: "rgba(133, 91, 251, 0.16)",
     iconColor: "#7132f5",
   },
   {
@@ -42,7 +42,7 @@ export const mockStats: MockStat[] = [
     delta: "+1 esta semana",
     deltaType: "positive",
     icon: "users",
-    iconBg: "rgba(20,158,97,0.12)",
+    iconBg: "rgba(20, 158, 97, 0.16)",
     iconColor: "#149e61",
   },
   {
@@ -51,7 +51,7 @@ export const mockStats: MockStat[] = [
     delta: "3 em andamento",
     deltaType: "neutral",
     icon: "upload",
-    iconBg: "rgba(113,50,245,0.12)",
+    iconBg: "rgba(133, 91, 251, 0.16)",
     iconColor: "#7132f5",
   },
   {
@@ -60,7 +60,7 @@ export const mockStats: MockStat[] = [
     delta: "+0.4% vs mês anterior",
     deltaType: "positive",
     icon: "checkCircle",
-    iconBg: "rgba(20,158,97,0.12)",
+    iconBg: "rgba(20, 158, 97, 0.16)",
     iconColor: "#149e61",
   },
 ];
@@ -154,14 +154,14 @@ export const mockQuickActionsMeta: MockQuickActionMeta[] = [
     label: "Novo Upload",
     description: "Iniciar upload em massa",
     color: "#7132f5",
-    bg: "rgba(113,50,245,0.08)",
+    bg: "rgba(133, 91, 251, 0.16)",
   },
   {
     key: "connect",
     label: "Conectar Conta",
     description: "Adicionar conta Meta Ads",
     color: "#149e61",
-    bg: "rgba(20,158,97,0.08)",
+    bg: "rgba(20, 158, 97, 0.16)",
     href: "/contas",
   },
   {
@@ -169,14 +169,14 @@ export const mockQuickActionsMeta: MockQuickActionMeta[] = [
     label: "Duplicar Upload",
     description: "Reutilizar configuração anterior",
     color: "#5741d8",
-    bg: "rgba(87,65,216,0.08)",
+    bg: "rgba(87, 65, 216, 0.14)",
   },
   {
     key: "report",
     label: "Ver Relatório",
     description: "Analisar desempenho",
     color: "#d97706",
-    bg: "rgba(217,119,6,0.08)",
+    bg: "rgba(217, 119, 6, 0.14)",
     href: "/relatorios",
   },
 ];
