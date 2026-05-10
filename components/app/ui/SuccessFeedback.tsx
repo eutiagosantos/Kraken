@@ -12,6 +12,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
 
 const DISMISS_MS = 4000;
@@ -32,7 +33,12 @@ export function useSuccessFeedback(): SuccessFeedbackContextValue {
 
 export function SuccessFeedbackProvider({ children }: { children: ReactNode }) {
   const [message, setMessage] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
   const dismissTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const clearDismissTimer = useCallback(() => {
     if (dismissTimerRef.current != null) {
@@ -57,38 +63,53 @@ export function SuccessFeedbackProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo(() => ({ showSuccess }), [showSuccess]);
 
+  const toastLayer =
+    mounted && typeof document !== "undefined"
+      ? createPortal(
+          <div
+            className={cn(
+              "pointer-events-none fixed inset-0 z-[130] flex items-center justify-center",
+              "p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]",
+              "pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))]",
+              "md:p-6"
+            )}
+          >
+            <AnimatePresence mode="wait">
+              {message ? (
+                <motion.div
+                  key={message}
+                  role="status"
+                  aria-live="polite"
+                  aria-atomic="true"
+                  initial={{ opacity: 0, y: 10, scale: 0.94 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -6, scale: 0.97 }}
+                  transition={{ type: "spring", damping: 24, stiffness: 400, mass: 0.85 }}
+                  className={cn(
+                    "pointer-events-auto flex max-w-[min(100%,20rem)] items-center justify-center gap-3 rounded-xl border border-semantic-green/25 bg-neutral-white px-4 py-3 shadow-[0px_8px_24px_rgba(0,0,0,0.12)]"
+                  )}
+                >
+                  <motion.span
+                    className="inline-flex shrink-0"
+                    initial={{ scale: 0, rotate: -25 }}
+                    animate={{ scale: 1, rotate: 0 }}
+                    transition={{ type: "spring", stiffness: 420, damping: 14, delay: 0.06 }}
+                  >
+                    <CheckCircle2 className="h-5 w-5 text-semantic-green" aria-hidden />
+                  </motion.span>
+                  <p className="text-center text-sm font-medium text-neutral-black">{message}</p>
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
+          </div>,
+          document.body
+        )
+      : null;
+
   return (
     <SuccessFeedbackContext.Provider value={value}>
       {children}
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[130] flex w-full justify-center p-4 pb-[max(1rem,env(safe-area-inset-bottom))] md:p-6">
-        <AnimatePresence mode="wait">
-          {message ? (
-            <motion.div
-              key={message}
-              role="status"
-              aria-live="polite"
-              aria-atomic="true"
-              initial={{ opacity: 0, y: 28, scale: 0.92 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 12, scale: 0.96 }}
-              transition={{ type: "spring", damping: 22, stiffness: 380, mass: 0.85 }}
-              className={cn(
-                "pointer-events-auto flex max-w-[min(100%,20rem)] items-center justify-center gap-3 rounded-xl border border-semantic-green/25 bg-neutral-white px-4 py-3 shadow-[0px_8px_24px_rgba(0,0,0,0.12)]"
-              )}
-            >
-              <motion.span
-                className="inline-flex shrink-0"
-                initial={{ scale: 0, rotate: -25 }}
-                animate={{ scale: 1, rotate: 0 }}
-                transition={{ type: "spring", stiffness: 420, damping: 14, delay: 0.08 }}
-              >
-                <CheckCircle2 className="h-5 w-5 text-semantic-green" aria-hidden />
-              </motion.span>
-              <p className="text-center text-sm font-medium text-neutral-black">{message}</p>
-            </motion.div>
-          ) : null}
-        </AnimatePresence>
-      </div>
+      {toastLayer}
     </SuccessFeedbackContext.Provider>
   );
 }
