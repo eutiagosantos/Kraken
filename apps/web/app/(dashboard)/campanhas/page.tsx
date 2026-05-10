@@ -415,7 +415,7 @@ export default function CampanhasPage() {
           setExportCampanha(null);
           setExportBulkCount(0);
         }}
-        onExport={(_format, _fields) => {
+        onExport={() => {
           showSuccess("Relatório exportado com sucesso.");
         }}
       />
