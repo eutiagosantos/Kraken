@@ -1,7 +1,7 @@
 "use client";
 
 import { Plus } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, Variants } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 export function ConnectNewCard({
@@ -9,7 +9,7 @@ export function ConnectNewCard({
   cardVariants,
 }: {
   onClick: () => void;
-  cardVariants?: { hidden?: object; visible?: object };
+  cardVariants?: Variants;
 }) {
   return (
     <motion.div
