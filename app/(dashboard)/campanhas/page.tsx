@@ -160,7 +160,7 @@ export default function CampanhasPage() {
       if (allIn) return prev.filter((id) => !pageIds.includes(id));
       const set = new Set(prev);
       pageIds.forEach((id) => set.add(id));
-      return [...set];
+      return Array.from(set);
     });
   }, [pageIds]);
 
