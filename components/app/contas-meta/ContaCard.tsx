@@ -16,7 +16,7 @@ import {
   ShieldCheck,
   ShieldX,
 } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, Variants } from "framer-motion";
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
@@ -150,7 +150,7 @@ export function ContaCard({
   onEdit: () => void;
   onReconnect: () => void;
   onDisconnect: () => void;
-  cardVariants?: { hidden?: object; visible?: object };
+  cardVariants?: Variants;
 }) {
   const [copied, setCopied] = useState(false);
   const accent = cardTopAccent(conta.status);
