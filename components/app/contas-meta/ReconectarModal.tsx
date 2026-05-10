@@ -1,6 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
+import { ModalPortal } from "@/components/app/ui/ModalPortal";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { AlertTriangle } from "lucide-react";
@@ -36,6 +37,7 @@ export function ReconectarModal({
   }, [open, onClose]);
 
   return (
+    <ModalPortal>
     <AnimatePresence>
       {open && conta ? (
         <>
@@ -118,5 +120,6 @@ export function ReconectarModal({
         </>
       ) : null}
     </AnimatePresence>
+    </ModalPortal>
   );
 }

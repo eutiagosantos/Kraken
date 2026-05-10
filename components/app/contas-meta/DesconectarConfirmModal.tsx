@@ -1,6 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
+import { ModalPortal } from "@/components/app/ui/ModalPortal";
 import { Unplug } from "lucide-react";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/Button";
@@ -40,6 +41,7 @@ export function DesconectarConfirmModal({
   }, [open, onClose]);
 
   return (
+    <ModalPortal>
     <AnimatePresence>
       {open && conta ? (
         <>
@@ -94,5 +96,6 @@ export function DesconectarConfirmModal({
         </>
       ) : null}
     </AnimatePresence>
+    </ModalPortal>
   );
 }

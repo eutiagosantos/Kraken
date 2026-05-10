@@ -1,6 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
+import { ModalPortal } from "@/components/app/ui/ModalPortal";
 import { addDays } from "date-fns";
 import { AlertTriangle, Check, Eye, EyeOff, Key, Link2, Loader2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
@@ -185,6 +186,7 @@ export function ConectarContaModal({
   };
 
   return (
+    <ModalPortal>
     <AnimatePresence>
       {open ? (
         <>
@@ -381,5 +383,6 @@ export function ConectarContaModal({
         </>
       ) : null}
     </AnimatePresence>
+    </ModalPortal>
   );
 }

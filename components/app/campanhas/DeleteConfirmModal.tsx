@@ -1,6 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
+import { ModalPortal } from "@/components/app/ui/ModalPortal";
 import { AlertTriangle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
@@ -32,6 +33,7 @@ export function DeleteConfirmModal({
   }, [open, onClose]);
 
   return (
+    <ModalPortal>
     <AnimatePresence>
       {open ? (
         <>
@@ -88,5 +90,6 @@ export function DeleteConfirmModal({
         </>
       ) : null}
     </AnimatePresence>
+    </ModalPortal>
   );
 }

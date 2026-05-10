@@ -1,6 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
+import { ModalPortal } from "@/components/app/ui/ModalPortal";
 import { Download } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
@@ -45,6 +46,7 @@ export function ExportModal({
   };
 
   return (
+    <ModalPortal>
     <AnimatePresence>
       {open && (campanha || (selectionCount && selectionCount > 0)) ? (
         <>
@@ -127,5 +129,6 @@ export function ExportModal({
         </>
       ) : null}
     </AnimatePresence>
+    </ModalPortal>
   );
 }

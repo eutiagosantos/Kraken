@@ -1,6 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
+import { ModalPortal } from "@/components/app/ui/ModalPortal";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -58,6 +59,7 @@ export function EditarContaModal({
   };
 
   return (
+    <ModalPortal>
     <AnimatePresence>
       {open && conta ? (
         <>
@@ -180,5 +182,6 @@ export function EditarContaModal({
         </>
       ) : null}
     </AnimatePresence>
+    </ModalPortal>
   );
 }

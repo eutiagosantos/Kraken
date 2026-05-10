@@ -1,6 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
+import { ModalPortal } from "@/components/app/ui/ModalPortal";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -43,6 +44,7 @@ export function EditCampanhaModal({
   }, [open, onClose]);
 
   return (
+    <ModalPortal>
     <AnimatePresence>
       {open && campanha ? (
         <>
@@ -138,5 +140,6 @@ export function EditCampanhaModal({
         </>
       ) : null}
     </AnimatePresence>
+    </ModalPortal>
   );
 }
