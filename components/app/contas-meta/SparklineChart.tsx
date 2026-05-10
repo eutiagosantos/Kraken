@@ -24,7 +24,7 @@ export function SparklineChart({
           </defs>
           <Tooltip
             contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid #e8e8f0" }}
-            formatter={(v: number) => [`R$ ${v.toLocaleString("pt-BR")}`, "Gasto"]}
+            formatter={(v) => [`R$ ${(v as number).toLocaleString("pt-BR")}`, "Gasto"]}
             labelFormatter={(_, payload) => payload?.[0]?.payload?.label ?? ""}
           />
           <Area

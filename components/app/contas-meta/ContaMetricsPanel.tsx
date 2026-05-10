@@ -92,7 +92,7 @@ function SpendLineChart({ data, gradientId }: { data: { day: string; value: numb
           <XAxis dataKey="day" tick={{ fontSize: 11 }} stroke="#9497a9" tickLine={false} axisLine={false} />
           <Tooltip
             contentStyle={{ fontSize: 12, borderRadius: 8 }}
-            formatter={(v: number) => [`R$ ${v.toLocaleString("pt-BR")}`, "Gasto"]}
+            formatter={(v) => [`R$ ${(v as number).toLocaleString("pt-BR")}`, "Gasto"]}
           />
           <Area
             type="monotone"
