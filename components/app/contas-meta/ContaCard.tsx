@@ -242,16 +242,18 @@ export function ContaCard({
 
       <hr className="my-4 border-dashboard-border" />
 
-      <div className="flex flex-wrap items-center gap-2">
-        <Button type="button" variant="subtle" className="py-2 text-sm" onClick={onOpenMetrics}>
-          <BarChart2 className="h-4 w-4" aria-hidden />
-          Ver Métricas
-        </Button>
-        <Button type="button" variant="outlined" className="py-2 text-sm" onClick={onEdit}>
-          <Pencil className="h-4 w-4" aria-hidden />
-          Editar
-        </Button>
-        <div className="ml-auto">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+          <Button type="button" variant="subtle" className="py-2 text-sm" onClick={onOpenMetrics}>
+            <BarChart2 className="h-4 w-4" aria-hidden />
+            Ver Métricas
+          </Button>
+          <Button type="button" variant="outlined" className="py-2 text-sm" onClick={onEdit}>
+            <Pencil className="h-4 w-4" aria-hidden />
+            Editar
+          </Button>
+        </div>
+        <div className="shrink-0">
           <ContaActionsMenu
             conta={conta}
             onOpenMetrics={onOpenMetrics}

@@ -109,7 +109,7 @@ export function CampanhaActionsMenu({
                     setOpen(false);
                   }}
                 >
-                  {it.icon}
+                  <span className="inline-flex h-4 w-8 shrink-0 items-center justify-center">{it.icon}</span>
                   {it.label}
                 </button>
               )
