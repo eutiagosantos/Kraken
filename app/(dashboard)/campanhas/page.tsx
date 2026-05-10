@@ -37,7 +37,7 @@ const defaultFilters: CampanhaFiltersState = {
 };
 
 function uniqueAccounts(campanhas: Campanha[]): string[] {
-  const names = [...new Set(campanhas.map((c) => c.account))].sort();
+  const names = Array.from(new Set(campanhas.map((c) => c.account))).sort();
   return ["Todas as contas", ...names];
 }
 
