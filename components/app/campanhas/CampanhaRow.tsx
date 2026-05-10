@@ -45,7 +45,6 @@ export function CampanhaRow({
 
   return (
     <motion.tr
-      className="table-row"
       layout
       custom={rowIndex}
       variants={{
