@@ -6,6 +6,7 @@ import { ptBR } from "date-fns/locale";
 import { Pencil, RefreshCw, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis } from "recharts";
+import { useIsClient } from "@/lib/hooks/use-is-client";
 import { Button } from "@/components/ui/Button";
 import { InfoRow } from "@/components/app/ui/InfoRow";
 import { PanelFooter } from "@/components/app/ui/PanelFooter";
@@ -79,31 +80,36 @@ function PeriodSelector({
 }
 
 function SpendLineChart({ data, gradientId }: { data: { day: string; value: number }[]; gradientId: string }) {
+  const isClient = useIsClient();
   return (
     <div className="h-[160px] w-full">
-      <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
-          <defs>
-            <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#7132f5" stopOpacity={0.2} />
-              <stop offset="100%" stopColor="#7132f5" stopOpacity={0} />
-            </linearGradient>
-          </defs>
-          <XAxis dataKey="day" tick={{ fontSize: 11 }} stroke="#9497a9" tickLine={false} axisLine={false} />
-          <Tooltip
-            contentStyle={{ fontSize: 12, borderRadius: 8 }}
-            formatter={(v) => [`R$ ${(v as number).toLocaleString("pt-BR")}`, "Gasto"]}
-          />
-          <Area
-            type="monotone"
-            dataKey="value"
-            stroke="#7132f5"
-            strokeWidth={2}
-            fill={`url(#${gradientId})`}
-            dot={false}
-          />
-        </AreaChart>
-      </ResponsiveContainer>
+      {isClient ? (
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+            <defs>
+              <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#7132f5" stopOpacity={0.2} />
+                <stop offset="100%" stopColor="#7132f5" stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <XAxis dataKey="day" tick={{ fontSize: 11 }} stroke="#9497a9" tickLine={false} axisLine={false} />
+            <Tooltip
+              contentStyle={{ fontSize: 12, borderRadius: 8 }}
+              formatter={(v) => [`R$ ${(v as number).toLocaleString("pt-BR")}`, "Gasto"]}
+            />
+            <Area
+              type="monotone"
+              dataKey="value"
+              stroke="#7132f5"
+              strokeWidth={2}
+              fill={`url(#${gradientId})`}
+              dot={false}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      ) : (
+        <div className="h-full w-full" aria-hidden />
+      )}
     </div>
   );
 }
