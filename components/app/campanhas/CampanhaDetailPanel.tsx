@@ -3,48 +3,15 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Copy, Download, Pause, Play, X } from "lucide-react";
+import { Download, Pause, Play, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { ProgressBar } from "@/components/app/ui/ProgressBar";
+import { InfoRow } from "@/components/app/ui/InfoRow";
+import { PanelFooter } from "@/components/app/ui/PanelFooter";
 import { cn } from "@/lib/utils";
 import type { Campanha } from "@/lib/mock-campanhas";
 import { StatusBadge } from "./StatusBadge";
-
-function InfoRow({
-  label,
-  value,
-  copyable,
-}: {
-  label: string;
-  value: string;
-  copyable?: boolean;
-}) {
-  const [copied, setCopied] = useState(false);
-  return (
-    <div className="flex items-start justify-between gap-3 border-b border-dashboard-border py-3 text-sm last:border-0">
-      <span className="shrink-0 text-neutral-gray">{label}</span>
-      <div className="flex min-w-0 items-center gap-2 text-right font-medium text-neutral-black">
-        <span className="truncate">{value}</span>
-        {copyable ? (
-          <button
-            type="button"
-            className="shrink-0 rounded p-1 text-neutral-gray hover:bg-dashboard-sidebar-ghost hover:text-brand-purple"
-            aria-label="Copiar"
-            onClick={async () => {
-              await navigator.clipboard.writeText(value);
-              setCopied(true);
-              setTimeout(() => setCopied(false), 1500);
-            }}
-          >
-            <Copy className="h-4 w-4" />
-            <span className="sr-only">{copied ? "Copiado" : "Copiar"}</span>
-          </button>
-        ) : null}
-      </div>
-    </div>
-  );
-}
 
 function CreativeGrid({ creatives }: { creatives: Campanha["creatives"] }) {
   if (creatives.length === 0) {
@@ -213,11 +180,11 @@ export function CampanhaDetailPanel({
               ) : null}
             </div>
 
-            <div className="sticky bottom-0 mt-auto flex flex-wrap gap-2 border-t border-dashboard-border bg-neutral-white p-4">
+            <PanelFooter>
               <Button
                 type="button"
                 variant="outlined"
-                className="flex-1 min-w-[120px] py-2.5 text-sm"
+                className="min-w-[120px] flex-1 py-2.5 text-sm"
                 onClick={() => onExport(campanha)}
               >
                 <Download className="h-4 w-4" />
@@ -226,7 +193,7 @@ export function CampanhaDetailPanel({
               <Button
                 type="button"
                 variant="outlined"
-                className="flex-1 min-w-[120px] py-2.5 text-sm"
+                className="min-w-[120px] flex-1 py-2.5 text-sm"
                 onClick={() => onDuplicate(campanha)}
               >
                 Duplicar
@@ -235,7 +202,7 @@ export function CampanhaDetailPanel({
                 <Button
                   type="button"
                   variant="subtle"
-                  className="flex-1 min-w-[120px] py-2.5 text-sm"
+                  className="min-w-[120px] flex-1 py-2.5 text-sm"
                   onClick={() => onPause(campanha)}
                 >
                   <Pause className="h-4 w-4" />
@@ -245,14 +212,14 @@ export function CampanhaDetailPanel({
                 <Button
                   type="button"
                   variant="primary"
-                  className="flex-1 min-w-[120px] py-2.5 text-sm"
+                  className="min-w-[120px] flex-1 py-2.5 text-sm"
                   onClick={() => onResume(campanha)}
                 >
                   <Play className="h-4 w-4" />
                   Reativar
                 </Button>
               )}
-            </div>
+            </PanelFooter>
           </motion.aside>
         </>
       ) : null}

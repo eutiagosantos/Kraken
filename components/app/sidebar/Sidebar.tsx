@@ -32,7 +32,7 @@ const mainNav = [
   { href: "/home", label: "Home", icon: LayoutDashboard, shortcut: "⌘1" },
   { href: "/upload", label: "Novo Upload", icon: Upload, shortcut: "⌘2" },
   { href: "/campanhas", label: "Campanhas", icon: Layers, shortcut: "⌘3" },
-  { href: "/contas", label: "Contas Meta", icon: Users, shortcut: "⌘4" },
+  { href: "/contas-meta", label: "Contas Meta", icon: Users, shortcut: "⌘4" },
   { href: "/relatorios", label: "Relatórios", icon: BarChart2, shortcut: "⌘5" },
 ] as const;
 

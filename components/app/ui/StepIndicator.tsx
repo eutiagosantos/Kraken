@@ -3,35 +3,42 @@
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const steps = [
+const DEFAULT_UPLOAD_STEPS = [
   "Selecionar Contas Meta",
   "Upload dos Criativos",
   "Configurar Campanhas",
   "Revisar e Publicar",
-];
+] as const;
 
 export function StepIndicator({
   currentStep,
+  steps: stepsProp,
 }: {
   /** 1-based */
   currentStep: number;
+  /** When omitted, uses the Novo Upload wizard labels. */
+  steps?: readonly string[];
 }) {
+  const steps = stepsProp ?? DEFAULT_UPLOAD_STEPS;
+  const safeStep = Math.min(Math.max(currentStep, 1), steps.length);
+  const currentLabel = steps[safeStep - 1] ?? steps[0];
+
   return (
     <div className="mb-8">
       <div className="flex items-start justify-between gap-1 md:gap-2">
         {steps.map((label, index) => {
           const stepNum = index + 1;
-          const done = stepNum < currentStep;
-          const active = stepNum === currentStep;
+          const done = stepNum < safeStep;
+          const active = stepNum === safeStep;
 
           return (
-            <div key={label} className="flex min-w-0 flex-1 flex-col items-center">
+            <div key={`${index}-${label}`} className="flex min-w-0 flex-1 flex-col items-center">
               <div className="flex w-full items-center">
                 {index > 0 ? (
                   <div
                     className={cn(
                       "h-0.5 flex-1 rounded-full transition-colors duration-300",
-                      stepNum <= currentStep ? "bg-brand-purple" : "bg-dashboard-border"
+                      stepNum <= safeStep ? "bg-brand-purple" : "bg-dashboard-border"
                     )}
                   />
                 ) : (
@@ -40,14 +47,9 @@ export function StepIndicator({
                 <div
                   className={cn(
                     "relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 text-sm font-semibold transition-colors duration-300",
-                    done &&
-                      "border-semantic-green bg-semantic-green text-neutral-white",
-                    active &&
-                      !done &&
-                      "border-brand-purple bg-brand-purple text-neutral-white",
-                    !active &&
-                      !done &&
-                      "border-dashboard-border-strong bg-dashboard-surface text-dashboard-muted"
+                    done && "border-semantic-green bg-semantic-green text-neutral-white",
+                    active && !done && "border-brand-purple bg-brand-purple text-neutral-white",
+                    !active && !done && "border-dashboard-border-strong bg-dashboard-surface text-dashboard-muted"
                   )}
                 >
                   {done ? <Check className="h-4 w-4" strokeWidth={3} /> : stepNum}
@@ -56,7 +58,7 @@ export function StepIndicator({
                   <div
                     className={cn(
                       "h-0.5 flex-1 rounded-full transition-colors duration-300",
-                      stepNum < currentStep ? "bg-brand-purple" : "bg-dashboard-border"
+                      stepNum < safeStep ? "bg-brand-purple" : "bg-dashboard-border"
                     )}
                   />
                 ) : (
@@ -75,9 +77,7 @@ export function StepIndicator({
           );
         })}
       </div>
-      <p className="mt-3 text-center text-sm font-semibold text-neutral-black sm:hidden">
-        {steps[currentStep - 1]}
-      </p>
+      <p className="mt-3 text-center text-sm font-semibold text-neutral-black sm:hidden">{currentLabel}</p>
     </div>
   );
 }

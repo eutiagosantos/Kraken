@@ -11,6 +11,7 @@ const crumbLabels: Record<string, string> = {
   upload: "Novo Upload",
   campanhas: "Campanhas",
   contas: "Contas Meta",
+  "contas-meta": "Contas Meta",
   relatorios: "Relatórios",
   configuracoes: "Configurações",
 };
