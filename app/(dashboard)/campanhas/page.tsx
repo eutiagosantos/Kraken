@@ -21,6 +21,7 @@ import { ExportModal } from "@/components/app/campanhas/ExportModal";
 import type { CampanhaFiltersState } from "@/components/app/campanhas/FilterBar";
 import { FilterBar } from "@/components/app/campanhas/FilterBar";
 import { StatusTabs } from "@/components/app/campanhas/StatusTabs";
+import { useSuccessFeedback } from "@/components/app/ui/SuccessFeedback";
 import {
   countCampanhasByTab,
   getCampanhasByStatus,
@@ -79,6 +80,7 @@ function newId() {
 }
 
 export default function CampanhasPage() {
+  const { showSuccess } = useSuccessFeedback();
   const [campanhas, setCampanhas] = useState<Campanha[]>(() => mockCampanhas.map((c) => ({ ...c, creatives: c.creatives.map((x) => ({ ...x })) })));
   const [activeTab, setActiveTab] = useState<CampanhaTabId>("ativas");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -389,6 +391,7 @@ export default function CampanhasPage() {
           setCampanhas((prev) =>
             prev.map((c) => (c.id === id ? { ...c, ...patch } : c))
           );
+          showSuccess("Campanha atualizada com sucesso.");
         }}
       />
 
@@ -396,7 +399,11 @@ export default function CampanhasPage() {
         open={deleteOpen}
         count={deleteCount}
         onClose={() => setDeleteOpen(false)}
-        onConfirm={() => deleteByIds(deleteIds)}
+        onConfirm={() => {
+          const n = deleteIds.length;
+          deleteByIds(deleteIds);
+          showSuccess(n > 1 ? "Campanhas excluídas com sucesso." : "Campanha excluída com sucesso.");
+        }}
       />
 
       <ExportModal
@@ -408,7 +415,9 @@ export default function CampanhasPage() {
           setExportCampanha(null);
           setExportBulkCount(0);
         }}
-        onExport={() => {}}
+        onExport={(_format, _fields) => {
+          showSuccess("Relatório exportado com sucesso.");
+        }}
       />
     </div>
   );

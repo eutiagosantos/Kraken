@@ -25,10 +25,12 @@ import { DesconectarConfirmModal } from "@/components/app/contas-meta/Desconecta
 import { EditarContaModal } from "@/components/app/contas-meta/EditarContaModal";
 import { ReconectarModal } from "@/components/app/contas-meta/ReconectarModal";
 import { StatusFilterTabs } from "@/components/app/contas-meta/StatusFilterTabs";
+import { useSuccessFeedback } from "@/components/app/ui/SuccessFeedback";
 
 type OpenModal = "conectar" | "editar" | "reconectar" | "desconectar" | null;
 
 export default function ContasMetaPage() {
+  const { showSuccess } = useSuccessFeedback();
   const [contas, setContas] = useState<ContaMeta[]>(() => mockContas);
   const [activeTab, setActiveTab] = useState<ContaTabId>("todas");
   const [filters, setFilters] = useState<ContasPageFiltersState>(() => defaultContasFilters());
@@ -109,7 +111,10 @@ export default function ContasMetaPage() {
       <ConectarContaModal
         open={openModal === "conectar"}
         onClose={() => setOpenModal(null)}
-        onConnect={(nova) => setContas((prev) => [...prev, nova])}
+        onConnect={(nova) => {
+          setContas((prev) => [...prev, nova]);
+          showSuccess("Conta conectada com sucesso.");
+        }}
       />
 
       <EditarContaModal
@@ -118,6 +123,7 @@ export default function ContasMetaPage() {
         onClose={() => setOpenModal(null)}
         onSave={(id, patch) => {
           setContas((prev) => prev.map((c) => (c.id === id ? { ...c, ...patch } : c)));
+          showSuccess("Alterações salvas com sucesso.");
         }}
       />
 
@@ -139,6 +145,7 @@ export default function ContasMetaPage() {
                 : c
             )
           );
+          showSuccess("Conta reconectada com sucesso.");
         }}
       />
 
@@ -146,7 +153,10 @@ export default function ContasMetaPage() {
         conta={openModal === "desconectar" ? modalConta : null}
         open={openModal === "desconectar"}
         onClose={() => setOpenModal(null)}
-        onConfirm={(id) => setContas((prev) => prev.filter((c) => c.id !== id))}
+        onConfirm={(id) => {
+          setContas((prev) => prev.filter((c) => c.id !== id));
+          showSuccess("Conta desconectada com sucesso.");
+        }}
       />
     </div>
   );

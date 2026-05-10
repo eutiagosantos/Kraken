@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { Sidebar } from "./sidebar/Sidebar";
 import { SidebarProvider, useSidebar } from "./sidebar/SidebarContext";
 import { sidebarMainMarginTwClass } from "./sidebar/sidebar-layout";
+import { SuccessFeedbackProvider } from "@/components/app/ui/SuccessFeedback";
 import { Topbar } from "./topbar/Topbar";
 
 function MainColumn({ children }: { children: ReactNode }) {
@@ -27,11 +28,13 @@ function MainColumn({ children }: { children: ReactNode }) {
 
 export function DashboardShell({ children }: { children: ReactNode }) {
   return (
-    <SidebarProvider>
-      <div className="min-h-screen bg-dashboard-base font-ui antialiased">
-        <Sidebar />
-        <MainColumn>{children}</MainColumn>
-      </div>
-    </SidebarProvider>
+    <SuccessFeedbackProvider>
+      <SidebarProvider>
+        <div className="min-h-screen bg-dashboard-base font-ui antialiased">
+          <Sidebar />
+          <MainColumn>{children}</MainColumn>
+        </div>
+      </SidebarProvider>
+    </SuccessFeedbackProvider>
   );
 }
