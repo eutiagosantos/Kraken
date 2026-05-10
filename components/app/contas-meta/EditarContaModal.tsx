@@ -71,17 +71,22 @@ export function EditarContaModal({
             onClick={onClose}
             aria-hidden
           />
-          <motion.div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="edit-conta-title"
-            className="fixed left-1/2 top-1/2 z-[121] flex w-[calc(100%-2rem)] max-w-md max-h-[min(90dvh,calc(100dvh-2rem))] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-card border border-dashboard-border bg-dashboard-surface shadow-card"
-            initial={{ opacity: 0, scale: 0.96, y: 8 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.96, y: 8 }}
-            transition={{ duration: 0.2 }}
-            onClick={(e) => e.stopPropagation()}
+          {/* Wrapper sem transform: Framer Motion no card sobrescreve translate do Tailwind e cortava o rodapé */}
+          <div
+            className="pointer-events-none fixed inset-0 z-[121] flex items-center justify-center p-4"
+            role="presentation"
           >
+            <motion.div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="edit-conta-title"
+              className="pointer-events-auto flex min-h-0 w-full max-w-md max-h-[min(90dvh,calc(100dvh-2rem))] flex-col overflow-hidden rounded-card border border-dashboard-border bg-dashboard-surface shadow-card"
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.96 }}
+              transition={{ duration: 0.2 }}
+              onClick={(e) => e.stopPropagation()}
+            >
             <div className="shrink-0 border-b border-dashboard-border px-6 pb-4 pt-6">
               <h2 id="edit-conta-title" className="font-display text-xl font-bold text-neutral-black">
                 Editar conta
@@ -188,7 +193,8 @@ export function EditarContaModal({
                 Salvar Alterações
               </Button>
             </div>
-          </motion.div>
+            </motion.div>
+          </div>
         </>
       ) : null}
     </AnimatePresence>

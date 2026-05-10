@@ -198,20 +198,24 @@ export function ConectarContaModal({
             onClick={onClose}
             aria-hidden
           />
-          <motion.div
-            role="dialog"
-            aria-modal="true"
+          <div
             className={cn(
-              "fixed z-[121] flex max-h-[100dvh] flex-col overflow-y-auto border border-dashboard-border bg-dashboard-surface shadow-card",
-              "left-1/2 top-1/2 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-card p-6",
-              "max-md:inset-0 max-md:left-0 max-md:top-0 max-md:h-[100dvh] max-md:max-h-none max-md:translate-x-0 max-md:translate-y-0 max-md:rounded-none"
+              "pointer-events-none fixed inset-0 z-[121] flex flex-col justify-center p-0 md:items-center md:justify-center md:p-4"
             )}
-            initial={{ opacity: 0, scale: 0.96, y: 8 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.96, y: 8 }}
-            transition={{ duration: 0.2 }}
-            onClick={(e) => e.stopPropagation()}
           >
+            <motion.div
+              role="dialog"
+              aria-modal="true"
+              className={cn(
+                "pointer-events-auto flex w-full flex-col overflow-y-auto border border-dashboard-border bg-dashboard-surface shadow-card",
+                "h-[100dvh] max-h-[100dvh] rounded-none p-6 md:h-auto md:max-h-[min(90dvh,calc(100dvh-2rem))] md:max-w-lg md:rounded-card"
+              )}
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.98 }}
+              transition={{ duration: 0.2 }}
+              onClick={(e) => e.stopPropagation()}
+            >
             <StepIndicator currentStep={step} steps={CONECTAR_META_STEPS} />
 
             <AnimatePresence mode="wait">
@@ -379,7 +383,8 @@ export function ConectarContaModal({
                 </motion.div>
               ) : null}
             </AnimatePresence>
-          </motion.div>
+            </motion.div>
+          </div>
         </>
       ) : null}
     </AnimatePresence>
