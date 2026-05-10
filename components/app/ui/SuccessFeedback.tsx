@@ -60,7 +60,7 @@ export function SuccessFeedbackProvider({ children }: { children: ReactNode }) {
   return (
     <SuccessFeedbackContext.Provider value={value}>
       {children}
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[130] flex justify-center p-4 pb-[max(1rem,env(safe-area-inset-bottom))] md:justify-end md:p-6">
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[130] flex w-full justify-center p-4 pb-[max(1rem,env(safe-area-inset-bottom))] md:p-6">
         <AnimatePresence mode="wait">
           {message ? (
             <motion.div
@@ -68,16 +68,23 @@ export function SuccessFeedbackProvider({ children }: { children: ReactNode }) {
               role="status"
               aria-live="polite"
               aria-atomic="true"
-              initial={{ opacity: 0, y: 16, scale: 0.98 }}
+              initial={{ opacity: 0, y: 28, scale: 0.92 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 8, scale: 0.98 }}
-              transition={{ type: "spring", damping: 26, stiffness: 320 }}
+              exit={{ opacity: 0, y: 12, scale: 0.96 }}
+              transition={{ type: "spring", damping: 22, stiffness: 380, mass: 0.85 }}
               className={cn(
-                "pointer-events-auto flex max-w-[min(100%,20rem)] items-center gap-3 rounded-xl border border-semantic-green/25 bg-neutral-white px-4 py-3 shadow-[0px_8px_24px_rgba(0,0,0,0.12)]"
+                "pointer-events-auto flex max-w-[min(100%,20rem)] items-center justify-center gap-3 rounded-xl border border-semantic-green/25 bg-neutral-white px-4 py-3 shadow-[0px_8px_24px_rgba(0,0,0,0.12)]"
               )}
             >
-              <CheckCircle2 className="h-5 w-5 shrink-0 text-semantic-green" aria-hidden />
-              <p className="text-left text-sm font-medium text-neutral-black">{message}</p>
+              <motion.span
+                className="inline-flex shrink-0"
+                initial={{ scale: 0, rotate: -25 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ type: "spring", stiffness: 420, damping: 14, delay: 0.08 }}
+              >
+                <CheckCircle2 className="h-5 w-5 text-semantic-green" aria-hidden />
+              </motion.span>
+              <p className="text-center text-sm font-medium text-neutral-black">{message}</p>
             </motion.div>
           ) : null}
         </AnimatePresence>
