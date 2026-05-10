@@ -43,7 +43,7 @@ function weekSpark(base: number, variance = 0.15): { day: string; value: number 
   const days = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
   return days.map((day, i) => ({
     day,
-    value: Math.round(base * (1 + (Math.sin(i * 0.8) * variance + (i - 3) * 0.02)))),
+    value: Math.round(base * (1 + (Math.sin(i * 0.8) * variance + (i - 3) * 0.02))),
   }));
 }
 
