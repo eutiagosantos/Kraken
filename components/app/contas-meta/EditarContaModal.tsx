@@ -75,20 +75,29 @@ export function EditarContaModal({
             role="dialog"
             aria-modal="true"
             aria-labelledby="edit-conta-title"
-            className="fixed left-1/2 top-1/2 z-[121] w-full max-w-md max-h-[90dvh] overflow-y-auto -translate-x-1/2 -translate-y-1/2 rounded-card border border-dashboard-border bg-dashboard-surface p-6 shadow-card"
+            className="fixed left-1/2 top-1/2 z-[121] flex w-[calc(100%-2rem)] max-w-md max-h-[min(90dvh,calc(100dvh-2rem))] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-card border border-dashboard-border bg-dashboard-surface shadow-card"
             initial={{ opacity: 0, scale: 0.96, y: 8 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 8 }}
             transition={{ duration: 0.2 }}
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 id="edit-conta-title" className="font-display text-xl font-bold text-neutral-black">
-              Editar conta
-            </h2>
-            <p className="mt-1 text-sm text-neutral-gray">{conta.name}</p>
+            <div className="shrink-0 border-b border-dashboard-border px-6 pb-4 pt-6">
+              <h2 id="edit-conta-title" className="font-display text-xl font-bold text-neutral-black">
+                Editar conta
+              </h2>
+              <p className="mt-1 text-sm text-neutral-gray">{conta.name}</p>
+            </div>
 
-            <div className="mt-5 space-y-4">
-              <Input id="edit-nickname" label="Apelido da conta" value={nickname} onChange={(e) => setNickname(e.target.value)} />
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-5">
+            <div className="space-y-4">
+              <Input
+                id="edit-nickname"
+                label="Apelido da conta"
+                placeholder={conta.nickname ? undefined : `Opcional — padrão: ${conta.name}`}
+                value={nickname}
+                onChange={(e) => setNickname(e.target.value)}
+              />
               <div>
                 <label htmlFor="edit-budget-conta" className="mb-1.5 block text-sm font-semibold text-neutral-black">
                   Orçamento padrão (R$)
@@ -156,8 +165,9 @@ export function EditarContaModal({
                 </div>
               </fieldset>
             </div>
+            </div>
 
-            <div className="mt-8 flex flex-wrap justify-end gap-3 border-t border-dashboard-border pt-5">
+            <div className="flex shrink-0 flex-wrap justify-end gap-3 border-t border-dashboard-border bg-dashboard-surface px-6 py-4">
               <Button type="button" variant="ghost" onClick={onClose}>
                 Cancelar
               </Button>
