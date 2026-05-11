@@ -1,6 +1,11 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 
+export const runtime = "nodejs";
+// Chunked upload de vídeos + espera de processamento pode ultrapassar o default de 10 s
+// no Vercel Hobby; 300 s é o máximo permitido no plano Pro.
+export const maxDuration = 300;
+
 import { getSessionUser } from "@/lib/api/session";
 import { normalizeActId } from "@/lib/meta/graph-campaign-publish";
 import { fetchUserFacebookPages, pageIdInUserPages } from "@/lib/meta/graph-user-pages";
@@ -32,7 +37,7 @@ function orderSelectedAccounts(
 
 function mimeFromCreativeType(type: "image" | "video", blobType: string | undefined): string {
   if (blobType && blobType.trim()) return blobType;
-  return type === "image" ? "image/jpeg" : "application/octet-stream";
+  return type === "image" ? "image/jpeg" : "video/mp4";
 }
 
 async function removeStorageObjects(

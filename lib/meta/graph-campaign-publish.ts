@@ -118,26 +118,46 @@ export async function graphCreateAdSet(options: {
   });
 }
 
+export type AdCreativeMedia =
+  | { kind: "image"; imageHash: string }
+  | { kind: "video"; videoId: string; thumbnailImageUrl: string };
+
 export async function graphCreateAdCreative(options: {
   actId: string;
   accessToken: string;
   name: string;
   pageId: string;
-  imageHash: string;
+  media: AdCreativeMedia;
   linkUrl: string;
   message: string;
   fetchImpl?: GraphFetch;
 }): Promise<{ id: string }> {
+  const message = options.message.slice(0, 2000);
+  const objectStorySpec: Record<string, unknown> =
+    options.media.kind === "image"
+      ? {
+          page_id: options.pageId,
+          link_data: {
+            image_hash: options.media.imageHash,
+            link: options.linkUrl,
+            message,
+          },
+        }
+      : {
+          page_id: options.pageId,
+          video_data: {
+            video_id: options.media.videoId,
+            image_url: options.media.thumbnailImageUrl,
+            message,
+            call_to_action: {
+              type: "LEARN_MORE",
+              value: { link: options.linkUrl },
+            },
+          },
+        };
   const body = {
     name: options.name.slice(0, 256),
-    object_story_spec: {
-      page_id: options.pageId,
-      link_data: {
-        image_hash: options.imageHash,
-        link: options.linkUrl,
-        message: options.message.slice(0, 2000),
-      },
-    },
+    object_story_spec: objectStorySpec,
   };
   return graphJsonPost<{ id: string }>({
     path: `${options.actId}/adcreatives`,

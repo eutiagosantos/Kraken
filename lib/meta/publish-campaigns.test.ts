@@ -166,6 +166,207 @@ describe("runWizardPublish", () => {
     expect(fetchImpl).not.toHaveBeenCalled();
   });
 
+  it("publishes a video creative via /advideos (chunked) + thumbnail + video_data", async () => {
+    let videoPostCount = 0;
+    const phasesSeen: string[] = [];
+    let adCreativeBody: Record<string, unknown> | null = null;
+
+    const fetchImpl: typeof fetch = vi.fn(async (input, init) => {
+      const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+      if (url.includes("/advideos")) {
+        videoPostCount++;
+        const form = init?.body as FormData;
+        const phase = String(form.get("upload_phase"));
+        phasesSeen.push(phase);
+        if (phase === "start") {
+          return new Response(
+            JSON.stringify({
+              upload_session_id: "sess_v",
+              video_id: "vid_777",
+              start_offset: "0",
+              end_offset: "3",
+            }),
+            { status: 200 }
+          );
+        }
+        if (phase === "transfer") {
+          return new Response(
+            JSON.stringify({ start_offset: "3", end_offset: "3" }),
+            { status: 200 }
+          );
+        }
+        if (phase === "finish") {
+          return new Response(JSON.stringify({ success: true }), { status: 200 });
+        }
+      }
+      if (url.includes("/vid_777/thumbnails")) {
+        return new Response(
+          JSON.stringify({
+            data: [{ id: "t", uri: "https://thumb.example/p.jpg", is_preferred: true }],
+          }),
+          { status: 200 }
+        );
+      }
+      if (url.includes("/vid_777") && (init?.method ?? "GET") === "GET") {
+        return new Response(
+          JSON.stringify({ id: "vid_777", status: { video_status: "ready" } }),
+          { status: 200 }
+        );
+      }
+      if (url.includes("/campaigns")) {
+        return new Response(JSON.stringify({ id: "meta-camp-v" }), { status: 200 });
+      }
+      if (url.includes("/adcreatives")) {
+        adCreativeBody = JSON.parse(String(init?.body ?? "{}")) as Record<string, unknown>;
+        return new Response(JSON.stringify({ id: "meta-cr-v" }), { status: 200 });
+      }
+      if (url.includes("/adsets")) {
+        return new Response(JSON.stringify({ id: "meta-as-v" }), { status: 200 });
+      }
+      if (url.includes("/ads") && !url.includes("adset")) {
+        return new Response(JSON.stringify({ id: "meta-ad-v" }), { status: 200 });
+      }
+      return new Response("unexpected", { status: 500 });
+    });
+
+    const payload = wizardPublishPayloadSchema.parse({
+      selectedAccountIds: ["111"],
+      creatives: [{ id: "c1", name: "promo.mp4", type: "video" }],
+      publishOperationId: PUBLISH_JOB_ID,
+      creativeStoragePaths: [
+        `00000000-0000-4000-8000-000000000001/${PUBLISH_JOB_ID}/creative_0.mp4`,
+      ],
+      campaignType: "CBO",
+      budget: 15,
+      budgetPeriod: "daily",
+      bidStrategy: "LOWEST_COST",
+      objective: "OUTCOME_TRAFFIC",
+      pixelId: "",
+      status: "PAUSED",
+      structure: "1-1-1",
+      customStructure: { campaigns: 1, adsets: 1, ads: 1 },
+      nomenclaturePreview: "N",
+      publico: publicoFixture,
+    });
+
+    const out = await runWizardPublish({
+      supabase: createSupabaseMock(),
+      userId: "00000000-0000-4000-8000-000000000001",
+      accessToken: "token",
+      payload,
+      creativeFilesByIndex: new Map([
+        [0, { buffer: Buffer.from([1, 2, 3]), mimeType: "video/mp4" }],
+      ]),
+      pageId: "1234567890",
+      adLinkUrl: "https://example.com",
+      accounts: [{ meta_account_id: "act_111", name: "Conta A" }],
+      existingPublishJobId: PUBLISH_JOB_ID,
+      fetchImpl,
+    });
+
+    expect(out.results[0].ok).toBe(true);
+    expect(out.results[0].metaCampaignId).toBe("meta-camp-v");
+    expect(videoPostCount).toBeGreaterThanOrEqual(3);
+    expect(phasesSeen).toContain("start");
+    expect(phasesSeen).toContain("transfer");
+    expect(phasesSeen).toContain("finish");
+    expect(adCreativeBody).not.toBeNull();
+    const oss = ((adCreativeBody ?? {}) as { object_story_spec?: Record<string, unknown> }).object_story_spec;
+    const videoData = oss?.video_data as Record<string, unknown> | undefined;
+    expect(videoData?.video_id).toBe("vid_777");
+    expect(videoData?.image_url).toBe("https://thumb.example/p.jpg");
+    const cta = videoData?.call_to_action as { type?: string; value?: { link?: string } } | undefined;
+    expect(cta?.type).toBe("LEARN_MORE");
+    expect(cta?.value?.link).toBe("https://example.com");
+  });
+
+  it("marks unit as error when video status returns error before creating campaign", async () => {
+    let campaignCalled = false;
+    const fetchImpl: typeof fetch = vi.fn(async (input, init) => {
+      const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+      if (url.includes("/advideos")) {
+        const form = init?.body as FormData;
+        const phase = String(form.get("upload_phase"));
+        if (phase === "start") {
+          return new Response(
+            JSON.stringify({
+              upload_session_id: "sess_e",
+              video_id: "vid_err",
+              start_offset: "0",
+              end_offset: "3",
+            }),
+            { status: 200 }
+          );
+        }
+        if (phase === "transfer") {
+          return new Response(
+            JSON.stringify({ start_offset: "3", end_offset: "3" }),
+            { status: 200 }
+          );
+        }
+        if (phase === "finish") {
+          return new Response(JSON.stringify({ success: true }), { status: 200 });
+        }
+      }
+      if (url.includes("/vid_err") && (init?.method ?? "GET") === "GET") {
+        return new Response(
+          JSON.stringify({
+            id: "vid_err",
+            status: {
+              video_status: "error",
+              processing_phase: { errors: [{ message: "codec inválido" }] },
+            },
+          }),
+          { status: 200 }
+        );
+      }
+      if (url.includes("/campaigns")) {
+        campaignCalled = true;
+        return new Response(JSON.stringify({ id: "should-not-create" }), { status: 200 });
+      }
+      return new Response("unexpected", { status: 500 });
+    });
+
+    const payload = wizardPublishPayloadSchema.parse({
+      selectedAccountIds: ["111"],
+      creatives: [{ id: "c1", name: "promo.mp4", type: "video" }],
+      publishOperationId: PUBLISH_JOB_ID,
+      creativeStoragePaths: [
+        `00000000-0000-4000-8000-000000000001/${PUBLISH_JOB_ID}/creative_0.mp4`,
+      ],
+      campaignType: "CBO",
+      budget: 15,
+      budgetPeriod: "daily",
+      bidStrategy: "LOWEST_COST",
+      objective: "OUTCOME_TRAFFIC",
+      pixelId: "",
+      status: "PAUSED",
+      structure: "1-1-1",
+      customStructure: { campaigns: 1, adsets: 1, ads: 1 },
+      nomenclaturePreview: "N",
+      publico: publicoFixture,
+    });
+
+    const out = await runWizardPublish({
+      supabase: createSupabaseMock(),
+      userId: "00000000-0000-4000-8000-000000000001",
+      accessToken: "token",
+      payload,
+      creativeFilesByIndex: new Map([
+        [0, { buffer: Buffer.from([1, 2, 3]), mimeType: "video/mp4" }],
+      ]),
+      pageId: "1234567890",
+      adLinkUrl: "https://example.com",
+      accounts: [{ meta_account_id: "act_111", name: "Conta A" }],
+      existingPublishJobId: PUBLISH_JOB_ID,
+      fetchImpl,
+    });
+
+    expect(out.results[0].ok).toBe(false);
+    expect(out.results[0].error).toMatch(/codec inv\u00e1lido/);
+    expect(campaignCalled).toBe(false);
+  });
+
   it("deletes campaign when ad set creation fails after campaign exists", async () => {
     let deleteCalled = false;
     const fetchImpl = vi.fn(async (url: string, init?: RequestInit) => {

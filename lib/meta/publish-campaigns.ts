@@ -2,12 +2,18 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { uploadAdImageToAccount } from "@/lib/meta/graph-ad-images";
 import {
+  fetchPreferredAdVideoThumbnail,
+  uploadAdVideoChunked,
+  waitForAdVideoReady,
+} from "@/lib/meta/graph-ad-videos";
+import {
   graphCreateAd,
   graphCreateAdCreative,
   graphCreateAdSet,
   graphCreateCampaign,
   graphDeleteCampaign,
   normalizeActId,
+  type AdCreativeMedia,
 } from "@/lib/meta/graph-campaign-publish";
 import type { GraphFetch } from "@/lib/meta/graph-client";
 import { GraphApiError } from "@/lib/meta/graph-client";
@@ -151,23 +157,6 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
       ok: false,
     };
 
-    if (creative.type === "video") {
-      const vErr = "Vídeo ainda não suportado nesta versão da publicação (use imagem).";
-      results.push({
-        ...baseResult,
-        error: vErr,
-      });
-      await persistFailedCampanha(ctx, {
-        unit,
-        creative,
-        structureDb,
-        error: vErr,
-      });
-      done += 1;
-      await ctx.supabase.from("upload_jobs").update({ done }).eq("id", publishId);
-      continue;
-    }
-
     const file = ctx.creativeFilesByIndex.get(unit.creativeIndex);
     if (!file?.buffer?.length) {
       const msg = "Ficheiro do criativo em falta no pedido multipart.";
@@ -180,14 +169,38 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
 
     let createdCampaignId: string | undefined;
     try {
-      const { hash } = await uploadAdImageToAccount({
-        actId: unit.actId,
-        accessToken: ctx.accessToken,
-        fileName: creative.name,
-        buffer: file.buffer,
-        mimeType: file.mimeType || "image/jpeg",
-        fetchImpl,
-      });
+      let media: AdCreativeMedia;
+      if (creative.type === "video") {
+        const { videoId } = await uploadAdVideoChunked({
+          actId: unit.actId,
+          accessToken: ctx.accessToken,
+          fileName: creative.name,
+          buffer: file.buffer,
+          mimeType: file.mimeType || "video/mp4",
+          fetchImpl,
+        });
+        await waitForAdVideoReady({
+          videoId,
+          accessToken: ctx.accessToken,
+          fetchImpl,
+        });
+        const { imageUrl } = await fetchPreferredAdVideoThumbnail({
+          videoId,
+          accessToken: ctx.accessToken,
+          fetchImpl,
+        });
+        media = { kind: "video", videoId, thumbnailImageUrl: imageUrl };
+      } else {
+        const { hash } = await uploadAdImageToAccount({
+          actId: unit.actId,
+          accessToken: ctx.accessToken,
+          fileName: creative.name,
+          buffer: file.buffer,
+          mimeType: file.mimeType || "image/jpeg",
+          fetchImpl,
+        });
+        media = { kind: "image", imageHash: hash };
+      }
 
       const campaignDaily = isCbo && !isLifetime ? totalMinor : undefined;
       const campaignLifetime = isCbo && isLifetime ? totalMinor : undefined;
@@ -211,7 +224,7 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
         accessToken: ctx.accessToken,
         name: creativeName,
         pageId: ctx.pageId,
-        imageHash: hash,
+        media,
         linkUrl: ctx.adLinkUrl,
         message: creative.name,
         fetchImpl,
