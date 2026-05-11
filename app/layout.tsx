@@ -30,7 +30,7 @@ const ibmPlexSans = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "DirectAds | Upload em Massa para Meta Ads",
+  title: "Kraken | Upload em Massa para Meta Ads",
   description:
     "Plataforma de upload em massa para Meta Ads. Automatize suas campanhas em múltiplas contas.",
   keywords: [
@@ -40,7 +40,7 @@ export const metadata: Metadata = {
     "automação de anúncios",
   ],
   openGraph: {
-    title: "DirectAds | Upload em Massa para Meta Ads",
+    title: "Kraken | Upload em Massa para Meta Ads",
     description: "Publique 100+ campanhas no Meta Ads com 1 clique.",
     type: "website",
     locale: "pt_BR",

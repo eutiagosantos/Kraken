@@ -2,9 +2,9 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { Menu, X } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { KrakenMarkTile } from "@/components/branding/KrakenMarkTile";
 import { cn } from "@/lib/utils";
 import { buttonVariantClasses } from "@/components/ui/Button";
 
@@ -46,8 +46,8 @@ export function Header() {
             href="#inicio"
             className="flex items-center gap-2 font-display text-lg font-bold text-brand-purple transition-colors hover:text-brand-purple-deep"
           >
-            <Image src="/logo.svg" alt="" width={32} height={32} priority />
-            DirectAds
+            <KrakenMarkTile size="sm" priority />
+            Kraken
           </Link>
 
           <nav className="hidden items-center gap-8 md:flex">

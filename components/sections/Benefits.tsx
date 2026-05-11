@@ -54,7 +54,7 @@ export function Benefits() {
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <Reveal className="mx-auto max-w-3xl text-center">
           <h2 className="text-neutral-black tracking-tight">
-            Por que escolher a DirectAds
+            Por que escolher a Kraken
           </h2>
           <p className="mt-4 text-lg leading-[1.38] text-neutral-gray">
             Operações sérias precisam de precisão, velocidade e proteção —

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { UploadWizard } from "@/components/app/home/UploadWizard";
 
 export const metadata: Metadata = {
-  title: "Novo Upload | DirectAds",
+  title: "Novo Upload | Kraken",
   description:
     "Configure em 3 passos: criativos e contas, campanha e público, depois publique em massa.",
 };

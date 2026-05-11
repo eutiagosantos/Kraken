@@ -121,7 +121,7 @@ export function Step3Publico(props: Step3PublicoProps) {
                       type="button"
                       className={`rounded-md border px-3 py-1.5 text-sm ${
                         publico.gender === item.value
-                          ? "border-[#7132f5] bg-[rgba(113,50,245,0.2)] text-white"
+                          ? "border-brand-purple bg-[rgba(113,50,245,0.12)] text-brand-purple-dark font-medium"
                           : "border-gray-300 bg-white text-gray-600"
                       }`}
                       onClick={() => onSetPublico({ gender: item.value as Publico["gender"] })}
@@ -151,7 +151,7 @@ export function Step3Publico(props: Step3PublicoProps) {
                       type="button"
                       className={`rounded-md border px-3 py-1.5 text-sm ${
                         publico.devices.includes(device)
-                          ? "border-[#7132f5] bg-[rgba(113,50,245,0.2)] text-white"
+                          ? "border-brand-purple bg-[rgba(113,50,245,0.12)] text-brand-purple-dark font-medium"
                           : "border-gray-300 bg-white text-gray-600"
                       }`}
                       onClick={() =>
@@ -176,7 +176,7 @@ export function Step3Publico(props: Step3PublicoProps) {
                       type="button"
                       className={`rounded-md border px-3 py-1.5 text-sm ${
                         publico.platforms.includes(platform)
-                          ? "border-[#7132f5] bg-[rgba(113,50,245,0.2)] text-white"
+                          ? "border-brand-purple bg-[rgba(113,50,245,0.12)] text-brand-purple-dark font-medium"
                           : "border-gray-300 bg-white text-gray-600"
                       }`}
                       onClick={() =>

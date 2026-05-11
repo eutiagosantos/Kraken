@@ -295,7 +295,7 @@ export function Step2Config(props: Step2ConfigProps) {
                   onClick={() => onSetStatus(value)}
                   className={`rounded-md border px-3 py-1.5 text-sm ${
                     status === value
-                      ? "border-[#7132f5] bg-[rgba(113,50,245,0.2)] text-white"
+                      ? "border-brand-purple bg-[rgba(113,50,245,0.12)] text-brand-purple-dark font-medium"
                       : "border-gray-300 bg-white text-gray-600"
                   }`}
                 >

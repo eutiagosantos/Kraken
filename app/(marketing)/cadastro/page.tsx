@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { CheckCircle2 } from "lucide-react";
+import { KrakenMarkTile } from "@/components/branding/KrakenMarkTile";
 import { RegisterForm } from "@/components/auth/RegisterForm";
 
 export const metadata: Metadata = {
@@ -20,15 +20,8 @@ export default function CadastroPage() {
     <div className="mx-auto flex w-full max-w-6xl min-h-0 flex-1 items-center px-4 py-2 sm:px-6 sm:py-4 lg:px-8">
       <div className="grid w-full gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,460px)] lg:gap-12">
         <aside className="hidden flex-col justify-center lg:flex">
-          <div className="relative mb-6 flex h-[64px] w-[64px] items-center justify-center rounded-2xl bg-gradient-to-br from-[#a855f7] via-[#8b5cf6] to-[#ec4899] shadow-lg shadow-purple-500/25">
-            <div className="absolute inset-[3px] rounded-[13px] bg-gradient-to-br from-white/25 to-transparent" />
-            <Image
-              src="/kraken-mark.svg"
-              alt=""
-              width={36}
-              height={36}
-              className="relative drop-shadow-md brightness-0 invert"
-            />
+          <div className="mb-6">
+            <KrakenMarkTile size="md" />
           </div>
           <h1 className="font-display text-[40px] font-bold leading-[1.1] tracking-tight text-neutral-black">
             Crie sua conta Kraken
@@ -64,16 +57,7 @@ export default function CadastroPage() {
         <div className="flex w-full flex-col items-center lg:items-stretch">
           <div className="w-full max-w-[440px] rounded-xl border border-neutral-border/80 bg-white px-5 py-6 shadow-[0_8px_40px_rgba(0,0,0,0.06)] sm:px-8 sm:py-7">
             <div className="mb-4 flex items-center gap-3 lg:hidden">
-              <div className="relative flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-[#a855f7] via-[#8b5cf6] to-[#ec4899] shadow-md shadow-purple-500/25">
-                <div className="absolute inset-[2px] rounded-[10px] bg-gradient-to-br from-white/25 to-transparent" />
-                <Image
-                  src="/kraken-mark.svg"
-                  alt=""
-                  width={24}
-                  height={24}
-                  className="relative drop-shadow-md brightness-0 invert"
-                />
-              </div>
+              <KrakenMarkTile size="xs" />
               <div>
                 <h1 className="font-display text-xl font-bold tracking-tight text-neutral-black">
                   Crie sua conta Kraken

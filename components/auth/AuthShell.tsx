@@ -15,7 +15,7 @@ type AuthShellProps = {
 export function AuthShell({
   title,
   description,
-  panelEyebrow = "DirectAds",
+  panelEyebrow = "Kraken",
   panelTitle,
   panelSubtitle,
   children,

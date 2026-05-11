@@ -1,5 +1,5 @@
-import Image from "next/image";
 import Link from "next/link";
+import { KrakenMarkTile } from "@/components/branding/KrakenMarkTile";
 import { Instagram, MessageCircle } from "lucide-react";
 
 const columns = [
@@ -42,8 +42,8 @@ export function Footer() {
               href="#inicio"
               className="flex items-center gap-2 font-display text-lg font-bold text-neutral-white"
             >
-              <Image src="/logo.svg" alt="" width={32} height={32} />
-              DirectAds
+              <KrakenMarkTile size="sm" />
+              Kraken
             </Link>
             <p className="mt-4 text-sm leading-relaxed text-neutral-silver">
               Escale campanhas no Meta Ads com precisão, velocidade e proteção
@@ -77,7 +77,7 @@ export function Footer() {
 
         <div className="flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-center">
           <p className="text-sm text-neutral-silver">
-            © {new Date().getFullYear()} DirectAds. Todos os direitos
+            © {new Date().getFullYear()} Kraken. Todos os direitos
             reservados.
           </p>
           <div className="flex items-center gap-4">

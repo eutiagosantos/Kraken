@@ -1,8 +1,8 @@
 "use client";
 
 import { Globe } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
+import { KrakenMarkTile } from "@/components/branding/KrakenMarkTile";
 import { buttonVariantClasses } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 
@@ -28,15 +28,9 @@ export function KrakenLoginHeader({
         href="/"
         className="flex items-center gap-2.5 text-[#5741CF] transition-opacity hover:opacity-90"
       >
-        <Image
-          src="/kraken-mark.svg"
-          alt=""
-          width={32}
-          height={32}
-          priority
-        />
-        <span className="font-display text-xl font-semibold lowercase tracking-tight">
-          kraken
+        <KrakenMarkTile size="sm" priority />
+        <span className="font-display text-xl font-semibold tracking-tight">
+          Kraken
         </span>
       </Link>
 
