@@ -1,6 +1,7 @@
 "use client";
 
-import { ChevronDown, History, LogOut, Puzzle } from "lucide-react";
+import { ChevronDown, History, LogOut, ShieldCheck } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
@@ -149,15 +150,15 @@ function ProfileDropdown({
         <p className="text-sm font-semibold text-neutral-black">{displayName}</p>
         <p className="truncate text-xs text-dashboard-muted">{email || "—"}</p>
       </div>
-      <button
-        type="button"
+      <Link
+        href="/privacidade"
         role="menuitem"
         className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm text-neutral-black hover:bg-dashboard-sidebar-ghost"
         onClick={onClose}
       >
-        <Puzzle className="h-4 w-4 text-dashboard-muted" aria-hidden />
-        Integrações
-      </button>
+        <ShieldCheck className="h-4 w-4 text-dashboard-muted" aria-hidden />
+        Política e privacidade
+      </Link>
       <button
         type="button"
         role="menuitem"
