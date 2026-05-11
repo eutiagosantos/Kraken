@@ -195,11 +195,19 @@ export async function POST(request: Request) {
       accounts: accountsOrdered,
       existingPublishJobId: parsed.data.publishOperationId,
     });
-    return NextResponse.json({
+    const okCount = out.results.filter((r) => r.ok).length;
+    const body = {
       publishId: out.publishId,
       results: out.results,
       warnings: out.warnings,
-    });
+      ...(okCount === 0
+        ? { error: "Nenhuma publicação concluiu com sucesso no Meta." as const }
+        : {}),
+    };
+    if (okCount === 0) {
+      return NextResponse.json(body, { status: 422 });
+    }
+    return NextResponse.json(body);
   } catch (e) {
     const message = e instanceof Error ? e.message : "publish_failed";
     return NextResponse.json({ error: message }, { status: 500 });

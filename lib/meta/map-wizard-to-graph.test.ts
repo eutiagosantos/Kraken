@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  billingEventForOptimization,
   buildTargetingFromPublico,
   budgetMinorUnits,
+  defaultLifetimeSchedule,
   mapBidStrategyToMeta,
+  publicoTargetsDsaRegion,
   resolveStructureCounts,
   selectOptimizationForObjective,
   structureLabelForDb,
@@ -172,5 +175,45 @@ describe("selectOptimizationForObjective", () => {
     const o = selectOptimizationForObjective("OUTCOME_SALES", "");
     expect(o.optimization_goal).toBe("LINK_CLICKS");
     expect(o.promoted_object).toBeUndefined();
+  });
+});
+
+describe("billingEventForOptimization", () => {
+  it("uses LINK_CLICKS for link click goals", () => {
+    expect(billingEventForOptimization("LINK_CLICKS")).toBe("LINK_CLICKS");
+    expect(billingEventForOptimization("LANDING_PAGE_VIEWS")).toBe("LINK_CLICKS");
+  });
+
+  it("uses IMPRESSIONS for reach and conversions-style goals", () => {
+    expect(billingEventForOptimization("REACH")).toBe("IMPRESSIONS");
+    expect(billingEventForOptimization("OFFSITE_CONVERSIONS")).toBe("IMPRESSIONS");
+  });
+});
+
+describe("defaultLifetimeSchedule", () => {
+  it("returns ISO-like strings with +0000 and end after start", () => {
+    const { startTime, endTime } = defaultLifetimeSchedule(7);
+    expect(startTime).toMatch(/\+0000$/);
+    expect(endTime).toMatch(/\+0000$/);
+    const toUtcMs = (s: string) => new Date(s.replace(/\+0000$/, "Z")).getTime();
+    expect(toUtcMs(endTime)).toBeGreaterThan(toUtcMs(startTime));
+  });
+});
+
+describe("publicoTargetsDsaRegion", () => {
+  it("is true for EU country keys", () => {
+    const p = wizardPublishPayloadSchema.parse({
+      ...basePayload,
+      publico: { ...basePayload.publico, locations: [{ type: "country", key: "DE", name: "Germany" }] },
+    });
+    expect(publicoTargetsDsaRegion(p.publico)).toBe(true);
+  });
+
+  it("is false when no EU country in audience", () => {
+    const p = wizardPublishPayloadSchema.parse({
+      ...basePayload,
+      publico: { ...basePayload.publico, locations: [{ type: "country", key: "BR", name: "Brasil" }] },
+    });
+    expect(publicoTargetsDsaRegion(p.publico)).toBe(false);
   });
 });

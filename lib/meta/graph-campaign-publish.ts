@@ -1,5 +1,5 @@
 import type { GraphFetch } from "@/lib/meta/graph-client";
-import { graphJsonPost } from "@/lib/meta/graph-client";
+import { graphDelete, graphJsonPost } from "@/lib/meta/graph-client";
 
 /** Create/update campaigns via Marketing API — token needs `ads_management` (and related scopes per Meta app config). */
 
@@ -16,8 +16,12 @@ export async function graphCreateCampaign(options: {
   name: string;
   objective: string;
   status: "ACTIVE" | "PAUSED";
-  /** CBO / DPA: set daily budget on campaign (minor currency units). Omit for ABO. */
+  /** CBO / DPA: set daily budget on campaign (minor currency units). Omit for ABO / lifetime. */
   dailyBudgetMinor?: number;
+  /** CBO / DPA lifetime: total budget for the flight (minor units). Use with startTime + endTime. */
+  lifetimeBudgetMinor?: number;
+  startTime?: string;
+  endTime?: string;
   fetchImpl?: GraphFetch;
 }): Promise<{ id: string }> {
   const body: Record<string, unknown> = {
@@ -29,6 +33,15 @@ export async function graphCreateCampaign(options: {
   };
   if (options.dailyBudgetMinor != null) {
     body.daily_budget = options.dailyBudgetMinor;
+  }
+  if (options.lifetimeBudgetMinor != null) {
+    body.lifetime_budget = options.lifetimeBudgetMinor;
+  }
+  if (options.startTime) {
+    body.start_time = options.startTime;
+  }
+  if (options.endTime) {
+    body.end_time = options.endTime;
   }
   return graphJsonPost<{ id: string }>({
     path: `${options.actId}/campaigns`,
@@ -51,6 +64,13 @@ export async function graphCreateAdSet(options: {
   bidAmount?: string;
   /** ABO: required when campaign has no CBO budget */
   dailyBudgetMinor?: number;
+  /** ABO lifetime: per–ad set total (minor units); use with startTime + endTime */
+  lifetimeBudgetMinor?: number;
+  startTime?: string;
+  endTime?: string;
+  destinationType?: string;
+  dsaBeneficiary?: string;
+  dsaPayor?: string;
   status: "ACTIVE" | "PAUSED";
   fetchImpl?: GraphFetch;
 }): Promise<{ id: string }> {
@@ -71,6 +91,24 @@ export async function graphCreateAdSet(options: {
   }
   if (options.dailyBudgetMinor != null) {
     body.daily_budget = options.dailyBudgetMinor;
+  }
+  if (options.lifetimeBudgetMinor != null) {
+    body.lifetime_budget = options.lifetimeBudgetMinor;
+  }
+  if (options.startTime) {
+    body.start_time = options.startTime;
+  }
+  if (options.endTime) {
+    body.end_time = options.endTime;
+  }
+  if (options.destinationType) {
+    body.destination_type = options.destinationType;
+  }
+  if (options.dsaBeneficiary?.trim()) {
+    body.dsa_beneficiary = options.dsaBeneficiary.trim();
+  }
+  if (options.dsaPayor?.trim()) {
+    body.dsa_payor = options.dsaPayor.trim();
   }
   return graphJsonPost<{ id: string }>({
     path: `${options.actId}/adsets`,
@@ -127,6 +165,19 @@ export async function graphCreateAd(options: {
       creative: { creative_id: options.creativeId },
       status: options.status,
     },
+    fetchImpl: options.fetchImpl,
+  });
+}
+
+/** Remove a campaign (and child ad sets/ads). */
+export async function graphDeleteCampaign(options: {
+  campaignId: string;
+  accessToken: string;
+  fetchImpl?: GraphFetch;
+}): Promise<void> {
+  await graphDelete({
+    path: options.campaignId,
+    accessToken: options.accessToken,
     fetchImpl: options.fetchImpl,
   });
 }

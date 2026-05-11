@@ -104,6 +104,30 @@ export async function graphJsonPost<T = unknown>(options: {
   throw lastErr ?? new GraphApiError("Graph: falha após retries.", { status: 0, rawBody: "" });
 }
 
+/** DELETE `/{object-id}` (e.g. campaign) — best-effort cleanup; failures are ignored by callers. */
+export async function graphDelete(options: {
+  /** Graph path without leading slash, e.g. numeric campaign id */
+  path: string;
+  accessToken: string;
+  fetchImpl?: GraphFetch;
+}): Promise<void> {
+  const fetchFn = options.fetchImpl ?? fetch;
+  const url = new URL(graphUrl(options.path));
+  url.searchParams.set("access_token", options.accessToken);
+  const res = await fetchFn(url.toString(), { method: "DELETE" });
+  const raw = await res.text();
+  if (!res.ok) {
+    const parsed = parseGraphErrorJson(raw);
+    throw new GraphApiError(parsed.message || `Graph DELETE HTTP ${res.status}`, {
+      status: res.status,
+      graphCode: parsed.code,
+      errorSubcode: parsed.errorSubcode,
+      errorUserTitle: parsed.errorUserTitle,
+      rawBody: raw,
+    });
+  }
+}
+
 export async function graphFormPost<T = unknown>(options: {
   path: string;
   accessToken: string;

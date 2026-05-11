@@ -198,6 +198,92 @@ export function budgetMinorUnits(budget: number): number {
   return Math.max(cents, 100);
 }
 
+/** EU/EEA (+ UK) ISO2 — used for optional DSA fields on ad sets. */
+const DSA_COUNTRY_CODES = new Set(
+  [
+    "AT",
+    "BE",
+    "BG",
+    "HR",
+    "CY",
+    "CZ",
+    "DK",
+    "EE",
+    "FI",
+    "FR",
+    "DE",
+    "GR",
+    "HU",
+    "IE",
+    "IT",
+    "LV",
+    "LT",
+    "LU",
+    "MT",
+    "NL",
+    "PL",
+    "PT",
+    "RO",
+    "SK",
+    "SI",
+    "ES",
+    "SE",
+    "IS",
+    "LI",
+    "NO",
+    "GB",
+  ].map((c) => c.toUpperCase())
+);
+
+export function publicoTargetsDsaRegion(publico: WizardPublishPayload["publico"]): boolean {
+  for (const loc of publico.locations) {
+    if (loc.type === "country" && loc.key.length === 2 && DSA_COUNTRY_CODES.has(loc.key.toUpperCase())) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Meta examples pair billing_event with optimization_goal (e.g. LINK_CLICKS + LINK_CLICKS).
+ */
+export function billingEventForOptimization(optimizationGoal: string): string {
+  switch (optimizationGoal) {
+    case "LINK_CLICKS":
+    case "LANDING_PAGE_VIEWS":
+      return "LINK_CLICKS";
+    case "REACH":
+    case "POST_ENGAGEMENT":
+    case "OFFSITE_CONVERSIONS":
+    case "APP_INSTALLS":
+    case "LEAD_GENERATION":
+    default:
+      return "IMPRESSIONS";
+  }
+}
+
+export type MetaLifetimeWindow = { startTime: string; endTime: string };
+
+/** Default flight for lifetime budgets: 30 days from now (UTC offset +0000, Meta-friendly). */
+export function defaultLifetimeSchedule(days = 30): MetaLifetimeWindow {
+  const start = new Date();
+  const end = new Date(start.getTime() + days * 24 * 60 * 60 * 1000);
+  return {
+    startTime: formatMetaDateTimeUtcOffset(start),
+    endTime: formatMetaDateTimeUtcOffset(end),
+  };
+}
+
+function formatMetaDateTimeUtcOffset(d: Date): string {
+  const y = d.getUTCFullYear();
+  const mo = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(d.getUTCDate()).padStart(2, "0");
+  const h = String(d.getUTCHours()).padStart(2, "0");
+  const mi = String(d.getUTCMinutes()).padStart(2, "0");
+  const s = String(d.getUTCSeconds()).padStart(2, "0");
+  return `${y}-${mo}-${day}T${h}:${mi}:${s}+0000`;
+}
+
 export function mapBidStrategyToMeta(
   bidStrategy: WizardPublishPayload["bidStrategy"],
   bidLimit?: number

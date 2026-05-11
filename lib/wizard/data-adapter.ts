@@ -25,6 +25,7 @@ export type PublishResult = {
     ok: boolean;
     error?: string;
     creativeName?: string;
+    creativeIndex?: number;
     accountName?: string;
     metaCampaignId?: string;
   }>;
@@ -267,7 +268,26 @@ export function createFetchWizardDataAdapter(): WizardDataAdapter {
         }
       }
 
+      const failedUnitLines = (rows: NonNullable<PublishResult["results"]>): string =>
+        rows
+          .filter((r) => !r.ok)
+          .map(
+            (r) =>
+              `${r.accountName ?? "Conta"} — ${r.creativeName ?? "Criativo"}: ${r.error ?? "Erro desconhecido."}`
+          )
+          .join("\n");
+
       if (!res.ok) {
+        const rows = json?.results;
+        if (rows?.length) {
+          const failed = rows.filter((r) => !r.ok);
+          if (failed.length > 0) {
+            const detail = failedUnitLines(rows);
+            throw new Error(
+              failed.length === rows.length ? detail : `Algumas unidades falharam:\n${detail}`
+            );
+          }
+        }
         if (json?.error) throw new Error(json.error);
         const hint = raw.trim().slice(0, 280);
         throw new Error(hint || `Publicação falhou (${res.status}).`);
@@ -275,6 +295,15 @@ export function createFetchWizardDataAdapter(): WizardDataAdapter {
 
       if (!json?.publishId) {
         throw new Error(json?.error ?? "Publicação falhou: resposta sem identificador.");
+      }
+
+      const okRows = json.results;
+      if (okRows?.some((r) => !r.ok)) {
+        const failed = okRows.filter((r) => !r.ok);
+        const detail = failedUnitLines(okRows);
+        throw new Error(
+          failed.length === okRows.length ? detail : `Algumas unidades falharam:\n${detail}`
+        );
       }
 
       return {

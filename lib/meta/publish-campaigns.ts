@@ -6,14 +6,18 @@ import {
   graphCreateAdCreative,
   graphCreateAdSet,
   graphCreateCampaign,
+  graphDeleteCampaign,
   normalizeActId,
 } from "@/lib/meta/graph-campaign-publish";
 import type { GraphFetch } from "@/lib/meta/graph-client";
 import { GraphApiError } from "@/lib/meta/graph-client";
 import {
+  billingEventForOptimization,
   budgetMinorUnits,
   buildTargetingFromPublico,
+  defaultLifetimeSchedule,
   mapBidStrategyToMeta,
+  publicoTargetsDsaRegion,
   resolveStructureCounts,
   selectOptimizationForObjective,
   structureLabelForDb,
@@ -88,6 +92,20 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
     );
   }
   const bid = mapBidStrategyToMeta(ctx.payload.bidStrategy, ctx.payload.bidLimit);
+  const isLifetime = ctx.payload.budgetPeriod === "lifetime";
+  const lifetimeSchedule = isLifetime ? defaultLifetimeSchedule(30) : null;
+  const billingEvent = billingEventForOptimization(opt.optimization_goal);
+  const needsDsa = publicoTargetsDsaRegion(ctx.payload.publico);
+  const dsaBeneficiary = process.env.META_DSA_BENEFICIARY?.trim();
+  const dsaPayor = process.env.META_DSA_PAYOR?.trim();
+  if (needsDsa && (!dsaBeneficiary || !dsaPayor)) {
+    warnings.push(
+      "Público inclui país UE/EEA: define META_DSA_BENEFICIARY e META_DSA_PAYOR no servidor (texto legal da entidade anunciante) para o Meta aceitar conjuntos com transparência DSA; caso contrário a criação do conjunto pode falhar."
+    );
+  }
+  const dsaForAdset =
+    needsDsa && dsaBeneficiary && dsaPayor ? { dsaBeneficiary, dsaPayor } : {};
+  const destinationType = ctx.payload.objective === "OUTCOME_TRAFFIC" ? "WEBSITE" : undefined;
 
   const units: Array<{ actId: string; accountName: string; creativeIndex: number }> = [];
   for (const acc of ctx.accounts) {
@@ -160,6 +178,7 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
       continue;
     }
 
+    let createdCampaignId: string | undefined;
     try {
       const { hash } = await uploadAdImageToAccount({
         actId: unit.actId,
@@ -170,7 +189,8 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
         fetchImpl,
       });
 
-      const campaignDaily = isCbo ? totalMinor : undefined;
+      const campaignDaily = isCbo && !isLifetime ? totalMinor : undefined;
+      const campaignLifetime = isCbo && isLifetime ? totalMinor : undefined;
       const campaign = await graphCreateCampaign({
         actId: unit.actId,
         accessToken: ctx.accessToken,
@@ -178,8 +198,12 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
         objective: ctx.payload.objective,
         status: ctx.payload.status,
         dailyBudgetMinor: campaignDaily,
+        lifetimeBudgetMinor: campaignLifetime ?? undefined,
+        startTime: isCbo && isLifetime && lifetimeSchedule ? lifetimeSchedule.startTime : undefined,
+        endTime: isCbo && isLifetime && lifetimeSchedule ? lifetimeSchedule.endTime : undefined,
         fetchImpl,
       });
+      createdCampaignId = campaign.id;
 
       const creativeName = `${creative.name} · ${unit.accountName}`.slice(0, 240);
       const adCreative = await graphCreateAdCreative({
@@ -195,8 +219,14 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
 
       const adSetIds: string[] = [];
       const adIds: string[] = [];
-      const perAdsetBudget =
-        !isCbo && counts.adsets > 0 ? Math.max(100, Math.floor(totalMinor / counts.adsets)) : undefined;
+      const perAdsetDaily =
+        !isCbo && !isLifetime && counts.adsets > 0
+          ? Math.max(100, Math.floor(totalMinor / counts.adsets))
+          : undefined;
+      const perAdsetLifetimeMinor =
+        !isCbo && isLifetime && counts.adsets > 0
+          ? Math.max(100, Math.floor(totalMinor / counts.adsets))
+          : undefined;
 
       for (let si = 0; si < counts.adsets; si++) {
         const adset = await graphCreateAdSet({
@@ -207,9 +237,15 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
           targeting,
           optimizationGoal: opt.optimization_goal,
           promotedObject: opt.promoted_object,
+          billingEvent,
           bidStrategy: bid.bid_strategy,
           bidAmount: bid.bid_amount,
-          dailyBudgetMinor: perAdsetBudget,
+          dailyBudgetMinor: perAdsetDaily,
+          lifetimeBudgetMinor: perAdsetLifetimeMinor,
+          startTime: isLifetime && lifetimeSchedule ? lifetimeSchedule.startTime : undefined,
+          endTime: isLifetime && lifetimeSchedule ? lifetimeSchedule.endTime : undefined,
+          destinationType,
+          ...dsaForAdset,
           status: ctx.payload.status,
           fetchImpl,
         });
@@ -277,7 +313,20 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
         metaCampaignId: campaign.id,
         krakenCampanhaId: inserted?.id,
       });
+      createdCampaignId = undefined;
     } catch (e) {
+      if (createdCampaignId) {
+        try {
+          await graphDeleteCampaign({
+            campaignId: createdCampaignId,
+            accessToken: ctx.accessToken,
+            fetchImpl,
+          });
+        } catch {
+          /* rollback best-effort */
+        }
+        createdCampaignId = undefined;
+      }
       const msg = graphErrorMessage(e);
       results.push({ ...baseResult, error: msg });
       await persistFailedCampanha(ctx, { unit, creative, structureDb, error: msg });

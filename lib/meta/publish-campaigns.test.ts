@@ -165,4 +165,67 @@ describe("runWizardPublish", () => {
     expect(out.results[0].error).toMatch(/Ficheiro/);
     expect(fetchImpl).not.toHaveBeenCalled();
   });
+
+  it("deletes campaign when ad set creation fails after campaign exists", async () => {
+    let deleteCalled = false;
+    const fetchImpl = vi.fn(async (url: string, init?: RequestInit) => {
+      if (init?.method === "DELETE" && url.includes("meta-camp-orphan")) {
+        deleteCalled = true;
+        return new Response(JSON.stringify({ success: true }), { status: 200 });
+      }
+      if (url.includes("/adimages")) {
+        return new Response(JSON.stringify({ images: { f: { hash: "img_hash" } } }), { status: 200 });
+      }
+      if (url.includes("/campaigns")) {
+        return new Response(JSON.stringify({ id: "meta-camp-orphan" }), { status: 200 });
+      }
+      if (url.includes("/adcreatives")) {
+        return new Response(JSON.stringify({ id: "meta-cr-1" }), { status: 200 });
+      }
+      if (url.includes("/adsets")) {
+        return new Response(
+          JSON.stringify({ error: { message: "Ad set invalid", type: "OAuthException", code: 100 } }),
+          { status: 400 }
+        );
+      }
+      return new Response("unexpected", { status: 500 });
+    });
+
+    const payload = wizardPublishPayloadSchema.parse({
+      selectedAccountIds: ["111"],
+      creatives: [{ id: "c1", name: "a.png", type: "image" }],
+      publishOperationId: PUBLISH_JOB_ID,
+      creativeStoragePaths: [
+        `00000000-0000-4000-8000-000000000001/${PUBLISH_JOB_ID}/creative_0.png`,
+      ],
+      campaignType: "CBO",
+      budget: 15,
+      budgetPeriod: "daily",
+      bidStrategy: "LOWEST_COST",
+      objective: "OUTCOME_TRAFFIC",
+      pixelId: "",
+      status: "PAUSED",
+      structure: "1-1-1",
+      customStructure: { campaigns: 1, adsets: 1, ads: 1 },
+      nomenclaturePreview: "N",
+      publico: publicoFixture,
+    });
+
+    const out = await runWizardPublish({
+      supabase: createSupabaseMock(),
+      userId: "00000000-0000-4000-8000-000000000001",
+      accessToken: "token",
+      payload,
+      creativeFilesByIndex: new Map([[0, { buffer: Buffer.from([1, 2, 3]), mimeType: "image/png" }]]),
+      pageId: "1234567890",
+      adLinkUrl: "https://example.com",
+      accounts: [{ meta_account_id: "act_111", name: "Conta A" }],
+      existingPublishJobId: PUBLISH_JOB_ID,
+      fetchImpl,
+    });
+
+    expect(out.results[0].ok).toBe(false);
+    expect(out.results[0].error).toMatch(/Ad set invalid|OAuthException/i);
+    expect(deleteCalled).toBe(true);
+  });
 });
