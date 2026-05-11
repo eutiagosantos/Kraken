@@ -12,7 +12,7 @@ export interface Creative {
 }
 
 export interface Localidade {
-  type: "country" | "state" | "city";
+  type: "country" | "state" | "region" | "city";
   key: string;
   name: string;
 }

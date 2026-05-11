@@ -40,27 +40,17 @@ export function UploadWizard() {
   const [accounts, setAccounts] = useState<Awaited<ReturnType<typeof mockWizardDataAdapter.listAccounts>>>([]);
   const [pixelOptions, setPixelOptions] = useState<Awaited<ReturnType<typeof mockWizardDataAdapter.listPixels>>>([]);
   const [savedPublicos, setSavedPublicos] = useState<Publico[]>([]);
-  const [locationOptions, setLocationOptions] = useState<
-    Awaited<ReturnType<typeof mockWizardDataAdapter.listLocationOptions>>
-  >([]);
-  const [interestOptions, setInterestOptions] = useState<
-    Awaited<ReturnType<typeof mockWizardDataAdapter.listInterestOptions>>
-  >([]);
 
   useEffect(() => {
     async function loadData() {
-      const [nextAccounts, nextPixels, nextPublicos, nextLocations, nextInterests] = await Promise.all([
+      const [nextAccounts, nextPixels, nextPublicos] = await Promise.all([
         mockWizardDataAdapter.listAccounts(),
         mockWizardDataAdapter.listPixels(),
         mockWizardDataAdapter.listSavedPublicos(),
-        mockWizardDataAdapter.listLocationOptions(),
-        mockWizardDataAdapter.listInterestOptions(),
       ]);
       setAccounts(nextAccounts);
       setPixelOptions(nextPixels);
       setSavedPublicos(nextPublicos);
-      setLocationOptions(nextLocations);
-      setInterestOptions(nextInterests);
     }
     void loadData();
   }, []);
@@ -195,8 +185,6 @@ export function UploadWizard() {
               publico={wizard.publico}
               publicoTab={publicoTab}
               savedPublicos={savedPublicos}
-              locationOptions={locationOptions}
-              interestOptions={interestOptions}
               selectedAccountCount={wizard.selectedAccountIds.length}
               creativeCount={wizard.creatives.length}
               campaignType={wizard.campaignType}

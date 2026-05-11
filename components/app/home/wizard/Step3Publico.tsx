@@ -1,27 +1,19 @@
-import CreatableSelect from "react-select/creatable";
 import { DollarSign, ImageIcon, Layers, Rocket, ShieldCheck, Users } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import type { GroupBase, StylesConfig } from "react-select";
+import type { InterestOption, LocationOption } from "@/lib/meta/types";
 import type { Publico } from "@/lib/stores/wizardStore";
+import { InterestSelect } from "./InterestSelect";
+import { LocationSelect } from "./LocationSelect";
 import { PublicosSalvosGrid } from "./PublicosSalvosGrid";
 import { ReviewCard } from "./ReviewCard";
 import { StepFooter } from "./StepFooter";
 import { SummaryRow } from "./SummaryRow";
 
-interface SelectOption {
-  value: string;
-  label: string;
-}
-
-interface LocationOption extends SelectOption {
-  type: "country" | "state" | "city";
-}
-
 interface Step3PublicoProps {
   publico: Publico;
   publicoTab: "custom" | "salvos";
   savedPublicos: Publico[];
-  locationOptions: LocationOption[];
-  interestOptions: SelectOption[];
   selectedAccountCount: number;
   creativeCount: number;
   campaignType: "CBO" | "ABO" | "DPA";
@@ -32,7 +24,9 @@ interface Step3PublicoProps {
   budget: number;
   estimatedCampaigns: number;
   publishing: boolean;
-  darkSelectStyles: Record<string, unknown>;
+  darkSelectStyles:
+    | StylesConfig<LocationOption, true, GroupBase<LocationOption>>
+    | StylesConfig<InterestOption, true, GroupBase<InterestOption>>;
   onSetPublicoTab: (tab: "custom" | "salvos") => void;
   onSetPublico: (publico: Partial<Publico>) => void;
   onLoadPublico: (publico: Publico) => void;
@@ -47,8 +41,6 @@ export function Step3Publico(props: Step3PublicoProps) {
     publico,
     publicoTab,
     savedPublicos,
-    locationOptions,
-    interestOptions,
     selectedAccountCount,
     creativeCount,
     campaignType,
@@ -86,25 +78,10 @@ export function Step3Publico(props: Step3PublicoProps) {
             <section className="space-y-4">
               <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
                 <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-500">Localidade</h4>
-                <CreatableSelect
-                  isMulti
-                  className="mt-2 text-sm"
-                  placeholder="Buscar países, estados, cidades..."
-                  options={locationOptions}
-                  styles={darkSelectStyles}
-                  value={publico.locations.map((location) => ({
-                    value: location.key,
-                    label: location.name,
-                    type: location.type,
-                  }))}
-                  onChange={(options) => {
-                    const values = options.map((option) => ({
-                      type: (option as LocationOption).type ?? "city",
-                      key: option.value,
-                      name: option.label,
-                    }));
-                    onSetPublico({ locations: values });
-                  }}
+                <LocationSelect
+                  value={publico.locations}
+                  styles={darkSelectStyles as StylesConfig<LocationOption, true, GroupBase<LocationOption>>}
+                  onChange={(locations) => onSetPublico({ locations })}
                 />
               </div>
 
@@ -159,18 +136,10 @@ export function Step3Publico(props: Step3PublicoProps) {
             <section className="space-y-4">
               <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
                 <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-500">Interesses</h4>
-                <CreatableSelect
-                  isMulti
-                  className="mt-2 text-sm"
-                  placeholder="Buscar interesses..."
-                  options={interestOptions}
-                  styles={darkSelectStyles}
-                  value={publico.interests.map((interest) => ({ value: interest.id, label: interest.name }))}
-                  onChange={(options) =>
-                    onSetPublico({
-                      interests: options.map((option) => ({ id: option.value, name: option.label })),
-                    })
-                  }
+                <InterestSelect
+                  value={publico.interests}
+                  styles={darkSelectStyles as StylesConfig<InterestOption, true, GroupBase<InterestOption>>}
+                  onChange={(interests) => onSetPublico({ interests })}
                 />
               </div>
               <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
