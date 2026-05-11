@@ -32,7 +32,7 @@ function agentLog(location, message, data, hypothesisId) {
 }
 
 const t0 = Date.now();
-const useTurbo = process.env.USE_TURBO !== "0";
+const useTurbo = process.env.USE_TURBO === "1";
 const nextArgs = useTurbo
   ? ["dev", "--turbo", "--hostname", "127.0.0.1"]
   : ["dev", "--hostname", "127.0.0.1"];
