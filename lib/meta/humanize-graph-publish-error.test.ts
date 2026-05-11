@@ -1,0 +1,61 @@
+import { describe, expect, it } from "vitest";
+
+import { GraphApiError } from "@/lib/meta/graph-client";
+import {
+  humanizeMetaAppDevelopmentModeError,
+  isMetaAppDevelopmentModeError,
+} from "@/lib/meta/humanize-graph-publish-error";
+
+describe("isMetaAppDevelopmentModeError", () => {
+  it("detects Portuguese Meta message", () => {
+    const e = new GraphApiError(
+      "O post do criativo dos anúncios foi criada por um app que está em modo de desenvolvimento: Invalid parameter",
+      { status: 400, rawBody: "{}" }
+    );
+    expect(isMetaAppDevelopmentModeError(e)).toBe(true);
+  });
+
+  it("detects English development mode phrase", () => {
+    const e = new GraphApiError("Cannot use this feature in development mode.", {
+      status: 400,
+      rawBody: "{}",
+    });
+    expect(isMetaAppDevelopmentModeError(e)).toBe(true);
+  });
+
+  it("detects created by an app + development", () => {
+    const e = new GraphApiError("Post was created by an app still in development.", {
+      status: 400,
+      rawBody: "{}",
+    });
+    expect(isMetaAppDevelopmentModeError(e)).toBe(true);
+  });
+
+  it("is case-insensitive", () => {
+    const e = new GraphApiError("MODO DE DESENVOLVIMENTO", { status: 400, rawBody: "{}" });
+    expect(isMetaAppDevelopmentModeError(e)).toBe(true);
+  });
+
+  it("returns false for unrelated Graph errors", () => {
+    const e = new GraphApiError("Invalid OAuth access token.", { status: 401, rawBody: "{}" });
+    expect(isMetaAppDevelopmentModeError(e)).toBe(false);
+  });
+
+  it("returns false for non-Graph errors", () => {
+    expect(isMetaAppDevelopmentModeError(new Error("network"))).toBe(false);
+  });
+});
+
+describe("humanizeMetaAppDevelopmentModeError", () => {
+  it("includes hint and original Meta text", () => {
+    const e = new GraphApiError("modo de desenvolvimento", {
+      status: 400,
+      errorUserTitle: "Invalid parameter",
+      rawBody: "{}",
+    });
+    const out = humanizeMetaAppDevelopmentModeError(e);
+    expect(out).toContain("developers.facebook.com");
+    expect(out).toContain("Invalid parameter");
+    expect(out).toContain("modo de desenvolvimento");
+  });
+});

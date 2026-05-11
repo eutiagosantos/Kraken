@@ -18,6 +18,10 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
+## Meta (publicação com app em Development)
+
+Para testar o fluxo de publicação com a app Facebook ainda em modo **Development** (sandbox da Meta: papéis na app, test ad account, página), segue o guia em [docs/meta-publicacao-app-development.md](docs/meta-publicacao-app-development.md).
+
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
 ## Learn More

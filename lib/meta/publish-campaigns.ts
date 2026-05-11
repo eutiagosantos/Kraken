@@ -15,6 +15,10 @@ import {
   normalizeActId,
   type AdCreativeMedia,
 } from "@/lib/meta/graph-campaign-publish";
+import {
+  humanizeMetaAppDevelopmentModeError,
+  isMetaAppDevelopmentModeError,
+} from "@/lib/meta/humanize-graph-publish-error";
 import type { GraphFetch } from "@/lib/meta/graph-client";
 import { GraphApiError } from "@/lib/meta/graph-client";
 import {
@@ -62,6 +66,9 @@ export type PublishUnitResult = {
 };
 
 function graphErrorMessage(e: unknown): string {
+  if (e instanceof GraphApiError && isMetaAppDevelopmentModeError(e)) {
+    return humanizeMetaAppDevelopmentModeError(e);
+  }
   if (e instanceof GraphApiError) {
     const title = e.errorUserTitle ? `${e.errorUserTitle}: ` : "";
     return `${title}${e.message}`;

@@ -1,3 +1,4 @@
+// Publicação do assistente → Meta. Sandbox com app em Development: docs/meta-publicacao-app-development.md
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 
