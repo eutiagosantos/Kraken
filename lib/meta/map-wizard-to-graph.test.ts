@@ -13,8 +13,9 @@ import {
 const basePayload = {
   selectedAccountIds: ["123"],
   creatives: [{ id: "c1", name: "a.png", type: "image" as const }],
+  publishOperationId: "aaaaaaaa-bbbb-4ccc-a000-eeeeeeeeeeee",
   creativeStoragePaths: [
-    "00000000-0000-4000-8000-000000000001/aaaaaaaa-bbbb-4ccc-dddd-eeeeeeeeeeee/creative_0.png",
+    "00000000-0000-4000-8000-000000000001/aaaaaaaa-bbbb-4ccc-a000-eeeeeeeeeeee/creative_0.png",
   ],
   campaignType: "CBO" as const,
   budget: 12.5,
@@ -63,6 +64,17 @@ describe("wizardPublishPayloadSchema", () => {
     const res = wizardPublishPayloadSchema.safeParse({
       ...basePayload,
       creativeStoragePaths: ["user/../evil/creative_0.png"],
+    });
+    expect(res.success).toBe(false);
+  });
+
+  it("rejects when storage path folder differs from publishOperationId", () => {
+    const res = wizardPublishPayloadSchema.safeParse({
+      ...basePayload,
+      publishOperationId: "aaaaaaaa-bbbb-4ccc-a000-eeeeeeeeeeee",
+      creativeStoragePaths: [
+        "00000000-0000-4000-8000-000000000001/bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb/creative_0.png",
+      ],
     });
     expect(res.success).toBe(false);
   });

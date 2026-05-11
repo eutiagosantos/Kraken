@@ -11,7 +11,8 @@ describe("validateCreativeStoragePathsForUser", () => {
       validateCreativeStoragePathsForUser(
         uid,
         [`${uid}/${session}/creative_0.png`],
-        1
+        1,
+        session
       )
     ).toBeNull();
   });
@@ -21,16 +22,25 @@ describe("validateCreativeStoragePathsForUser", () => {
       validateCreativeStoragePathsForUser(
         uid,
         [`other-user/${session}/creative_0.png`],
-        1
+        1,
+        session
       )
     ).not.toBeNull();
   });
 
   it("rejects length mismatch", () => {
-    expect(validateCreativeStoragePathsForUser(uid, [`${uid}/${session}/a.png`], 2)).not.toBeNull();
+    expect(validateCreativeStoragePathsForUser(uid, [`${uid}/${session}/a.png`], 2, session)).not.toBeNull();
   });
 
-  it("rejects non-uuid session segment", () => {
-    expect(validateCreativeStoragePathsForUser(uid, [`${uid}/not-a-uuid/creative_0.png`], 1)).not.toBeNull();
+  it("rejects when path operation folder differs from publishOperationId", () => {
+    expect(
+      validateCreativeStoragePathsForUser(uid, [`${uid}/not-a-uuid/creative_0.png`], 1, session)
+    ).not.toBeNull();
+  });
+
+  it("rejects invalid publishOperationId", () => {
+    expect(
+      validateCreativeStoragePathsForUser(uid, [`${uid}/${session}/creative_0.png`], 1, "not-a-uuid")
+    ).not.toBeNull();
   });
 });

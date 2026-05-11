@@ -34,6 +34,8 @@ export type WizardPublishContext = {
   adLinkUrl: string;
   /** Verified rows: meta_account_id + display name */
   accounts: Array<{ meta_account_id: string; name: string }>;
+  /** Linha `upload_jobs` criada em POST /api/wizard/publish/init (status `awaiting_creatives`). */
+  existingPublishJobId: string;
   fetchImpl?: GraphFetch;
 };
 
@@ -101,18 +103,19 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
 
   const { data: jobRow, error: jobErr } = await ctx.supabase
     .from("upload_jobs")
-    .insert({
-      user_id: ctx.userId,
+    .update({
       account_name: units.length === 1 ? units[0].accountName : `${units.length} contas`,
       total: units.length,
       done: 0,
       status: "processing",
     })
+    .eq("id", ctx.existingPublishJobId)
+    .eq("user_id", ctx.userId)
     .select("id")
     .single();
 
   if (jobErr || !jobRow) {
-    throw new Error(jobErr?.message ?? "Falha ao criar upload_jobs.");
+    throw new Error(jobErr?.message ?? "Falha ao preparar upload_jobs (operação inválida ou já usada).");
   }
   const publishId = jobRow.id;
 

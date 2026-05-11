@@ -109,6 +109,8 @@ port = 54324
 [storage]
 enabled = true
 # The maximum file size allowed (e.g. "5MB", "500KB").
+# Local default is low; o bucket `wizard_creatives` em migrações pode ter limite maior no remoto.
+# Para testar criativos grandes em self-hosted, aumenta (ex. "500MiB").
 file_size_limit = "50MiB"
 
 # Uncomment to configure local storage buckets

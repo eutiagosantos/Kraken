@@ -58,18 +58,32 @@ export const wizardPublishPayloadSchema = z
     workspaceId: z.string().uuid().nullable().optional(),
     /** Facebook Page ID for object_story_spec — chosen in the wizard; server validates against GET /me/accounts. */
     pageId: z.string().min(1).optional(),
+    /** Igual ao 2.º segmento dos `creativeStoragePaths` e ao `upload_jobs.id` criado em POST /api/wizard/publish/init. */
+    publishOperationId: z.string().uuid(),
     /** Object paths in bucket `wizard_creatives`, same order as `creatives` (browser upload, server download). */
     creativeStoragePaths: z.array(storagePathString).min(1),
   })
   .refine((d) => d.creativeStoragePaths.length === d.creatives.length, {
     message: "creativeStoragePaths deve ter uma entrada por criativo.",
     path: ["creativeStoragePaths"],
+  })
+  .superRefine((d, ctx) => {
+    for (let i = 0; i < d.creativeStoragePaths.length; i++) {
+      const segments = d.creativeStoragePaths[i].split("/").filter((s) => s.length > 0);
+      if (segments[1] !== d.publishOperationId) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Cada caminho deve usar publishOperationId como pasta da operação.",
+          path: ["creativeStoragePaths", i],
+        });
+      }
+    }
   });
 
 export type WizardPublishPayload = z.infer<typeof wizardPublishPayloadSchema>;
 
-/** Client-side wizard state before storage upload adds `creativeStoragePaths`. */
-export type WizardPublishPayloadInput = Omit<WizardPublishPayload, "creativeStoragePaths">;
+/** Client-side wizard state before init + storage upload (sem `publishOperationId` nem paths). */
+export type WizardPublishPayloadInput = Omit<WizardPublishPayload, "creativeStoragePaths" | "publishOperationId">;
 
 export type StructureCounts = {
   /** Meta campaigns we create per account×creative (always 1 per publish unit in MVP) */

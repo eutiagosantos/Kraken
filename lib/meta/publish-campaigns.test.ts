@@ -18,6 +18,8 @@ const publicoFixture = {
   platforms: ["facebook" as const],
 };
 
+const PUBLISH_JOB_ID = "aaaaaaaa-bbbb-4ccc-a000-eeeeeeeeeeee";
+
 function createSupabaseMock() {
   const insertCampanhas = vi.fn((row: Record<string, unknown>) => {
     if (row.status === "erro") {
@@ -33,13 +35,14 @@ function createSupabaseMock() {
   const from = vi.fn((table: string) => {
     if (table === "upload_jobs") {
       return {
-        insert: () => ({
-          select: () => ({
-            single: async () => ({ data: { id: "job-1" }, error: null }),
-          }),
-        }),
         update: () => ({
-          eq: async () => ({ error: null }),
+          eq: () => ({
+            eq: () => ({
+              select: () => ({
+                single: async () => ({ data: { id: PUBLISH_JOB_ID }, error: null }),
+              }),
+            }),
+          }),
         }),
       };
     }
@@ -85,8 +88,9 @@ describe("runWizardPublish", () => {
     const payload = wizardPublishPayloadSchema.parse({
       selectedAccountIds: ["111"],
       creatives: [{ id: "c1", name: "a.png", type: "image" }],
+      publishOperationId: PUBLISH_JOB_ID,
       creativeStoragePaths: [
-        "00000000-0000-4000-8000-000000000001/aaaaaaaa-bbbb-4ccc-dddd-eeeeeeeeeeee/creative_0.png",
+        `00000000-0000-4000-8000-000000000001/${PUBLISH_JOB_ID}/creative_0.png`,
       ],
       campaignType: "CBO",
       budget: 15,
@@ -103,17 +107,18 @@ describe("runWizardPublish", () => {
 
     const out = await runWizardPublish({
       supabase: createSupabaseMock(),
-      userId: "user-1",
+      userId: "00000000-0000-4000-8000-000000000001",
       accessToken: "token",
       payload,
       creativeFilesByIndex: new Map([[0, { buffer: Buffer.from([1, 2, 3]), mimeType: "image/png" }]]),
       pageId: "1234567890",
       adLinkUrl: "https://example.com",
       accounts: [{ meta_account_id: "act_111", name: "Conta A" }],
+      existingPublishJobId: PUBLISH_JOB_ID,
       fetchImpl: graphFetchOk(),
     });
 
-    expect(out.publishId).toBe("job-1");
+    expect(out.publishId).toBe(PUBLISH_JOB_ID);
     expect(out.results).toHaveLength(1);
     expect(out.results[0].ok).toBe(true);
     expect(out.results[0].metaCampaignId).toBe("meta-camp-1");
@@ -125,8 +130,9 @@ describe("runWizardPublish", () => {
     const payload = wizardPublishPayloadSchema.parse({
       selectedAccountIds: ["111"],
       creatives: [{ id: "c1", name: "a.png", type: "image" }],
+      publishOperationId: PUBLISH_JOB_ID,
       creativeStoragePaths: [
-        "00000000-0000-4000-8000-000000000001/bbbbbbbb-bbbb-4ccc-dddd-eeeeeeeeeeee/creative_0.png",
+        `00000000-0000-4000-8000-000000000001/${PUBLISH_JOB_ID}/creative_0.png`,
       ],
       campaignType: "ABO",
       budget: 20,
@@ -144,13 +150,14 @@ describe("runWizardPublish", () => {
     const fetchImpl = graphFetchOk();
     const out = await runWizardPublish({
       supabase: createSupabaseMock(),
-      userId: "user-1",
+      userId: "00000000-0000-4000-8000-000000000001",
       accessToken: "token",
       payload,
       creativeFilesByIndex: new Map(),
       pageId: "1234567890",
       adLinkUrl: "https://example.com",
       accounts: [{ meta_account_id: "act_111", name: "Conta A" }],
+      existingPublishJobId: PUBLISH_JOB_ID,
       fetchImpl,
     });
 

@@ -6,14 +6,18 @@ const SEGMENT_RE = /^[\w.-]+$/;
 
 /**
  * Ensures paths are owned by `userId`, avoid path traversal, and match expected layout:
- * `{userId}/{sessionUuid}/creative_{n}.{ext}` (at least 3 segments).
+ * `{userId}/{publishOperationId}/creative_{n}.{ext}` (at least 3 segments).
  * @returns error message or null if valid.
  */
 export function validateCreativeStoragePathsForUser(
   userId: string,
   paths: string[],
-  creativeCount: number
+  creativeCount: number,
+  publishOperationId: string
 ): string | null {
+  if (!publishOperationId || !SESSION_UUID_RE.test(publishOperationId)) {
+    return "publishOperationId inválido.";
+  }
   if (paths.length !== creativeCount) {
     return "creativeStoragePaths deve ter o mesmo número de entradas que creatives.";
   }
@@ -28,8 +32,8 @@ export function validateCreativeStoragePathsForUser(
     if (segments[0] !== userId) {
       return "Caminhos de storage devem pertencer ao utilizador autenticado.";
     }
-    if (!SESSION_UUID_RE.test(segments[1])) {
-      return "Segmento de sessão inválido no caminho de storage.";
+    if (segments[1] !== publishOperationId) {
+      return "Caminhos de storage não correspondem ao publishOperationId.";
     }
     for (const seg of segments) {
       if (!SEGMENT_RE.test(seg)) {

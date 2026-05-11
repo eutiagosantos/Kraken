@@ -121,7 +121,11 @@ function uploadFileTus(
   });
 }
 
-async function uploadCreativesToWizardBucket(files: File[], userId: string): Promise<string[]> {
+async function uploadCreativesToWizardBucket(
+  files: File[],
+  userId: string,
+  operationId: string
+): Promise<string[]> {
   for (const file of files) {
     if (file.size > MAX_FILE_BYTES) {
       const limitMb = (MAX_FILE_BYTES / (1024 ** 2)).toFixed(0);
@@ -140,8 +144,7 @@ async function uploadCreativesToWizardBucket(files: File[], userId: string): Pro
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-  const sessionUuid = crypto.randomUUID();
-  const base = `${userId}/${sessionUuid}`;
+  const base = `${userId}/${operationId}`;
 
   const paths = files.map((f, i) => `${base}/creative_${i}${extensionFromFileName(f.name)}`);
 
@@ -217,8 +220,15 @@ export function createFetchWizardDataAdapter(): WizardDataAdapter {
         throw new Error("Sessão em falta. Inicia sessão para publicar.");
       }
 
-      const creativeStoragePaths = await uploadCreativesToWizardBucket(payload.creativeFiles, user.id);
-      const body = { ...payload.snapshot, creativeStoragePaths };
+      const initRes = await fetch("/api/wizard/publish/init", { ...opts, method: "POST" });
+      const { operationId } = await parseJson<{ operationId: string }>(initRes);
+
+      const creativeStoragePaths = await uploadCreativesToWizardBucket(
+        payload.creativeFiles,
+        user.id,
+        operationId
+      );
+      const body = { ...payload.snapshot, publishOperationId: operationId, creativeStoragePaths };
 
       const res = await fetch("/api/wizard/publish", {
         ...opts,

@@ -73,15 +73,37 @@ export async function POST(request: Request) {
   }
 
   const cleanupPaths = [...parsed.data.creativeStoragePaths];
+  const deleteCreativesAfterPublish = process.env.WIZARD_DELETE_CREATIVES_AFTER_PUBLISH === "true";
 
   try {
     const pathErr = validateCreativeStoragePathsForUser(
       user.id,
       parsed.data.creativeStoragePaths,
-      parsed.data.creatives.length
+      parsed.data.creatives.length,
+      parsed.data.publishOperationId
     );
     if (pathErr) {
       return NextResponse.json({ error: pathErr }, { status: 400 });
+    }
+
+    const { data: pendingJob, error: jobLookupErr } = await supabase
+      .from("upload_jobs")
+      .select("id,status")
+      .eq("id", parsed.data.publishOperationId)
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (jobLookupErr || !pendingJob) {
+      return NextResponse.json(
+        { error: "Operação de publicação inválida ou não encontrada." },
+        { status: 400 }
+      );
+    }
+    if (pendingJob.status !== "awaiting_creatives") {
+      return NextResponse.json(
+        { error: "Esta operação já foi iniciada ou concluída. Inicia uma nova publicação." },
+        { status: 400 }
+      );
     }
 
     const pageId = parsed.data.pageId?.trim() || process.env.META_DEFAULT_PAGE_ID?.trim();
@@ -171,6 +193,7 @@ export async function POST(request: Request) {
       pageId,
       adLinkUrl,
       accounts: accountsOrdered,
+      existingPublishJobId: parsed.data.publishOperationId,
     });
     return NextResponse.json({
       publishId: out.publishId,
@@ -181,6 +204,8 @@ export async function POST(request: Request) {
     const message = e instanceof Error ? e.message : "publish_failed";
     return NextResponse.json({ error: message }, { status: 500 });
   } finally {
-    await removeStorageObjects(supabase, cleanupPaths);
+    if (deleteCreativesAfterPublish) {
+      await removeStorageObjects(supabase, cleanupPaths);
+    }
   }
 }
