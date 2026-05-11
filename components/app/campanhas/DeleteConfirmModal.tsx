@@ -45,15 +45,16 @@ export function DeleteConfirmModal({
             onClick={onClose}
             aria-hidden
           />
-          <motion.div
-            role="dialog"
-            aria-modal="true"
-            className="fixed left-1/2 top-1/2 z-[121] w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-card border border-dashboard-border bg-dashboard-surface p-6 text-center shadow-card"
-            initial={{ opacity: 0, scale: 0.96 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.96 }}
-            onClick={(e) => e.stopPropagation()}
-          >
+          <div className="fixed inset-0 z-[121] flex items-center justify-center p-4 pointer-events-none">
+            <motion.div
+              role="dialog"
+              aria-modal="true"
+              className="pointer-events-auto w-full max-w-md rounded-card border border-dashboard-border bg-dashboard-surface p-6 text-center shadow-card"
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.96 }}
+              onClick={(e) => e.stopPropagation()}
+            >
             <AlertTriangle className="mx-auto h-10 w-10 text-semantic-red" aria-hidden />
             <h3 className="mt-4 font-display text-lg font-bold text-neutral-black">
               Excluir {count} campanha{count > 1 ? "s" : ""}?
@@ -86,7 +87,8 @@ export function DeleteConfirmModal({
                 Excluir definitivamente
               </Button>
             </div>
-          </motion.div>
+            </motion.div>
+          </div>
         </>
       ) : null}
     </AnimatePresence>
