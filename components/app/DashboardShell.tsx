@@ -3,11 +3,11 @@
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
-import { Sidebar } from "./sidebar/Sidebar";
-import { SidebarProvider, useSidebar } from "./sidebar/SidebarContext";
+import { Sidebar } from "@/components/layout/Sidebar";
+import { SidebarProvider, useSidebar } from "@/components/layout/SidebarContext";
 import { sidebarMainMarginTwClass } from "./sidebar/sidebar-layout";
 import { SuccessFeedbackProvider } from "@/components/app/ui/SuccessFeedback";
-import { Topbar } from "./topbar/Topbar";
+import { Topbar } from "@/components/layout/Topbar";
 
 function MainColumn({ children }: { children: ReactNode }) {
   const { collapsed, ready } = useSidebar();

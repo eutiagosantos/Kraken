@@ -230,7 +230,7 @@ export const mockQuickActionsMeta: MockQuickActionMeta[] = [
     description: "Adicionar conta Meta Ads",
     color: "#149e61",
     bg: "rgba(20, 158, 97, 0.16)",
-    href: "/contas",
+    href: "/contas-meta",
   },
   {
     key: "duplicate",
