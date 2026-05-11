@@ -1,10 +1,11 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useMemo, useState } from "react";
-import type { WizardPublishPayloadInput } from "@/lib/meta/map-wizard-to-graph";
+import { useEffect, useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import type { NomenclaturePreviewContext } from "@/lib/wizard/nomenclature-preview";
-import { ProgressBar } from "@/components/app/ui/ProgressBar";
+import { buildWizardPublishPayload } from "@/lib/wizard/build-wizard-publish-payload";
+import { getWizardPublishSliceFromStore } from "@/lib/wizard/get-wizard-publish-slice";
 import { mockWizardDataAdapter } from "@/lib/wizard/data-adapter";
 import { useWizardStore, type Publico, type Structure } from "@/lib/stores/wizardStore";
 import { Step1Creatives } from "./wizard/Step1Creatives";
@@ -33,13 +34,12 @@ const lightSelectStyles = {
 };
 
 export function UploadWizard() {
+  const router = useRouter();
   const wizard = useWizardStore();
+  const [isNavigatingToQueue, startTransition] = useTransition();
+  const [publishNavigateError, setPublishNavigateError] = useState<string | null>(null);
   const [accountQuery, setAccountQuery] = useState("");
   const [publicoTab, setPublicoTab] = useState<"custom" | "salvos">("custom");
-  const [publishing, setPublishing] = useState(false);
-  const [publishOpen, setPublishOpen] = useState(false);
-  const [publishProgress, setPublishProgress] = useState(0);
-  const [publishError, setPublishError] = useState<string | null>(null);
   const [accounts, setAccounts] = useState<Awaited<ReturnType<typeof mockWizardDataAdapter.listAccounts>>>([]);
   const [pixelOptions, setPixelOptions] = useState<Awaited<ReturnType<typeof mockWizardDataAdapter.listPixels>>>([]);
   const [savedPublicos, setSavedPublicos] = useState<Publico[]>([]);
@@ -133,55 +133,18 @@ export function UploadWizard() {
     });
   };
 
-  const startPublish = async () => {
-    setPublishError(null);
-    setPublishing(true);
-    setPublishOpen(true);
-    setPublishProgress(4);
-    const timer = setInterval(() => {
-      setPublishProgress((progress) => (progress < 90 ? progress + 5 + Math.random() * 6 : progress));
-    }, 220);
+  const sendToPublishQueue = () => {
+    setPublishNavigateError(null);
     try {
-      const pageId = wizard.pageId?.trim();
-      if (!pageId) {
-        throw new Error("Escolhe uma Página Facebook no passo 1.");
-      }
-      const snapshot: WizardPublishPayloadInput = {
-        selectedAccountIds: wizard.selectedAccountIds,
-        creatives: wizard.creatives.map((c) => ({ id: c.id, name: c.name, type: c.type })),
-        campaignType: wizard.campaignType,
-        budget: wizard.budget,
-        budgetPeriod: wizard.budgetPeriod,
-        bidStrategy: wizard.bidStrategy,
-        ...(wizard.bidLimit !== undefined ? { bidLimit: wizard.bidLimit } : {}),
-        ...(wizard.roasTarget !== undefined ? { roasTarget: wizard.roasTarget } : {}),
-        objective: wizard.objective,
-        pixelId: wizard.pixelId,
-        status: wizard.status,
-        structure: wizard.structure,
-        customStructure: { ...wizard.customStructure },
-        nomenclaturePreview: wizard.nomenclaturePreview.trim() || "Campanha Kraken",
-        publico: { ...wizard.publico },
-        antiSpy: true,
-        pageId,
-      };
-      await mockWizardDataAdapter.publishCampaigns({
-        snapshot,
-        creativeFiles: wizard.creatives.map((c) => c.file),
-      });
-      clearInterval(timer);
-      setPublishProgress(100);
-      setTimeout(() => {
-        setPublishOpen(false);
-        setPublishing(false);
-        wizard.reset();
-      }, 750);
+      buildWizardPublishPayload(getWizardPublishSliceFromStore());
     } catch (e) {
-      clearInterval(timer);
-      setPublishError(e instanceof Error ? e.message : "Falha na publicação.");
-      setPublishProgress(0);
-      setPublishing(false);
+      setPublishNavigateError(e instanceof Error ? e.message : "Não foi possível preparar a publicação.");
+      return;
     }
+    wizard.requestPublishJob();
+    startTransition(() => {
+      router.push("/fila-de-processamento");
+    });
   };
 
   return (
@@ -275,7 +238,7 @@ export function UploadWizard() {
               status={wizard.status}
               budget={wizard.budget}
               estimatedCampaigns={estimatedCampaigns}
-              publishing={publishing}
+              publishing={isNavigatingToQueue}
               publishBlockedReason={
                 wizard.pageId?.trim()
                   ? null
@@ -291,58 +254,15 @@ export function UploadWizard() {
                 setSavedPublicos((current) => [{ ...saved, id: `${saved.id}-${Date.now()}` }, ...current]);
               }}
               onPrev={() => wizard.setStep(2)}
-              onPublish={() => void startPublish()}
+              onPublish={sendToPublishQueue}
             />
           </motion.div>
         ) : null}
       </AnimatePresence>
 
-      <AnimatePresence>
-        {publishOpen ? (
-          <motion.div
-            className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <motion.div
-              className="w-full max-w-md rounded-xl border border-[#1e2130] bg-[#141720] p-5"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-            >
-              <p className="text-lg font-semibold text-white">
-                {publishError ? "Erro na publicação" : "Publicando campanhas"}
-              </p>
-              {publishError ? (
-                <p className="mt-2 text-sm text-red-400">{publishError}</p>
-              ) : (
-                <p className="mt-1 text-sm text-[#686b82]">
-                  {publishProgress < 100 ? "Processando no Meta Ads..." : "Concluído!"}
-                </p>
-              )}
-              <div className="mt-4">
-                <ProgressBar value={publishError ? 0 : publishProgress} />
-                {!publishError ? (
-                  <p className="mt-2 text-right text-xs font-semibold text-[#9b72ff]">{Math.round(publishProgress)}%</p>
-                ) : null}
-              </div>
-              {publishError ? (
-                <button
-                  type="button"
-                  className="mt-4 w-full rounded-lg bg-[#2a2d3d] py-2 text-sm font-semibold text-white hover:bg-[#34384a]"
-                  onClick={() => {
-                    setPublishOpen(false);
-                    setPublishError(null);
-                  }}
-                >
-                  Fechar
-                </button>
-              ) : null}
-            </motion.div>
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
+      {publishNavigateError ? (
+        <p className="border-t border-gray-200 bg-red-50 px-6 py-3 text-sm text-red-700">{publishNavigateError}</p>
+      ) : null}
     </div>
   );
 }

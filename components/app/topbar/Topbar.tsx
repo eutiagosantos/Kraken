@@ -9,6 +9,7 @@ import { useSidebar } from "../sidebar/SidebarContext";
 const crumbLabels: Record<string, string> = {
   home: "Home",
   upload: "Novo Upload",
+  "fila-de-processamento": "Fila de processamento",
   campanhas: "Campanhas",
   contas: "Contas Meta",
   "contas-meta": "Contas Meta",

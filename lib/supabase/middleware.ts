@@ -11,7 +11,8 @@ export function isDashboardRoute(request: NextRequest) {
     request.nextUrl.pathname.startsWith("/contas-meta") ||
     request.nextUrl.pathname.startsWith("/relatorios") ||
     request.nextUrl.pathname.startsWith("/configuracoes") ||
-    request.nextUrl.pathname.startsWith("/upload")
+    request.nextUrl.pathname.startsWith("/upload") ||
+    request.nextUrl.pathname.startsWith("/fila-de-processamento")
   );
 }
 

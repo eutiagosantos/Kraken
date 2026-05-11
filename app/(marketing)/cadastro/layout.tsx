@@ -9,7 +9,7 @@ export default function CadastroLayout({ children }: { children: ReactNode }) {
       <div className="flex min-h-0 flex-1 flex-col">{children}</div>
       <footer className="mx-auto hidden w-full max-w-6xl px-4 pb-3 pt-1 text-center sm:block sm:px-6 lg:px-8">
         <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-1 text-xs text-neutral-gray">
-          <Link href="#" className="transition-colors hover:text-neutral-black">
+          <Link href="/privacidade" className="transition-colors hover:text-neutral-black">
             Aviso de privacidade
           </Link>
           <Link href="#" className="transition-colors hover:text-neutral-black">

@@ -7,6 +7,7 @@ import {
   ChevronRight,
   HelpCircle,
   House,
+  ListOrdered,
   Search,
   Settings,
   Upload,
@@ -32,6 +33,7 @@ import { MetaNavIcon } from "./MetaNavIcon";
 const mainNav = [
   { href: "/home", label: "Home", icon: House, shortcut: "⌘1" },
   { href: "/upload", label: "Novo Upload", icon: Upload, shortcut: "⌘2" },
+  { href: "/fila-de-processamento", label: "Fila de processamento", icon: ListOrdered },
   { href: "/campanhas", label: "Campanhas", icon: CampaignsNavIcon, shortcut: "⌘3" },
   { href: "/contas-meta", label: "Contas Meta", icon: MetaNavIcon, shortcut: "⌘4" },
   { href: "/relatorios", label: "Relatórios", icon: BarChart2, shortcut: "⌘5" },

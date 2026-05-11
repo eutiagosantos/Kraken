@@ -81,7 +81,18 @@ const initialState = {
   publico: defaultPublico,
   /** Facebook Page ID for ad creatives — chosen in step 1 after accounts are selected. */
   pageId: null as string | null,
+  /** When `"wizard"`, the fila page should run `publishCampaigns` once (consumed synchronously). */
+  publishJobTrigger: null as null | "wizard",
+  /** In-flight publish UI (survives React Strict Mode remounts on the fila page). */
+  queuePublish: {
+    active: false,
+    progress: 0,
+    error: null as string | null,
+    success: false,
+  },
 };
+
+export type WizardQueuePublish = (typeof initialState)["queuePublish"];
 
 type WizardState = typeof initialState & {
   setStep: (step: 1 | 2 | 3) => void;
@@ -106,9 +117,20 @@ type WizardState = typeof initialState & {
   setPageId: (pageId: string | null) => void;
   resetCreatives: () => void;
   reset: () => void;
+  requestPublishJob: () => void;
+  /** Returns `"wizard"` if a job was pending and was cleared; otherwise `null`. */
+  consumePublishJobTrigger: () => null | "wizard";
+  patchQueuePublish: (partial: Partial<WizardQueuePublish>) => void;
 };
 
-export const useWizardStore = create<WizardState>()((set) => ({
+const initialQueuePublish: WizardQueuePublish = {
+  active: false,
+  progress: 0,
+  error: null,
+  success: false,
+};
+
+export const useWizardStore = create<WizardState>()((set, get) => ({
   ...initialState,
   setStep: (step) => set({ step }),
   addCreative: (creative) => set((s) => ({ creatives: [...s.creatives, creative] })),
@@ -152,6 +174,16 @@ export const useWizardStore = create<WizardState>()((set) => ({
   reset: () =>
     set((s) => {
       s.creatives.forEach((creative) => URL.revokeObjectURL(creative.preview));
-      return { ...initialState };
+      return { ...initialState, queuePublish: { ...initialQueuePublish } };
     }),
+  requestPublishJob: () => set({ publishJobTrigger: "wizard" }),
+  consumePublishJobTrigger: () => {
+    if (get().publishJobTrigger !== "wizard") return null;
+    set({ publishJobTrigger: null });
+    return "wizard";
+  },
+  patchQueuePublish: (partial) =>
+    set((s) => ({
+      queuePublish: { ...s.queuePublish, ...partial },
+    })),
 }));
