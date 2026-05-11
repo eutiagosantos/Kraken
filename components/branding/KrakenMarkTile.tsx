@@ -16,6 +16,14 @@ const sizeStyles = {
     imgSize: 18,
     imgClass: "drop-shadow brightness-0 invert",
   },
+  /** Sidebar workspace trigger (matches former h-9 w-9 slot). */
+  sidebar: {
+    outer:
+      "h-9 w-9 rounded-lg shadow-md shadow-purple-500/20",
+    inset: "inset-[2px] rounded-[7px]",
+    imgSize: 20,
+    imgClass: "drop-shadow brightness-0 invert",
+  },
   md: {
     outer:
       "h-16 w-16 rounded-2xl shadow-lg shadow-purple-500/25",

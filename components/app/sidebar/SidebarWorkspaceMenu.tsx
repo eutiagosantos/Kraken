@@ -1,7 +1,8 @@
 "use client";
 
-import { Check, ChevronDown, GripVertical, Megaphone } from "lucide-react";
+import { Check, ChevronDown, GripVertical } from "lucide-react";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { KrakenMarkTile } from "@/components/branding/KrakenMarkTile";
 import { cn } from "@/lib/utils";
 import type { MockWorkspace } from "@/lib/mock-data";
 
@@ -55,9 +56,7 @@ export function SidebarWorkspaceMenu({ workspaces, collapsed }: Props) {
           collapsed && "justify-center px-0"
         )}
       >
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-purple-subtle">
-          <Megaphone className="h-5 w-5 text-brand-purple" aria-hidden />
-        </span>
+        <KrakenMarkTile size="sidebar" className="shrink-0" />
         {!collapsed ? (
           <>
             <span className="min-w-0 flex-1">
