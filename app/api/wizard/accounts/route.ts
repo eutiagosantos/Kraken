@@ -32,6 +32,7 @@ export async function GET() {
     return {
       id: c.accountId,
       name: c.name,
+      nickname: c.nickname ?? null,
       status,
       spend: spendFmt.format(c.monthlySpend),
     };

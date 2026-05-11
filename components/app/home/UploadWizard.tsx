@@ -2,6 +2,7 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
+import type { NomenclaturePreviewContext } from "@/lib/wizard/nomenclature-preview";
 import { ProgressBar } from "@/components/app/ui/ProgressBar";
 import { mockWizardDataAdapter } from "@/lib/wizard/data-adapter";
 import { useWizardStore, type Publico, type Structure } from "@/lib/stores/wizardStore";
@@ -62,6 +63,55 @@ export function UploadWizard() {
       (account) => account.name.toLowerCase().includes(query) || account.id.toLowerCase().includes(query)
     );
   }, [accountQuery, accounts]);
+
+  const nomenclaturePreviewContext = useMemo((): NomenclaturePreviewContext => {
+    const selectedOrdered = accounts.filter((a) => wizard.selectedAccountIds.includes(a.id));
+    const first = selectedOrdered[0];
+    const pixelRow = pixelOptions.find((p) => p.id === wizard.pixelId);
+    const estrutura =
+      wizard.structure === "custom"
+        ? `${wizard.customStructure.campaigns}-${wizard.customStructure.adsets}-${wizard.customStructure.ads}`
+        : wizard.structure;
+
+    let criativo = "—";
+    if (wizard.creatives.length > 0) {
+      const c0 = wizard.creatives[0].name;
+      criativo = wizard.creatives.length === 1 ? c0 : `${c0} +${wizard.creatives.length - 1}`;
+    }
+
+    const pixel =
+      wizard.pixelId.trim() === ""
+        ? "—"
+        : pixelRow
+          ? `${wizard.pixelId} ${pixelRow.name}`
+          : wizard.pixelId;
+
+    return {
+      contaNome: first?.name ?? "—",
+      contaApelido: first?.nickname?.trim() || first?.name || "—",
+      contaId: first?.id ?? "—",
+      budget: String(wizard.budget),
+      estrutura,
+      pixel,
+      objetivo: wizard.objective || "—",
+      criativo,
+      catalogo: "—",
+      idFila: "—",
+      seq: "01",
+    };
+  }, [
+    accounts,
+    pixelOptions,
+    wizard.selectedAccountIds,
+    wizard.creatives,
+    wizard.budget,
+    wizard.objective,
+    wizard.pixelId,
+    wizard.structure,
+    wizard.customStructure.campaigns,
+    wizard.customStructure.adsets,
+    wizard.customStructure.ads,
+  ]);
 
   const adsetsPerStructure =
     wizard.structure === "custom" ? wizard.customStructure.adsets : adsetsByStructure[wizard.structure];
@@ -153,6 +203,7 @@ export function UploadWizard() {
               customStructure={wizard.customStructure}
               nomenclatureTokens={wizard.nomenclatureTokens}
               nomenclaturePreview={wizard.nomenclaturePreview}
+              nomenclaturePreviewContext={nomenclaturePreviewContext}
               pixelOptions={pixelOptions}
               onSetCampaignType={wizard.setCampaignType}
               onSetBudget={wizard.setBudget}

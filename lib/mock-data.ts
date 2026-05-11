@@ -3,6 +3,8 @@ export type AccountStatus = "ativo" | "suspenso";
 export type MockAccount = {
   id: string;
   name: string;
+  /** Apelido local (Kraken); opcional. */
+  nickname?: string | null;
   status: AccountStatus;
   spend: string;
 };

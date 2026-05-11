@@ -1,8 +1,8 @@
 import { AnimatePresence, motion } from "framer-motion";
+import { useEffect } from "react";
 import { LayoutGrid, ShoppingBag, Sliders } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { buildPreview } from "@/lib/mock-data/wizard";
 import type {
   BidStrategy,
   BudgetPeriod,
@@ -11,6 +11,10 @@ import type {
   Structure,
   WizardStatus,
 } from "@/lib/stores/wizardStore";
+import {
+  buildNomenclaturePreview,
+  type NomenclaturePreviewContext,
+} from "@/lib/wizard/nomenclature-preview";
 import { BidStrategyCard } from "./BidStrategyCard";
 import { CampaignTypeCard } from "./CampaignTypeCard";
 import { NomenclatureEditor } from "./NomenclatureEditor";
@@ -30,6 +34,7 @@ interface Step2ConfigProps {
   customStructure: { campaigns: number; adsets: number; ads: number };
   nomenclatureTokens: NomenclatureToken[];
   nomenclaturePreview: string;
+  nomenclaturePreviewContext: NomenclaturePreviewContext;
   pixelOptions: { id: string; name: string }[];
   onSetCampaignType: (value: CampaignType) => void;
   onSetBudget: (value: number) => void;
@@ -72,6 +77,7 @@ export function Step2Config(props: Step2ConfigProps) {
     customStructure,
     nomenclatureTokens,
     nomenclaturePreview,
+    nomenclaturePreviewContext,
     pixelOptions,
     onSetCampaignType,
     onSetBudget,
@@ -89,6 +95,10 @@ export function Step2Config(props: Step2ConfigProps) {
     onPrev,
     onNext,
   } = props;
+
+  useEffect(() => {
+    onSetNomenclaturePreview(buildNomenclaturePreview(nomenclatureTokens, nomenclaturePreviewContext));
+  }, [nomenclatureTokens, nomenclaturePreviewContext, onSetNomenclaturePreview]);
 
   return (
     <>
@@ -217,7 +227,7 @@ export function Step2Config(props: Step2ConfigProps) {
             preview={nomenclaturePreview}
             onTokensChange={(tokens) => {
               onSetNomenclatureTokens(tokens);
-              onSetNomenclaturePreview(buildPreview(tokens));
+              onSetNomenclaturePreview(buildNomenclaturePreview(tokens, nomenclaturePreviewContext));
             }}
           />
         </section>

@@ -22,46 +22,6 @@ export type WizardInterestOption = {
   label: string;
 };
 
-export const variablePreviewValues: Record<string, string> = {
-  "{{conta_nome}}": "Alex Merovic",
-  "{{conta_apelido}}": "Conta Escalada",
-  "{{conta_id}}": "912777",
-  "{{budget}}": "50",
-  "{{estrutura}}": "1-1-3",
-  "{{pixel}}": "44082631820300",
-  "{{objetivo}}": "OUTCOME_SALES",
-  "{{id_fila}}": "Q12902",
-  "{{criativo}}": "23Corte 01",
-  "{{catalogo}}": "Catalogo Main",
-  "{{seq}}": "01",
-  "{{data_dd_mm_aa_}}": "17_04_26",
-  "{{data_dd-mm-aa}}": "17-04-26",
-  "{{data_dd.mm.aa}}": "17.04.26",
-  "{{data_dd/mm/aa}}": "17/04/26",
-  "{{data_ddmmaa}}": "170426",
-  "{{data_dd_mm_aaaa}}": "17_04_2026",
-  "{{data_dd_mm}}": "17_04",
-  "{{data_dd/mm}}": "17/04",
-  "{{data_mm_dd_aa}}": "04_17_26",
-  "{{data_mm-dd-aa}}": "04-17-26",
-};
-
-export function buildPreview(tokens: NomenclatureToken[]): string {
-  return tokens
-    .map((token, index) => {
-      if (token.type !== "variable") {
-        return token.value;
-      }
-
-      const resolvedValue = variablePreviewValues[token.value] ?? token.value;
-      const nextToken = tokens[index + 1];
-      const separator = nextToken?.type === "variable" ? "-" : "";
-
-      return `[${resolvedValue}]${separator}`;
-    })
-    .join("");
-}
-
 export const mockPixels: WizardPixel[] = [
   { id: "44082631820300", name: "Pixel Principal" },
   { id: "98732100293847", name: "Pixel E-commerce" },
