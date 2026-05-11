@@ -36,19 +36,23 @@ export async function GET() {
       return NextResponse.json({ error: wsErr.message }, { status: 500 });
     }
 
+    const { data: memberRows, error: memberRowsErr } = await supabase
+      .from("workspace_members")
+      .select("workspace_id")
+      .in("workspace_id", ids);
+
+    if (memberRowsErr) {
+      return NextResponse.json({ error: memberRowsErr.message }, { status: 500 });
+    }
+
+    const countsByWorkspace = new Map<string, number>();
+    for (const row of memberRows ?? []) {
+      countsByWorkspace.set(row.workspace_id, (countsByWorkspace.get(row.workspace_id) ?? 0) + 1);
+    }
+
     const workspacesOut: MockWorkspace[] = [];
-
     for (const ws of workspaces ?? []) {
-      const { count, error: countErr } = await supabase
-        .from("workspace_members")
-        .select("*", { count: "exact", head: true })
-        .eq("workspace_id", ws.id);
-
-      if (countErr) {
-        return NextResponse.json({ error: countErr.message }, { status: 500 });
-      }
-
-      const n = count ?? 0;
+      const n = countsByWorkspace.get(ws.id) ?? 0;
       workspacesOut.push({
         id: ws.id,
         name: ws.name,
