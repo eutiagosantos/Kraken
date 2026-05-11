@@ -24,6 +24,8 @@ interface Step3PublicoProps {
   budget: number;
   estimatedCampaigns: number;
   publishing: boolean;
+  /** When set, the publish button stays disabled (e.g. missing Facebook Page). */
+  publishBlockedReason?: string | null;
   darkSelectStyles:
     | StylesConfig<LocationOption, true, GroupBase<LocationOption>>
     | StylesConfig<InterestOption, true, GroupBase<InterestOption>>;
@@ -51,6 +53,7 @@ export function Step3Publico(props: Step3PublicoProps) {
     budget,
     estimatedCampaigns,
     publishing,
+    publishBlockedReason = null,
     darkSelectStyles,
     onSetPublicoTab,
     onSetPublico,
@@ -238,9 +241,18 @@ export function Step3Publico(props: Step3PublicoProps) {
           </Button>
         }
         right={
-          <Button onClick={onPublish} disabled={publishing} className="min-w-64">
-            <Rocket className="h-4 w-4" /> Publicar {estimatedCampaigns} Campanhas
-          </Button>
+          <div className="flex flex-col items-end gap-2">
+            {publishBlockedReason ? (
+              <p className="max-w-md text-right text-sm text-amber-800">{publishBlockedReason}</p>
+            ) : null}
+            <Button
+              onClick={onPublish}
+              disabled={publishing || Boolean(publishBlockedReason)}
+              className="min-w-64"
+            >
+              <Rocket className="h-4 w-4" /> Publicar {estimatedCampaigns} Campanhas
+            </Button>
+          </div>
         }
       />
     </>

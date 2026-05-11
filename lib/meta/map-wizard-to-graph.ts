@@ -56,7 +56,7 @@ export const wizardPublishPayloadSchema = z
     publico: publicoSchema,
     antiSpy: z.boolean().optional().default(true),
     workspaceId: z.string().uuid().nullable().optional(),
-    /** Facebook Page ID for object_story_spec (optional if META_DEFAULT_PAGE_ID is set server-side) */
+    /** Facebook Page ID for object_story_spec — chosen in the wizard; server validates against GET /me/accounts. */
     pageId: z.string().min(1).optional(),
     /** Object paths in bucket `wizard_creatives`, same order as `creatives` (browser upload, server download). */
     creativeStoragePaths: z.array(storagePathString).min(1),

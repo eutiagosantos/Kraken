@@ -1,8 +1,9 @@
 import { UploadCloud } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import type { MockAccount } from "@/lib/mock-data";
 import type { Creative } from "@/lib/stores/wizardStore";
+import { useWizardStore } from "@/lib/stores/wizardStore";
 import { cn } from "@/lib/utils";
 import { AccountSelectItem } from "./AccountSelectItem";
 import { CreativeGrid } from "./CreativeGrid";
@@ -35,6 +36,54 @@ export function Step1Creatives({
 }: Step1CreativesProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragActive, setDragActive] = useState(false);
+  const pageId = useWizardStore((s) => s.pageId);
+  const setPageId = useWizardStore((s) => s.setPageId);
+
+  type WizardFbPage = { id: string; name: string; pictureUrl?: string };
+  const [fbPages, setFbPages] = useState<WizardFbPage[]>([]);
+  const [fbPagesLoading, setFbPagesLoading] = useState(false);
+  const [fbPagesError, setFbPagesError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (selectedAccountIds.length === 0) {
+      setFbPages([]);
+      setFbPagesError(null);
+      setFbPagesLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    async function run() {
+      setFbPagesLoading(true);
+      setFbPagesError(null);
+      try {
+        const res = await fetch("/api/wizard/pages", { credentials: "include" });
+        const raw = (await res.json().catch(() => ({}))) as { error?: string; data?: WizardFbPage[] };
+        if (!res.ok) {
+          throw new Error(typeof raw.error === "string" ? raw.error : `Pedido falhou (${res.status})`);
+        }
+        const data = raw.data ?? [];
+        if (!cancelled) setFbPages(data);
+      } catch (e) {
+        if (!cancelled) {
+          setFbPages([]);
+          setFbPagesError(e instanceof Error ? e.message : "Não foi possível carregar as páginas.");
+        }
+      } finally {
+        if (!cancelled) setFbPagesLoading(false);
+      }
+    }
+    void run();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedAccountIds.length]);
+
+  useEffect(() => {
+    if (pageId && fbPages.length > 0 && !fbPages.some((p) => p.id === pageId)) {
+      setPageId(null);
+    }
+  }, [fbPages, pageId, setPageId]);
 
   const handleFileList = (list: FileList | null) => {
     if (!list?.length) return;
@@ -113,6 +162,40 @@ export function Step1Creatives({
               Selecionar todas
             </button>
           </div>
+
+          {selectedAccountIds.length > 0 ? (
+            <div className="mt-5 border-t border-gray-200 pt-4">
+              <h4 className="text-base font-semibold text-gray-900">Página Facebook</h4>
+              <p className="mb-2 text-sm text-gray-500">
+                Identidade dos anúncios no Facebook. Se a lista estiver vazia, volta a entrar com Meta para aceitar as
+                permissões de páginas.
+              </p>
+              {fbPagesLoading ? (
+                <p className="text-sm text-gray-500">A carregar páginas…</p>
+              ) : fbPagesError ? (
+                <p className="text-sm text-red-600">{fbPagesError}</p>
+              ) : fbPages.length === 0 ? (
+                <p className="text-sm text-amber-800">
+                  Nenhuma página encontrada. Em Contas Meta, reconecta a conta — são necessárias as permissões{" "}
+                  <code className="rounded bg-gray-100 px-1">pages_show_list</code> e{" "}
+                  <code className="rounded bg-gray-100 px-1">pages_manage_ads</code>.
+                </p>
+              ) : (
+                <select
+                  value={pageId ?? ""}
+                  onChange={(e) => setPageId(e.target.value.trim() || null)}
+                  className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-[#7132f5]"
+                >
+                  <option value="">Seleciona uma página…</option>
+                  {fbPages.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name} ({p.id})
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+          ) : null}
         </section>
       </div>
       <StepFooter
@@ -120,7 +203,7 @@ export function Step1Creatives({
         right={
           <Button
             onClick={onNext}
-            disabled={creatives.length === 0 || selectedAccountIds.length === 0}
+            disabled={creatives.length === 0 || selectedAccountIds.length === 0 || !pageId}
             className="px-5 py-2.5 text-sm"
           >
             Continuar → Configuração

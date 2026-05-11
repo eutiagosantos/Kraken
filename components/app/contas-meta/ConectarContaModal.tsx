@@ -331,6 +331,8 @@ export function ConectarContaModal({
                       <li>ads_management ✓</li>
                       <li>ads_read ✓</li>
                       <li>business_management ✓</li>
+                      <li>pages_show_list ✓</li>
+                      <li>pages_manage_ads ✓</li>
                     </ul>
                   </div>
                   <div className="mt-8 flex flex-wrap justify-between gap-3 border-t border-dashboard-border pt-5">

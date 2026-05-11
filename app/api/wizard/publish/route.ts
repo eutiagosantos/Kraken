@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 
 import { getSessionUser } from "@/lib/api/session";
 import { normalizeActId } from "@/lib/meta/graph-campaign-publish";
+import { fetchUserFacebookPages, pageIdInUserPages } from "@/lib/meta/graph-user-pages";
 import { getMetaGraphAccessToken } from "@/lib/meta/graph-token";
 import { wizardPublishPayloadSchema } from "@/lib/meta/map-wizard-to-graph";
 import { runWizardPublish } from "@/lib/meta/publish-campaigns";
@@ -88,7 +89,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           error:
-            "Defina META_DEFAULT_PAGE_ID no servidor ou envie «pageId» no payload (ID da Página Facebook para o anúncio).",
+            "Escolhe uma Página Facebook no passo dos criativos (ou define META_DEFAULT_PAGE_ID só para desenvolvimento local).",
         },
         { status: 400 }
       );
@@ -99,6 +100,25 @@ export async function POST(request: Request) {
     const tokenRes = await getMetaGraphAccessToken(supabase, user.id);
     if ("error" in tokenRes) {
       return NextResponse.json({ error: tokenRes.error }, { status: 400 });
+    }
+
+    try {
+      const userPages = await fetchUserFacebookPages(tokenRes.accessToken);
+      if (!pageIdInUserPages(pageId, userPages)) {
+        return NextResponse.json(
+          {
+            error:
+              "Este pageId não corresponde a nenhuma Página Facebook à qual a tua conta Meta tem acesso. Escolhe outra página no assistente ou reconecta o Meta (permissões pages_show_list e pages_manage_ads).",
+          },
+          { status: 400 }
+        );
+      }
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "pages_fetch_failed";
+      return NextResponse.json(
+        { error: `Não foi possível validar a Página Facebook: ${message}` },
+        { status: 502 }
+      );
     }
 
     const normIds = Array.from(new Set(parsed.data.selectedAccountIds.map((id) => normalizeActId(id))));

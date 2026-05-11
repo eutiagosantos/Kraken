@@ -142,6 +142,10 @@ export function UploadWizard() {
       setPublishProgress((progress) => (progress < 90 ? progress + 5 + Math.random() * 6 : progress));
     }, 220);
     try {
+      const pageId = wizard.pageId?.trim();
+      if (!pageId) {
+        throw new Error("Escolhe uma Página Facebook no passo 1.");
+      }
       const snapshot: WizardPublishPayloadInput = {
         selectedAccountIds: wizard.selectedAccountIds,
         creatives: wizard.creatives.map((c) => ({ id: c.id, name: c.name, type: c.type })),
@@ -159,9 +163,7 @@ export function UploadWizard() {
         nomenclaturePreview: wizard.nomenclaturePreview.trim() || "Campanha Kraken",
         publico: { ...wizard.publico },
         antiSpy: true,
-        ...(typeof process !== "undefined" && process.env.NEXT_PUBLIC_META_PAGE_ID
-          ? { pageId: process.env.NEXT_PUBLIC_META_PAGE_ID }
-          : {}),
+        pageId,
       };
       await mockWizardDataAdapter.publishCampaigns({
         snapshot,
@@ -274,6 +276,11 @@ export function UploadWizard() {
               budget={wizard.budget}
               estimatedCampaigns={estimatedCampaigns}
               publishing={publishing}
+              publishBlockedReason={
+                wizard.pageId?.trim()
+                  ? null
+                  : "Escolhe uma Página Facebook no passo 1 (Criativos e contas)."
+              }
               darkSelectStyles={lightSelectStyles}
               onSetPublicoTab={setPublicoTab}
               onSetPublico={wizard.setPublico}

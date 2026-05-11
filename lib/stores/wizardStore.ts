@@ -79,6 +79,8 @@ const initialState = {
   nomenclatureTokens: [] as NomenclatureToken[],
   nomenclaturePreview: "",
   publico: defaultPublico,
+  /** Facebook Page ID for ad creatives — chosen in step 1 after accounts are selected. */
+  pageId: null as string | null,
 };
 
 type WizardState = typeof initialState & {
@@ -101,6 +103,7 @@ type WizardState = typeof initialState & {
   setNomenclatureTokens: (tokens: NomenclatureToken[]) => void;
   setNomenclaturePreview: (value: string) => void;
   setPublico: (publico: Partial<Publico>) => void;
+  setPageId: (pageId: string | null) => void;
   resetCreatives: () => void;
   reset: () => void;
 };
@@ -140,6 +143,7 @@ export const useWizardStore = create<WizardState>()((set) => ({
     set((s) => ({
       publico: { ...s.publico, ...partial },
     })),
+  setPageId: (pageId) => set({ pageId }),
   resetCreatives: () =>
     set((s) => {
       s.creatives.forEach((creative) => URL.revokeObjectURL(creative.preview));

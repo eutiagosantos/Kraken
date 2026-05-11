@@ -11,7 +11,15 @@ import { useSupabase } from "@/lib/hooks/useSupabase";
 import { cn } from "@/lib/utils";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const META_SCOPES = ["email", "public_profile", "ads_read", "ads_management", "business_management"].join(",");
+const META_SCOPES = [
+  "email",
+  "public_profile",
+  "ads_read",
+  "ads_management",
+  "business_management",
+  "pages_show_list",
+  "pages_manage_ads",
+].join(",");
 
 export function RegisterForm() {
   const router = useRouter();
