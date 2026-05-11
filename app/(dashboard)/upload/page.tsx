@@ -1,5 +1,10 @@
 import type { Metadata } from "next";
-import { UploadWizard } from "@/components/app/home/UploadWizard";
+import dynamic from "next/dynamic";
+
+const UploadWizard = dynamic(
+  () => import("@/components/app/home/UploadWizard").then((mod) => mod.UploadWizard),
+  { ssr: false }
+);
 
 export const metadata: Metadata = {
   title: "Novo Upload | Kraken",

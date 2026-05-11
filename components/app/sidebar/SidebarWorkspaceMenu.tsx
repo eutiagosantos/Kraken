@@ -22,6 +22,13 @@ export function SidebarWorkspaceMenu({ workspaces, collapsed }: Props) {
   const close = useCallback(() => setOpen(false), []);
 
   useEffect(() => {
+    if (workspaces.length === 0) return;
+    if (!workspaces.some((workspace) => workspace.id === activeId)) {
+      setActiveId(workspaces[0].id);
+    }
+  }, [workspaces, activeId]);
+
+  useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") close();
