@@ -8,6 +8,9 @@ const nextConfig = {
   },
   experimental: {
     optimizePackageImports: ["lucide-react", "date-fns", "recharts", "framer-motion"],
+    serverActions: {
+      bodySizeLimit: "32mb",
+    },
   },
 };
 

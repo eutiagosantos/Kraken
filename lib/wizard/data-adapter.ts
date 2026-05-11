@@ -95,15 +95,47 @@ export function createFetchWizardDataAdapter(): WizardDataAdapter {
         method: "POST",
         body: form,
       });
-      const json = (await res.json()) as {
+      const raw = await res.text();
+
+      if (res.status === 413) {
+        throw new Error(
+          "O pedido é demasiado grande (ficheiros de criativos). Reduz o tamanho ou o número de ficheiros e tenta novamente."
+        );
+      }
+
+      const ct = res.headers.get("content-type") ?? "";
+      const looksJson =
+        ct.includes("application/json") ||
+        ct.includes("application/problem+json") ||
+        raw.trimStart().startsWith("{");
+
+      type PublishResponse = {
         error?: string;
         publishId?: string;
         warnings?: string[];
         results?: PublishResult["results"];
       };
-      if (!res.ok || !json.publishId) {
-        throw new Error(json.error ?? "Publish failed");
+      let json: PublishResponse | null = null;
+      if (looksJson && raw.trim().length > 0) {
+        try {
+          json = JSON.parse(raw) as PublishResponse;
+        } catch {
+          throw new Error(
+            "Não foi possível ler a resposta do servidor. Se estás a enviar muitos ou ficheiros muito grandes, tenta reduzir."
+          );
+        }
       }
+
+      if (!res.ok) {
+        if (json?.error) throw new Error(json.error);
+        const hint = raw.trim().slice(0, 280);
+        throw new Error(hint || `Publicação falhou (${res.status}).`);
+      }
+
+      if (!json?.publishId) {
+        throw new Error(json?.error ?? "Publicação falhou: resposta sem identificador.");
+      }
+
       return {
         publishId: json.publishId,
         warnings: json.warnings,
