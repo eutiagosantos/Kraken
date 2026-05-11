@@ -33,6 +33,8 @@ export function useSuccessFeedback(): SuccessFeedbackContextValue {
 
 export function SuccessFeedbackProvider({ children }: { children: ReactNode }) {
   const [message, setMessage] = useState<string | null>(null);
+  const [toastKey, setToastKey] = useState(0);
+  const [layerVisible, setLayerVisible] = useState(false);
   const [mounted, setMounted] = useState(false);
   const dismissTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -47,9 +49,16 @@ export function SuccessFeedbackProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const dismiss = useCallback(() => {
+    clearDismissTimer();
+    setMessage(null);
+  }, [clearDismissTimer]);
+
   const showSuccess = useCallback(
     (msg: string) => {
       clearDismissTimer();
+      setToastKey((k) => k + 1);
+      setLayerVisible(true);
       setMessage(msg);
       dismissTimerRef.current = setTimeout(() => {
         setMessage(null);
@@ -61,47 +70,76 @@ export function SuccessFeedbackProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => () => clearDismissTimer(), [clearDismissTimer]);
 
+  useEffect(() => {
+    if (!message) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") dismiss();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [message, dismiss]);
+
   const value = useMemo(() => ({ showSuccess }), [showSuccess]);
 
   const toastLayer =
-    mounted && typeof document !== "undefined"
+    mounted && typeof document !== "undefined" && layerVisible
       ? createPortal(
-          <div
-            className={cn(
-              "pointer-events-none fixed inset-0 z-[130] flex items-center justify-center",
-              "p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]",
-              "pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))]",
-              "md:p-6"
-            )}
+          <AnimatePresence
+            onExitComplete={() => {
+              setLayerVisible(false);
+            }}
           >
-            <AnimatePresence mode="wait">
-              {message ? (
-                <motion.div
-                  key={message}
-                  role="status"
-                  aria-live="polite"
-                  aria-atomic="true"
-                  initial={{ opacity: 0, y: 10, scale: 0.94 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -6, scale: 0.97 }}
-                  transition={{ type: "spring", damping: 24, stiffness: 400, mass: 0.85 }}
+            {message ? (
+              <motion.div
+                key={toastKey}
+                className="fixed inset-0 z-[130]"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <div
+                  className="absolute inset-0 bg-[rgba(16,17,20,0.35)] backdrop-blur-sm"
+                  aria-hidden
+                  onClick={dismiss}
+                />
+                <div
                   className={cn(
-                    "pointer-events-auto flex max-w-[min(100%,20rem)] items-center justify-center gap-3 rounded-xl border border-semantic-green/25 bg-neutral-white px-4 py-3 shadow-[0px_8px_24px_rgba(0,0,0,0.12)]"
+                    "pointer-events-none relative flex h-full min-h-0 items-center justify-center",
+                    "p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]",
+                    "pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))]",
+                    "md:p-6"
                   )}
+                  role="presentation"
                 >
-                  <motion.span
-                    className="inline-flex shrink-0"
-                    initial={{ scale: 0, rotate: -25 }}
-                    animate={{ scale: 1, rotate: 0 }}
-                    transition={{ type: "spring", stiffness: 420, damping: 14, delay: 0.06 }}
+                  <motion.div
+                    role="status"
+                    aria-live="polite"
+                    aria-atomic="true"
+                    initial={{ opacity: 0, scale: 0.96 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.96 }}
+                    transition={{ duration: 0.2 }}
+                    onClick={(e) => e.stopPropagation()}
+                    className={cn(
+                      "pointer-events-auto flex w-full max-w-md min-h-[min(40dvh,14rem)] flex-col items-center justify-center gap-4",
+                      "rounded-card border border-dashboard-border bg-dashboard-surface px-6 py-8 shadow-card"
+                    )}
                   >
-                    <CheckCircle2 className="h-5 w-5 text-semantic-green" aria-hidden />
-                  </motion.span>
-                  <p className="text-center text-sm font-medium text-neutral-black">{message}</p>
-                </motion.div>
-              ) : null}
-            </AnimatePresence>
-          </div>,
+                    <motion.span
+                      className="inline-flex shrink-0"
+                      initial={{ scale: 0, rotate: -25 }}
+                      animate={{ scale: 1, rotate: 0 }}
+                      transition={{ type: "spring", stiffness: 420, damping: 14, delay: 0.06 }}
+                    >
+                      <CheckCircle2 className="h-10 w-10 text-semantic-green" aria-hidden />
+                    </motion.span>
+                    <p className="text-center font-display text-lg font-semibold text-neutral-black">{message}</p>
+                  </motion.div>
+                </div>
+              </motion.div>
+            ) : null}
+          </AnimatePresence>,
           document.body
         )
       : null;
