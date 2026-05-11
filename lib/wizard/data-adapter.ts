@@ -63,7 +63,7 @@ function extensionFromFileName(name: string): string {
 const MAX_FILE_BYTES =
   typeof process !== "undefined" && process.env.NEXT_PUBLIC_UPLOAD_MAX_BYTES
     ? Number(process.env.NEXT_PUBLIC_UPLOAD_MAX_BYTES)
-    : 500 * 1024 * 1024 * 1024; // 500 GB
+    : 500 * 1024 * 1024; // 500 MB
 
 const TUS_CHUNK_SIZE = 6 * 1024 * 1024; // 6 MB — required by Supabase TUS
 
@@ -99,7 +99,15 @@ function uploadFileTus(
         cacheControl: "3600",
       },
       onError(error) {
-        reject(new Error(`Falha ao enviar "${file.name}": ${error.message ?? String(error)}`));
+        const msg = error.message ?? String(error);
+        const is413 = msg.includes("413") || msg.toLowerCase().includes("maximum size exceeded");
+        reject(
+          new Error(
+            is413
+              ? `"${file.name}" é demasiado grande para enviar. Usa ficheiros até 500 MB.`
+              : `Falha ao enviar "${file.name}": ${msg}`
+          )
+        );
       },
       onSuccess() {
         resolve();
@@ -116,10 +124,10 @@ function uploadFileTus(
 async function uploadCreativesToWizardBucket(files: File[], userId: string): Promise<string[]> {
   for (const file of files) {
     if (file.size > MAX_FILE_BYTES) {
-      const limitGb = (MAX_FILE_BYTES / (1024 ** 3)).toFixed(0);
-      const sizeGb = (file.size / (1024 ** 3)).toFixed(2);
+      const limitMb = (MAX_FILE_BYTES / (1024 ** 2)).toFixed(0);
+      const sizeMb = (file.size / (1024 ** 2)).toFixed(1);
       throw new Error(
-        `O arquivo "${file.name}" (${sizeGb} GB) ultrapassa o limite de ${limitGb} GB.`
+        `O arquivo "${file.name}" (${sizeMb} MB) ultrapassa o limite de ${limitMb} MB.`
       );
     }
   }
