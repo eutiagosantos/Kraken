@@ -14,6 +14,14 @@ type LocationSelectProps = {
   styles: StylesConfig<LocationOption, true, GroupBase<LocationOption>>;
 };
 
+function locationOptionToLocalidade(item: LocationOption): Localidade {
+  return {
+    key: item.key,
+    name: item.label,
+    type: item.type === "region" ? "state" : item.type,
+  };
+}
+
 export function LocationSelect({ value, onChange, styles }: LocationSelectProps) {
   const loadOptions = useMemo(() => {
     let timeout: ReturnType<typeof setTimeout> | null = null;
@@ -73,11 +81,7 @@ export function LocationSelect({ value, onChange, styles }: LocationSelectProps)
         </div>
       )}
       onChange={(selected: MultiValue<LocationOption>) => {
-        const parsed = selected.map((item) => ({
-          key: item.key,
-          name: item.label,
-          type: item.type === "region" ? "state" : item.type,
-        }));
+        const parsed = selected.map(locationOptionToLocalidade);
         onChange(parsed);
       }}
       noOptionsMessage={({ inputValue }) =>
