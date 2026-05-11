@@ -25,10 +25,10 @@ import { useSuccessFeedback } from "@/components/app/ui/SuccessFeedback";
 import {
   countCampanhasByTab,
   getCampanhasByStatus,
-  mockCampanhas,
   type Campanha,
   type CampanhaTabId,
 } from "@/lib/mock-campanhas";
+import { useCampanhas } from "@/lib/hooks/useCampanhas";
 
 const defaultFilters: CampanhaFiltersState = {
   search: "",
@@ -75,13 +75,9 @@ function sortRows(rows: Campanha[], sort: SortConfig): Campanha[] {
   });
 }
 
-function newId() {
-  return `CP_${Math.floor(8000 + Math.random() * 2000)}`;
-}
-
 export default function CampanhasPage() {
   const { showSuccess } = useSuccessFeedback();
-  const [campanhas, setCampanhas] = useState<Campanha[]>(() => mockCampanhas.map((c) => ({ ...c, creatives: c.creatives.map((x) => ({ ...x })) })));
+  const { campanhas, refetch } = useCampanhas();
   const [activeTab, setActiveTab] = useState<CampanhaTabId>("ativas");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [filters, setFilters] = useState<CampanhaFiltersState>(defaultFilters);
@@ -186,22 +182,6 @@ export default function CampanhasPage() {
     );
   };
 
-  useEffect(() => {
-    const t = window.setInterval(() => {
-      setCampanhas((prev) =>
-        prev.map((c) => {
-          if (c.status !== "processando") return c;
-          if (c.adsCreated >= c.adsTotal) {
-            return { ...c, adsCreated: c.adsTotal, status: "concluida" as const };
-          }
-          const step = Math.min(12, c.adsTotal - c.adsCreated);
-          return { ...c, adsCreated: c.adsCreated + step };
-        })
-      );
-    }, 3000);
-    return () => window.clearInterval(t);
-  }, []);
-
   const resolveCampanha = useCallback(
     (id: string) => campanhas.find((c) => c.id === id) ?? null,
     [campanhas]
@@ -209,18 +189,26 @@ export default function CampanhasPage() {
 
   const panelCampanha = selectedCampanha?.id ? resolveCampanha(selectedCampanha.id) : null;
 
-  const pauseOne = (c: Campanha) => {
+  const pauseOne = async (c: Campanha) => {
     if (c.status !== "ativa" && c.status !== "processando") return;
-    setCampanhas((prev) =>
-      prev.map((x) => (x.id === c.id ? { ...x, status: "pausada" as const } : x))
-    );
+    await fetch(`/api/campanhas/${c.id}`, {
+      method: "PATCH",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "pausada" }),
+    });
+    await refetch();
   };
 
-  const resumeOne = (c: Campanha) => {
+  const resumeOne = async (c: Campanha) => {
     if (c.status !== "pausada") return;
-    setCampanhas((prev) =>
-      prev.map((x) => (x.id === c.id ? { ...x, status: "ativa" as const } : x))
-    );
+    await fetch(`/api/campanhas/${c.id}`, {
+      method: "PATCH",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "ativa" }),
+    });
+    await refetch();
   };
 
   const toggleStatusOne = (c: Campanha) => {
@@ -228,53 +216,99 @@ export default function CampanhasPage() {
     else if (c.status === "pausada") resumeOne(c);
   };
 
-  const duplicateOne = (c: Campanha) => {
-    const copy: Campanha = {
-      ...c,
-      id: newId(),
-      name: `${c.name} (cópia)`,
-      createdAt: new Date(),
-      status: "ativa",
-      adsCreated: Math.min(c.adsTotal, c.adsCreated),
-      creatives: c.creatives.map((cr) => ({ ...cr, id: `${cr.id}_dup` })),
-    };
-    setCampanhas((prev) => [copy, ...prev]);
+  const duplicateOne = async (c: Campanha) => {
+    await fetch("/api/campanhas", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: `${c.name} (cópia)`,
+        account: c.account,
+        accountId: c.accountId,
+        structure: c.structure,
+        objective: c.objective,
+        dailyBudget: c.dailyBudget,
+        antiSpy: c.antiSpy,
+        status: "ativa",
+        adsCreated: Math.min(c.adsTotal, c.adsCreated),
+        adsTotal: c.adsTotal,
+        trend: c.trend,
+        creatives: c.creatives.map((cr) => ({ ...cr, id: `${cr.id}_dup` })),
+        errors: c.errors,
+      }),
+    });
+    await refetch();
   };
 
-  const deleteByIds = (ids: string[]) => {
-    setCampanhas((prev) => prev.filter((c) => !ids.includes(c.id)));
+  const deleteByIds = async (ids: string[]) => {
+    await Promise.all(
+      ids.map((id) => fetch(`/api/campanhas/${id}`, { method: "DELETE", credentials: "include" }))
+    );
     setSelectedIds((prev) => prev.filter((id) => !ids.includes(id)));
     setPanelOpen(false);
     setSelectedCampanha(null);
+    await refetch();
   };
 
-  const bulkPause = () => {
-    setCampanhas((prev) =>
-      prev.map((c) =>
-        selectedIds.includes(c.id) && (c.status === "ativa" || c.status === "processando")
-          ? { ...c, status: "pausada" as const }
-          : c
+  const bulkPause = async () => {
+    const targets = campanhas.filter(
+      (c) => selectedIds.includes(c.id) && (c.status === "ativa" || c.status === "processando")
+    );
+    await Promise.all(
+      targets.map((c) =>
+        fetch(`/api/campanhas/${c.id}`, {
+          method: "PATCH",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: "pausada" }),
+        })
       )
     );
+    await refetch();
   };
 
-  const bulkResume = () => {
-    setCampanhas((prev) =>
-      prev.map((c) => (selectedIds.includes(c.id) && c.status === "pausada" ? { ...c, status: "ativa" as const } : c))
+  const bulkResume = async () => {
+    const targets = campanhas.filter((c) => selectedIds.includes(c.id) && c.status === "pausada");
+    await Promise.all(
+      targets.map((c) =>
+        fetch(`/api/campanhas/${c.id}`, {
+          method: "PATCH",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: "ativa" }),
+        })
+      )
     );
+    await refetch();
   };
 
-  const bulkDuplicate = () => {
+  const bulkDuplicate = async () => {
     const toDup = campanhas.filter((c) => selectedIds.includes(c.id));
-    const copies = toDup.map((c) => ({
-      ...c,
-      id: newId(),
-      name: `${c.name} (cópia)`,
-      createdAt: new Date(),
-      status: "ativa" as const,
-      creatives: c.creatives.map((cr) => ({ ...cr, id: `${cr.id}_${Math.random().toString(36).slice(2, 7)}` })),
-    }));
-    setCampanhas((prev) => [...copies, ...prev]);
+    await Promise.all(
+      toDup.map((c) =>
+        fetch("/api/campanhas", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: `${c.name} (cópia)`,
+            account: c.account,
+            accountId: c.accountId,
+            structure: c.structure,
+            objective: c.objective,
+            dailyBudget: c.dailyBudget,
+            antiSpy: c.antiSpy,
+            status: "ativa",
+            adsCreated: c.adsCreated,
+            adsTotal: c.adsTotal,
+            trend: c.trend,
+            creatives: c.creatives,
+            errors: c.errors,
+          }),
+        })
+      )
+    );
+    await refetch();
   };
 
   const openDelete = (ids: string[]) => {
@@ -387,10 +421,19 @@ export default function CampanhasPage() {
           setEditOpen(false);
           setEditCampanha(null);
         }}
-        onSave={(id, patch) => {
-          setCampanhas((prev) =>
-            prev.map((c) => (c.id === id ? { ...c, ...patch } : c))
-          );
+        onSave={async (id, patch) => {
+          await fetch(`/api/campanhas/${id}`, {
+            method: "PATCH",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              name: patch.name,
+              dailyBudget: patch.dailyBudget,
+              objective: patch.objective,
+              antiSpy: patch.antiSpy,
+            }),
+          });
+          await refetch();
           showSuccess("Campanha atualizada com sucesso.");
         }}
       />
@@ -400,9 +443,11 @@ export default function CampanhasPage() {
         count={deleteCount}
         onClose={() => setDeleteOpen(false)}
         onConfirm={() => {
-          const n = deleteIds.length;
-          deleteByIds(deleteIds);
-          showSuccess(n > 1 ? "Campanhas excluídas com sucesso." : "Campanha excluída com sucesso.");
+          void (async () => {
+            const n = deleteIds.length;
+            await deleteByIds(deleteIds);
+            showSuccess(n > 1 ? "Campanhas excluídas com sucesso." : "Campanha excluída com sucesso.");
+          })();
         }}
       />
 

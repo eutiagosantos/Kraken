@@ -13,12 +13,12 @@ export function ReconectarModal({
   conta,
   open,
   onClose,
-  onReconnect,
+  onReconnected,
 }: {
   conta: ContaMeta | null;
   open: boolean;
   onClose: () => void;
-  onReconnect: (id: string) => void;
+  onReconnected: () => void;
 }) {
   const [newToken, setNewToken] = useState("");
   const [reconnecting, setReconnecting] = useState(false);
@@ -106,12 +106,23 @@ export function ReconectarModal({
                 variant="primary"
                 disabled={!newToken.trim() || reconnecting}
                 onClick={() => {
-                  setReconnecting(true);
-                  setTimeout(() => {
-                    setReconnecting(false);
-                    onReconnect(conta.id);
-                    onClose();
-                  }, 800);
+                  void (async () => {
+                    setReconnecting(true);
+                    try {
+                      const res = await fetch("/api/contas-meta", {
+                        method: "POST",
+                        credentials: "include",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ action: "sync_with_token", token: newToken.trim() }),
+                      });
+                      if (res.ok) {
+                        onReconnected();
+                        onClose();
+                      }
+                    } finally {
+                      setReconnecting(false);
+                    }
+                  })();
                 }}
               >
                 {reconnecting ? "Reconectando..." : "Reconectar"}

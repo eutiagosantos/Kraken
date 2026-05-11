@@ -1,21 +1,17 @@
-import { NextResponse, type NextRequest } from "next/server";
-import { isDashboardRoute } from "@/lib/supabase/middleware";
+import type { NextRequest } from "next/server";
 
-export function middleware(request: NextRequest) {
-  if (!isDashboardRoute(request)) {
-    return NextResponse.next();
-  }
+import { updateSession } from "@/lib/supabase/middleware";
 
-  const hasSession = request.cookies.has("session");
-  if (hasSession) {
-    return NextResponse.next();
-  }
-
-  const loginUrl = new URL("/login", request.url);
-  loginUrl.searchParams.set("next", request.nextUrl.pathname);
-  return NextResponse.redirect(loginUrl);
+export async function middleware(request: NextRequest) {
+  return updateSession(request);
 }
 
 export const config = {
-  matcher: ["/home/:path*", "/campanhas/:path*", "/contas-meta/:path*", "/relatorios/:path*", "/configuracoes/:path*", "/upload/:path*"],
+  matcher: [
+    /*
+     * Match all request paths except static assets and images.
+     * Needed so Supabase can refresh the session on navigation.
+     */
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+  ],
 };

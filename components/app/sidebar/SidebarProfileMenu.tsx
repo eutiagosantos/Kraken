@@ -1,15 +1,27 @@
 "use client";
 
 import { ChevronDown, History, LogOut, Puzzle } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
-import { mockUser } from "@/lib/mock-data";
+import { useKrakenUser } from "@/lib/hooks/useKrakenUser";
+import { useSupabase } from "@/lib/hooks/useSupabase";
 
 type Props = {
   collapsed: boolean;
 };
 
+function initialsFrom(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
 export function SidebarProfileMenu({ collapsed }: Props) {
+  const router = useRouter();
+  const supabase = useSupabase();
+  const { displayName, email } = useKrakenUser();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const menuId = useId();
@@ -33,12 +45,15 @@ export function SidebarProfileMenu({ collapsed }: Props) {
     };
   }, [open, close]);
 
-  const initials = mockUser.name
-    .split(" ")
-    .map((p) => p[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
+  const initials = initialsFrom(displayName);
+
+  const logout = async () => {
+    await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+    await supabase.auth.signOut();
+    close();
+    router.push("/login");
+    router.refresh();
+  };
 
   if (collapsed) {
     return (
@@ -53,7 +68,16 @@ export function SidebarProfileMenu({ collapsed }: Props) {
         >
           {initials}
         </button>
-        {open ? <ProfileDropdown id={menuId} className="left-full top-0 ml-2" onClose={close} /> : null}
+        {open ? (
+          <ProfileDropdown
+            id={menuId}
+            className="left-full top-0 ml-2"
+            displayName={displayName}
+            email={email}
+            onClose={close}
+            onLogout={() => void logout()}
+          />
+        ) : null}
       </div>
     );
   }
@@ -75,15 +99,24 @@ export function SidebarProfileMenu({ collapsed }: Props) {
           {initials}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold text-neutral-black">{mockUser.name}</p>
-          <p className="truncate text-xs text-dashboard-muted">{mockUser.email}</p>
+          <p className="truncate text-sm font-semibold text-neutral-black">{displayName}</p>
+          <p className="truncate text-xs text-dashboard-muted">{email || "—"}</p>
         </div>
         <ChevronDown
           className={cn("h-4 w-4 shrink-0 text-dashboard-muted transition-transform", open && "rotate-180")}
           aria-hidden
         />
       </button>
-        {open ? <ProfileDropdown id={menuId} className="left-2 right-2 bottom-full mb-1" onClose={close} /> : null}
+      {open ? (
+        <ProfileDropdown
+          id={menuId}
+          className="left-2 right-2 bottom-full mb-1"
+          displayName={displayName}
+          email={email}
+          onClose={close}
+          onLogout={() => void logout()}
+        />
+      ) : null}
     </div>
   );
 }
@@ -91,11 +124,17 @@ export function SidebarProfileMenu({ collapsed }: Props) {
 function ProfileDropdown({
   id,
   className,
+  displayName,
+  email,
   onClose,
+  onLogout,
 }: {
   id: string;
   className?: string;
+  displayName: string;
+  email: string;
   onClose: () => void;
+  onLogout: () => void;
 }) {
   return (
     <div
@@ -107,8 +146,8 @@ function ProfileDropdown({
       )}
     >
       <div className="border-b border-dashboard-border px-3 py-2">
-        <p className="text-sm font-semibold text-neutral-black">{mockUser.name}</p>
-        <p className="truncate text-xs text-dashboard-muted">{mockUser.email}</p>
+        <p className="text-sm font-semibold text-neutral-black">{displayName}</p>
+        <p className="truncate text-xs text-dashboard-muted">{email || "—"}</p>
       </div>
       <button
         type="button"
@@ -133,7 +172,9 @@ function ProfileDropdown({
         type="button"
         role="menuitem"
         className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm text-semantic-red hover:bg-semantic-red-bg"
-        onClick={onClose}
+        onClick={() => {
+          onLogout();
+        }}
       >
         <LogOut className="h-4 w-4" aria-hidden />
         Sair

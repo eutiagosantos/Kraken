@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ImageIcon } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
-import { mockCreativeLibraryItems, type CreativeLibraryStatus } from "@/lib/mock-data";
+import type { CreativeLibraryStatus, MockCreativeLibraryItem } from "@/lib/mock-data";
 
 function statusBadge(status: CreativeLibraryStatus) {
   switch (status) {
@@ -30,13 +30,20 @@ function statusBadge(status: CreativeLibraryStatus) {
   }
 }
 
-export function CreativesSummary() {
+type Props = {
+  items?: MockCreativeLibraryItem[];
+};
+
+export function CreativesSummary({ items = [] }: Props) {
   return (
     <section className="rounded-card border border-neutral-border bg-neutral-white p-6 shadow-subtle">
       <h3 className="font-display text-xl font-bold tracking-[-0.02em] text-neutral-black">Criativos na biblioteca</h3>
       <p className="mt-1 font-ui text-sm text-neutral-silver">Status e uso em campanhas</p>
+      {items.length === 0 ? (
+        <p className="mt-5 text-sm text-neutral-silver">Sem criativos na biblioteca.</p>
+      ) : (
       <ul className="mt-5 space-y-4">
-        {mockCreativeLibraryItems.map((item) => (
+        {items.map((item) => (
           <li
             key={item.id}
             className="rounded-[12px] border border-neutral-border bg-[rgba(148,151,169,0.08)] p-4"
@@ -68,6 +75,7 @@ export function CreativesSummary() {
           </li>
         ))}
       </ul>
+      )}
     </section>
   );
 }

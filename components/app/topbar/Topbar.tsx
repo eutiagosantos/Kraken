@@ -3,7 +3,7 @@
 import { Bell, Menu, Search } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { cn } from "@/lib/utils";
-import { mockUser } from "@/lib/mock-data";
+import { useKrakenUser } from "@/lib/hooks/useKrakenUser";
 import { useSidebar } from "../sidebar/SidebarContext";
 
 const crumbLabels: Record<string, string> = {
@@ -24,9 +24,18 @@ function breadcrumbsFromPath(pathname: string) {
   return ["Home", label];
 }
 
+function initialsFrom(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
 export function Topbar({ pathname }: { pathname: string }) {
   const { setMobileOpen } = useSidebar();
+  const { displayName, email } = useKrakenUser();
   const crumbs = breadcrumbsFromPath(pathname);
+  const initials = initialsFrom(displayName);
 
   return (
     <header
@@ -83,14 +92,9 @@ export function Topbar({ pathname }: { pathname: string }) {
         </Badge>
         <div
           className="ml-1 hidden h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-brand-purple to-brand-purple-dark text-xs font-bold text-neutral-white sm:flex"
-          title={mockUser.email}
+          title={email || displayName}
         >
-          {mockUser.name
-            .split(" ")
-            .map((p) => p[0])
-            .join("")
-            .slice(0, 2)
-            .toUpperCase()}
+          {initials}
         </div>
       </div>
     </header>

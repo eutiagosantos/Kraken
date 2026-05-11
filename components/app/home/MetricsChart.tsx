@@ -15,37 +15,36 @@ import {
 
 type Point = { name: string; uploads: number; spend: number };
 
-const data7d: Point[] = [
-  { name: "Seg", uploads: 12, spend: 4200 },
-  { name: "Ter", uploads: 18, spend: 5100 },
-  { name: "Qua", uploads: 15, spend: 4800 },
-  { name: "Qui", uploads: 22, spend: 6200 },
-  { name: "Sex", uploads: 28, spend: 7100 },
-  { name: "Sáb", uploads: 9, spend: 3100 },
-  { name: "Dom", uploads: 11, spend: 3600 },
-];
+function emptyWeek(): Point[] {
+  return ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"].map((name) => ({ name, uploads: 0, spend: 0 }));
+}
 
-const data30d: Point[] = [
-  { name: "S1", uploads: 58, spend: 19200 },
-  { name: "S2", uploads: 74, spend: 24100 },
-  { name: "S3", uploads: 89, spend: 31000 },
-  { name: "S4", uploads: 115, spend: 38400 },
-];
-
-const data90d: Point[] = [
-  { name: "Jan", uploads: 210, spend: 68000 },
-  { name: "Fev", uploads: 284, spend: 91200 },
-  { name: "Mar", uploads: 336, spend: 112000 },
-];
-
-const datasets: Record<string, Point[]> = { "7D": data7d, "30D": data30d, "90D": data90d };
+const defaultDatasets: Record<string, Point[]> = {
+  "7D": emptyWeek(),
+  "30D": [
+    { name: "S1", uploads: 0, spend: 0 },
+    { name: "S2", uploads: 0, spend: 0 },
+    { name: "S3", uploads: 0, spend: 0 },
+    { name: "S4", uploads: 0, spend: 0 },
+  ],
+  "90D": [
+    { name: "Jan", uploads: 0, spend: 0 },
+    { name: "Fev", uploads: 0, spend: 0 },
+    { name: "Mar", uploads: 0, spend: 0 },
+  ],
+};
 
 const PERIODS = ["7D", "30D", "90D"] as const;
 type Period = (typeof PERIODS)[number];
 
-export function MetricsChart() {
+type MetricsChartProps = {
+  datasets?: Partial<Record<Period, Point[]>>;
+};
+
+export function MetricsChart({ datasets: datasetsProp }: MetricsChartProps) {
   const [period, setPeriod] = useState<Period>("7D");
-  const chartData = datasets[period];
+  const datasets = { ...defaultDatasets, ...datasetsProp } as Record<Period, Point[]>;
+  const chartData = datasets[period] ?? defaultDatasets[period];
   const isClient = useIsClient();
 
   return (

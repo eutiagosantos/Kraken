@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { StatCard } from "@/components/app/ui/StatCard";
-import { mockHomeCreativesCampaignStats, type MockStat } from "@/lib/mock-data";
+import type { MockStat } from "@/lib/mock-data";
 
 const container = {
   hidden: {},
@@ -20,7 +20,15 @@ type StatsRowProps = {
   stats?: MockStat[];
 };
 
-export function StatsRow({ stats = mockHomeCreativesCampaignStats }: StatsRowProps) {
+export function StatsRow({ stats = [] }: StatsRowProps) {
+  if (stats.length === 0) {
+    return (
+      <div className="rounded-card border border-dashboard-border bg-dashboard-surface px-4 py-6 text-sm text-dashboard-muted shadow-subtle">
+        Ainda não há KPIs registados. Conecta contas Meta e usa a app para ver métricas aqui.
+      </div>
+    );
+  }
+
   return (
     <motion.div
       className="grid gap-4 sm:grid-cols-2 sm:gap-5 xl:grid-cols-4"

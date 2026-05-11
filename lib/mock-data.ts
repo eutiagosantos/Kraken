@@ -7,12 +7,7 @@ export type MockAccount = {
   spend: string;
 };
 
-export const mockAccounts: MockAccount[] = [
-  { id: "ACT_001", name: "Loja Exemplo BR", status: "ativo", spend: "R$ 12.400" },
-  { id: "ACT_002", name: "E-commerce Alpha", status: "ativo", spend: "R$ 8.200" },
-  { id: "ACT_003", name: "Agência XYZ", status: "ativo", spend: "R$ 31.000" },
-  { id: "ACT_004", name: "Conta Suspensa", status: "suspenso", spend: "R$ 0" },
-];
+export const mockAccounts: MockAccount[] = [];
 
 export type StatDeltaType = "positive" | "neutral" | "negative";
 
@@ -24,115 +19,23 @@ export type MockStat = {
   iconColor: string;
 };
 
-/** KPIs genéricos do produto (ex.: relatórios); a home usa `mockHomeCreativesCampaignStats`. */
-export const mockStats: MockStat[] = [
-  {
-    label: "Anúncios Criados",
-    value: "12.847",
-    delta: "+342 hoje",
-    deltaType: "positive",
-    iconColor: "#7132f5",
-  },
-  {
-    label: "Contas Ativas",
-    value: "8",
-    delta: "+1 esta semana",
-    deltaType: "positive",
-    iconColor: "#149e61",
-  },
-  {
-    label: "Uploads Este Mês",
-    value: "47",
-    delta: "3 em andamento",
-    deltaType: "neutral",
-    iconColor: "#7132f5",
-  },
-  {
-    label: "Taxa de Aprovação",
-    value: "98.2%",
-    delta: "+0.4% vs mês anterior",
-    deltaType: "positive",
-    iconColor: "#149e61",
-  },
-];
+export const mockStats: MockStat[] = [];
 
-export const mockHomeCreativesCampaignStats: MockStat[] = [
-  {
-    label: "Anúncios ativos",
-    value: "12.847",
-    delta: "+342 nas últimas 24h",
-    deltaType: "positive",
-    iconColor: "#7132f5",
-  },
-  {
-    label: "Campanhas ativas",
-    value: "1.284",
-    delta: "+18 esta semana",
-    deltaType: "positive",
-    iconColor: "#5741d8",
-  },
-  {
-    label: "Criativos na biblioteca",
-    value: "312",
-    delta: "12 novos este mês",
-    deltaType: "positive",
-    iconColor: "#7132f5",
-  },
-  {
-    label: "Aprovação de criativos",
-    value: "98.2%",
-    delta: "+0.4% vs mês anterior",
-    deltaType: "positive",
-    iconColor: "#149e61",
-  },
-];
+export const mockHomeCreativesCampaignStats: MockStat[] = [];
 
 export type ActivityType = "success" | "processing" | "error";
 
 export type MockActivity = {
+  id?: string;
   type: ActivityType;
   message: string;
   account: string;
   time: string;
 };
 
-export const mockActivities: MockActivity[] = [
-  {
-    type: "success",
-    message: "Upload concluído — 142 campanhas criadas",
-    account: "Loja Exemplo BR",
-    time: "há 12 min",
-  },
-  {
-    type: "processing",
-    message: "Upload em andamento — 87/200 campanhas",
-    account: "Agência XYZ",
-    time: "há 35 min",
-  },
-  {
-    type: "error",
-    message: "3 anúncios rejeitados — revisar criativos",
-    account: "E-commerce Alpha",
-    time: "há 2h",
-  },
-  {
-    type: "success",
-    message: "Nova conta conectada com sucesso",
-    account: "Sistema",
-    time: "há 3h",
-  },
-  {
-    type: "success",
-    message: "Upload concluído — 56 campanhas criadas",
-    account: "E-commerce Alpha",
-    time: "ontem",
-  },
-];
+export const mockActivities: MockActivity[] = [];
 
-/** Feed da home: só eventos ligados a campanhas e criativos. */
-export const mockHomeActivities: MockActivity[] = mockActivities.filter(
-  (a) => a.account !== "Sistema"
-);
+export const mockHomeActivities: MockActivity[] = [];
 
 export type UploadJobStatus = "processing" | "completed" | "error";
 
@@ -145,24 +48,7 @@ export type MockActiveUpload = {
   startedAt: string;
 };
 
-export const mockActiveUploads: MockActiveUpload[] = [
-  {
-    id: "UP_001",
-    account: "Agência XYZ",
-    total: 200,
-    done: 87,
-    status: "processing",
-    startedAt: "14:23",
-  },
-  {
-    id: "UP_002",
-    account: "Loja Exemplo BR",
-    total: 50,
-    done: 50,
-    status: "completed",
-    startedAt: "13:10",
-  },
-];
+export const mockActiveUploads: MockActiveUpload[] = [];
 
 export type CreativeLibraryStatus = "aprovado" | "pendente" | "rejeitado";
 
@@ -174,36 +60,7 @@ export type MockCreativeLibraryItem = {
   campaignsCount: number;
 };
 
-export const mockCreativeLibraryItems: MockCreativeLibraryItem[] = [
-  {
-    id: "CR_001",
-    name: "Black Friday — vídeo 15s",
-    format: "Vídeo 9:16",
-    status: "aprovado",
-    campaignsCount: 24,
-  },
-  {
-    id: "CR_002",
-    name: "Carrinho — estático feed",
-    format: "Imagem 1:1",
-    status: "aprovado",
-    campaignsCount: 18,
-  },
-  {
-    id: "CR_003",
-    name: "Lançamento — carrossel",
-    format: "Carrossel",
-    status: "pendente",
-    campaignsCount: 0,
-  },
-  {
-    id: "CR_004",
-    name: "Remarketing — story",
-    format: "Vídeo 4:5",
-    status: "rejeitado",
-    campaignsCount: 2,
-  },
-];
+export const mockCreativeLibraryItems: MockCreativeLibraryItem[] = [];
 
 export type QuickActionKey = "upload" | "connect" | "duplicate" | "report";
 
@@ -256,13 +113,13 @@ export type MetricsChartPoint = {
 };
 
 export const mockMetricsSeries: MetricsChartPoint[] = [
-  { name: "Seg", uploads: 12, spend: 4200 },
-  { name: "Ter", uploads: 18, spend: 5100 },
-  { name: "Qua", uploads: 15, spend: 4800 },
-  { name: "Qui", uploads: 22, spend: 6200 },
-  { name: "Sex", uploads: 28, spend: 7100 },
-  { name: "Sáb", uploads: 9, spend: 3100 },
-  { name: "Dom", uploads: 11, spend: 3600 },
+  { name: "Seg", uploads: 0, spend: 0 },
+  { name: "Ter", uploads: 0, spend: 0 },
+  { name: "Qua", uploads: 0, spend: 0 },
+  { name: "Qui", uploads: 0, spend: 0 },
+  { name: "Sex", uploads: 0, spend: 0 },
+  { name: "Sáb", uploads: 0, spend: 0 },
+  { name: "Dom", uploads: 0, spend: 0 },
 ];
 
 export type WizardConfig = {
@@ -290,8 +147,8 @@ export const initialWizardState = {
 };
 
 export const mockUser = {
-  name: "João Silva",
-  email: "joao@empresa.com.br",
+  name: "",
+  email: "",
 };
 
 export type MockWorkspace = {
@@ -301,8 +158,4 @@ export type MockWorkspace = {
   membersLabel?: string;
 };
 
-export const mockWorkspaces: MockWorkspace[] = [
-  { id: "ws1", name: "Kraken", plan: "Plano Pro", membersLabel: "12 membros" },
-  { id: "ws2", name: "Agência Alpha", plan: "Team", membersLabel: "4,5k membros" },
-  { id: "ws3", name: "Loja Beta", plan: "Gratuito", membersLabel: "2 membros" },
-];
+export const mockWorkspaces: MockWorkspace[] = [];

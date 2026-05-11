@@ -3,19 +3,25 @@
 import { Eye, EyeOff } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { Input } from "@/components/ui/Input";
+import { useSupabase } from "@/lib/hooks/useSupabase";
 import { cn } from "@/lib/utils";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const META_SCOPES = ["email", "public_profile", "ads_read", "ads_management", "business_management"].join(",");
 
 export function RegisterForm() {
+  const router = useRouter();
+  const supabase = useSupabase();
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [notice, setNotice] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  function handleSubmit(e: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = e.currentTarget;
     const fd = new FormData(form);
@@ -41,16 +47,47 @@ export function RegisterForm() {
 
     if (Object.keys(next).length > 0) return;
 
-    setNotice(
-      "Formulário válido. A integração com o backend ainda não está configurada — em breve você poderá criar sua conta por aqui."
-    );
+    setSubmitting(true);
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { full_name: name, name },
+        emailRedirectTo: origin ? `${origin}/login` : undefined,
+      },
+    });
+    setSubmitting(false);
+
+    if (error) {
+      setNotice(error.message);
+      return;
+    }
+
+    if (data.session) {
+      router.push("/home");
+      router.refresh();
+      return;
+    }
+
+    setNotice("Verifique o seu e-mail para confirmar a conta antes de entrar.");
   }
 
-  function handleMetaSignup() {
+  async function handleMetaSignup() {
     setErrors({});
-    setNotice(
-      "Cadastro com Meta ainda não está configurado — em breve você poderá usar esta opção."
-    );
+    setNotice(null);
+    const origin = window.location.origin;
+    const redirectTo = `${origin}/api/auth/callback?next=${encodeURIComponent("/home")}`;
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "facebook",
+      options: {
+        redirectTo,
+        scopes: META_SCOPES,
+      },
+    });
+    if (error) {
+      setNotice(error.message);
+    }
   }
 
   const inputClass =
@@ -187,9 +224,10 @@ export function RegisterForm() {
 
       <button
         type="submit"
-        className="w-full rounded-[10px] bg-[#6B46E5] py-2.5 text-[15px] font-semibold text-white shadow-none transition-colors hover:bg-[#5b21e6]"
+        disabled={submitting}
+        className="w-full rounded-[10px] bg-[#6B46E5] py-2.5 text-[15px] font-semibold text-white shadow-none transition-colors hover:bg-[#5b21e6] disabled:opacity-60"
       >
-        Criar conta
+        {submitting ? "A criar…" : "Criar conta"}
       </button>
 
       <div className="relative py-1">
@@ -201,7 +239,7 @@ export function RegisterForm() {
 
       <button
         type="button"
-        onClick={handleMetaSignup}
+        onClick={() => void handleMetaSignup()}
         className="flex w-full items-center justify-center gap-2.5 rounded-[10px] border border-neutral-border bg-white py-2.5 text-[15px] font-semibold text-neutral-black shadow-subtle transition-colors hover:bg-neutral-white"
       >
         <Image src="/meta-symbol.svg" alt="" width={20} height={20} className="shrink-0" />

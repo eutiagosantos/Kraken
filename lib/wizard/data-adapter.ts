@@ -1,10 +1,5 @@
-import { mockAccounts, type MockAccount } from "@/lib/mock-data";
+import type { MockAccount } from "@/lib/mock-data";
 import {
-  mockInterestOptions,
-  mockLocationOptions,
-  mockPixels,
-  mockSavedPresets,
-  mockSavedPublicos,
   type WizardInterestOption,
   type WizardLocationOption,
   type WizardPixel,
@@ -29,39 +24,70 @@ export interface WizardDataAdapter {
   publishCampaigns: (payload: PublishPayload) => Promise<{ publishId: string }>;
 }
 
-const sleep = (ms = 220) => new Promise((resolve) => setTimeout(resolve, ms));
+async function parseJson<T>(res: Response): Promise<T> {
+  const json = (await res.json()) as { error?: string; data?: T };
+  if (!res.ok) {
+    throw new Error(json.error ?? `Request failed (${res.status})`);
+  }
+  if (json.data === undefined) {
+    throw new Error("Missing data in response");
+  }
+  return json.data;
+}
 
-export const mockWizardDataAdapter: WizardDataAdapter = {
-  async listAccounts() {
-    await sleep();
-    return mockAccounts;
-  },
-  async listPixels() {
-    await sleep();
-    return mockPixels;
-  },
-  async listSavedPresets() {
-    await sleep();
-    return mockSavedPresets;
-  },
-  async listSavedPublicos() {
-    await sleep();
-    return mockSavedPublicos;
-  },
-  async listLocationOptions() {
-    await sleep();
-    return mockLocationOptions;
-  },
-  async listInterestOptions() {
-    await sleep();
-    return mockInterestOptions;
-  },
-  async savePublico(publico) {
-    await sleep();
-    return { ...publico, type: "saved" };
-  },
-  async publishCampaigns() {
-    await sleep(400);
-    return { publishId: `pub_${Date.now()}` };
-  },
-};
+export function createFetchWizardDataAdapter(): WizardDataAdapter {
+  const opts: RequestInit = { credentials: "include" };
+
+  return {
+    async listAccounts() {
+      const res = await fetch("/api/wizard/accounts", opts);
+      return parseJson<MockAccount[]>(res);
+    },
+    async listPixels() {
+      const res = await fetch("/api/wizard/pixels", opts);
+      return parseJson<WizardPixel[]>(res);
+    },
+    async listSavedPresets() {
+      const res = await fetch("/api/wizard/presets", opts);
+      return parseJson<WizardPreset[]>(res);
+    },
+    async listSavedPublicos() {
+      const res = await fetch("/api/wizard/publicos", opts);
+      return parseJson<Publico[]>(res);
+    },
+    async listLocationOptions() {
+      return [];
+    },
+    async listInterestOptions() {
+      return [];
+    },
+    async savePublico(publico) {
+      const res = await fetch("/api/wizard/publicos", {
+        ...opts,
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(publico),
+      });
+      return parseJson<Publico>(res);
+    },
+    async publishCampaigns(payload) {
+      const res = await fetch("/api/wizard/publish", {
+        ...opts,
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          accountLabel: payload.selectedAccountIds[0] ?? "Conta",
+          total: Math.max(1, payload.estimatedCampaigns),
+          done: 0,
+        }),
+      });
+      const json = (await res.json()) as { error?: string; publishId?: string };
+      if (!res.ok || !json.publishId) {
+        throw new Error(json.error ?? "Publish failed");
+      }
+      return { publishId: json.publishId };
+    },
+  };
+}
+
+export const mockWizardDataAdapter = createFetchWizardDataAdapter();

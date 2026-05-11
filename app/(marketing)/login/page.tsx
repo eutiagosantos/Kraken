@@ -15,9 +15,12 @@ export default function LoginPage() {
           <KrakenMarkTile size="lg" />
         </div>
 
-        <h1 className="mb-8 text-center font-display text-2xl font-bold tracking-tight text-neutral-black sm:text-[28px]">
-          Fazer login na Kraken
+        <h1 className="mb-2 text-center font-display text-2xl font-bold tracking-tight text-neutral-black sm:text-[28px]">
+          Entrar na Kraken
         </h1>
+        <p className="mb-8 text-center text-sm leading-relaxed text-neutral-gray">
+          Autenticação da app e permissões para sincronizar contas de anúncio Meta no mesmo fluxo com Meta.
+        </p>
 
         <KrakenLoginForm />
       </div>

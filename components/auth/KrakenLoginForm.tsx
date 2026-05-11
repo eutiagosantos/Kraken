@@ -3,24 +3,35 @@
 import { Eye, EyeOff } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { useSupabase } from "@/lib/hooks/useSupabase";
+
+const META_SCOPES = ["email", "public_profile", "ads_read", "ads_management", "business_management"].join(",");
 
 export function KrakenLoginForm() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const supabase = useSupabase();
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [notice, setNotice] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  function handleSubmit(e: FormEvent<HTMLFormElement>) {
+  const nextParam = searchParams.get("next") ?? "/home";
+  const safeNext = nextParam.startsWith("/") && !nextParam.startsWith("//") ? nextParam : "/home";
+
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = e.currentTarget;
     const fd = new FormData(form);
-    const identifier = String(fd.get("identifier") ?? "").trim();
+    const email = String(fd.get("identifier") ?? "").trim();
     const password = String(fd.get("password") ?? "");
 
     const next: Record<string, string> = {};
-    if (!identifier) next.identifier = "Informe seu e-mail ou nome de usuário.";
+    if (!email) next.identifier = "Informe seu e-mail.";
     if (!password) next.password = "Informe sua senha.";
 
     setErrors(next);
@@ -28,16 +39,34 @@ export function KrakenLoginForm() {
 
     if (Object.keys(next).length > 0) return;
 
-    setNotice(
-      "Formulário válido. A integração com o backend ainda não está configurada — em breve você poderá entrar na conta por aqui."
-    );
+    setSubmitting(true);
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    setSubmitting(false);
+
+    if (error) {
+      setNotice(error.message);
+      return;
+    }
+
+    router.push(safeNext);
+    router.refresh();
   }
 
-  function handleMetaLogin() {
+  async function handleMetaLogin() {
     setErrors({});
-    setNotice(
-      "Login com Meta ainda não está configurado — em breve você poderá usar esta opção."
-    );
+    setNotice(null);
+    const origin = window.location.origin;
+    const redirectTo = `${origin}/api/auth/callback?next=${encodeURIComponent(safeNext)}`;
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "facebook",
+      options: {
+        redirectTo,
+        scopes: META_SCOPES,
+      },
+    });
+    if (error) {
+      setNotice(error.message);
+    }
   }
 
   return (
@@ -54,11 +83,11 @@ export function KrakenLoginForm() {
       <Input
         id="login-identifier"
         name="identifier"
-        type="text"
-        autoComplete="username"
-        label="Email ou nome de usuário"
+        type="email"
+        autoComplete="email"
+        label="E-mail"
         labelSrOnly
-        placeholder="Email ou nome de usuário"
+        placeholder="E-mail"
         error={errors.identifier}
         className="border-[#d4d4e8] focus:border-[#6B46E5] focus:ring-[#6B46E5]/25"
       />
@@ -91,18 +120,19 @@ export function KrakenLoginForm() {
 
       <div className="pt-0.5">
         <Link
-          href="#"
+          href="/cadastro"
           className="text-sm font-semibold text-[#6B46E5] underline-offset-2 hover:underline"
         >
-          Esqueceu sua senha ou nome de usuário?
+          Criar conta com e-mail
         </Link>
       </div>
 
       <Button
         type="submit"
+        disabled={submitting}
         className="w-full rounded-[10px] bg-[#6B46E5] py-3 text-base font-semibold text-white shadow-none hover:bg-[#5b21e6]"
       >
-        Continuar
+        {submitting ? "A entrar…" : "Continuar"}
       </Button>
 
       <div className="relative py-2">
@@ -114,12 +144,16 @@ export function KrakenLoginForm() {
 
       <button
         type="button"
-        onClick={handleMetaLogin}
+        onClick={() => void handleMetaLogin()}
         className="flex w-full items-center justify-center gap-2.5 rounded-[10px] border border-neutral-border bg-white py-3 text-base font-semibold text-neutral-black shadow-subtle transition-colors hover:bg-neutral-white"
       >
         <Image src="/meta-symbol.svg" alt="" width={24} height={24} className="shrink-0" />
         Continuar com Meta
       </button>
+
+      <p className="rounded-lg border border-dashboard-border bg-dashboard-base px-3 py-2 text-xs text-neutral-gray">
+        Ao continuar com Meta, entras na Kraken e autorizas o acesso às tuas contas de anúncio para sincronização.
+      </p>
 
       <p className="pt-4 text-center text-sm leading-relaxed text-neutral-gray">
         Ainda não consegue fazer login? Envie-nos um{" "}

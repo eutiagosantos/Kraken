@@ -1,6 +1,5 @@
 "use client";
 
-import { addDays } from "date-fns";
 import { AlertTriangle } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
@@ -9,13 +8,7 @@ import {
   hasActiveContasFilters,
   type ContasPageFiltersState,
 } from "@/lib/contas-meta-filters";
-import {
-  hasTokenExpiringSoonBanner,
-  mockContas,
-  tabCounts,
-  type ContaMeta,
-  type ContaTabId,
-} from "@/lib/mock-contas";
+import { hasTokenExpiringSoonBanner, tabCounts, type ContaMeta, type ContaTabId } from "@/lib/mock-contas";
 import { ConectarContaModal } from "@/components/app/contas-meta/ConectarContaModal";
 import { ContasGrid } from "@/components/app/contas-meta/ContasGrid";
 import { ContasHeader } from "@/components/app/contas-meta/ContasHeader";
@@ -26,12 +19,13 @@ import { EditarContaModal } from "@/components/app/contas-meta/EditarContaModal"
 import { ReconectarModal } from "@/components/app/contas-meta/ReconectarModal";
 import { StatusFilterTabs } from "@/components/app/contas-meta/StatusFilterTabs";
 import { useSuccessFeedback } from "@/components/app/ui/SuccessFeedback";
+import { useContasMeta } from "@/lib/hooks/useContasMeta";
 
 type OpenModal = "conectar" | "editar" | "reconectar" | "desconectar" | null;
 
 export default function ContasMetaPage() {
   const { showSuccess } = useSuccessFeedback();
-  const [contas, setContas] = useState<ContaMeta[]>(() => mockContas);
+  const { contas, refetch } = useContasMeta();
   const [activeTab, setActiveTab] = useState<ContaTabId>("todas");
   const [filters, setFilters] = useState<ContasPageFiltersState>(() => defaultContasFilters());
   const [selectedConta, setSelectedConta] = useState<ContaMeta | null>(null);
@@ -111,9 +105,9 @@ export default function ContasMetaPage() {
       <ConectarContaModal
         open={openModal === "conectar"}
         onClose={() => setOpenModal(null)}
-        onConnect={(nova) => {
-          setContas((prev) => [...prev, nova]);
-          showSuccess("Conta conectada com sucesso.");
+        onConnected={() => {
+          void refetch();
+          showSuccess("Conta sincronizada com sucesso.");
         }}
       />
 
@@ -121,9 +115,22 @@ export default function ContasMetaPage() {
         conta={openModal === "editar" ? modalConta : null}
         open={openModal === "editar"}
         onClose={() => setOpenModal(null)}
-        onSave={(id, patch) => {
-          setContas((prev) => prev.map((c) => (c.id === id ? { ...c, ...patch } : c)));
-          showSuccess("Alterações salvas com sucesso.");
+        onSave={async (id, patch) => {
+          const res = await fetch(`/api/contas-meta/${id}`, {
+            method: "PATCH",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              nickname: patch.nickname,
+              defaultBudget: patch.defaultBudget,
+              defaultStructure: patch.defaultStructure,
+              defaultAntiSpy: patch.defaultAntiSpy,
+            }),
+          });
+          if (res.ok) {
+            await refetch();
+            showSuccess("Alterações salvas com sucesso.");
+          }
         }}
       />
 
@@ -131,20 +138,8 @@ export default function ContasMetaPage() {
         conta={openModal === "reconectar" ? modalConta : null}
         open={openModal === "reconectar"}
         onClose={() => setOpenModal(null)}
-        onReconnect={(id) => {
-          setContas((prev) =>
-            prev.map((c) =>
-              c.id === id
-                ? {
-                    ...c,
-                    status: "ativa",
-                    tokenStatus: "valido",
-                    tokenExpiresAt: addDays(new Date(), 60),
-                    lastActivity: new Date(),
-                  }
-                : c
-            )
-          );
+        onReconnected={() => {
+          void refetch();
           showSuccess("Conta reconectada com sucesso.");
         }}
       />
@@ -153,9 +148,12 @@ export default function ContasMetaPage() {
         conta={openModal === "desconectar" ? modalConta : null}
         open={openModal === "desconectar"}
         onClose={() => setOpenModal(null)}
-        onConfirm={(id) => {
-          setContas((prev) => prev.filter((c) => c.id !== id));
-          showSuccess("Conta desconectada com sucesso.");
+        onConfirm={async (id) => {
+          const res = await fetch(`/api/contas-meta/${id}`, { method: "DELETE", credentials: "include" });
+          if (res.ok) {
+            await refetch();
+            showSuccess("Conta desconectada com sucesso.");
+          }
         }}
       />
     </div>

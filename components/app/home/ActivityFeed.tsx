@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { mockHomeActivities, type ActivityType } from "@/lib/mock-data";
+import type { ActivityType, MockActivity } from "@/lib/mock-data";
 
 function dotClass(type: ActivityType) {
   switch (type) {
@@ -16,12 +16,19 @@ function dotClass(type: ActivityType) {
   }
 }
 
-export function ActivityFeed() {
-  const inner = (
+type Props = {
+  activities?: MockActivity[];
+};
+
+export function ActivityFeed({ activities = [] }: Props) {
+  const inner =
+    activities.length === 0 ? (
+      <p className="py-6 text-center text-sm text-dashboard-muted">Sem atividade recente.</p>
+    ) : (
     <ul className="max-h-[min(420px,55vh)] space-y-0 overflow-y-auto xl:max-h-[520px]">
-      {mockHomeActivities.map((a, i) => (
+      {activities.map((a, i) => (
         <li
-          key={`${a.message}-${i}`}
+          key={a.id ?? `${a.message}-${i}`}
           className={cn(
             "flex gap-3 py-3",
             i > 0 && "border-t border-dashboard-border"
@@ -36,7 +43,7 @@ export function ActivityFeed() {
         </li>
       ))}
     </ul>
-  );
+    );
 
   return (
     <>

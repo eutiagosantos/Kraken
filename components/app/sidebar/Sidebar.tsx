@@ -17,7 +17,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
-import { mockWorkspaces } from "@/lib/mock-data";
+import type { MockWorkspace } from "@/lib/mock-data";
+import { useWorkspaces } from "@/lib/hooks/useWorkspaces";
 import { SidebarItem } from "./SidebarItem";
 import { useSidebar } from "./SidebarContext";
 import { SidebarProfileMenu } from "./SidebarProfileMenu";
@@ -39,6 +40,11 @@ const mainNav = [
 export function Sidebar() {
   const pathname = usePathname();
   const { collapsed, toggleCollapsed, mobileOpen, setMobileOpen, ready } = useSidebar();
+  const { workspaces } = useWorkspaces();
+  const workspaceList: MockWorkspace[] =
+    workspaces.length > 0
+      ? workspaces
+      : [{ id: "loading", name: "Workspace", plan: "…", membersLabel: undefined }];
   const [searchMod, setSearchMod] = useState("⌘");
 
   useEffect(() => {
@@ -67,7 +73,7 @@ export function Sidebar() {
           "bg-dashboard-surface shadow-sidebar md:flex"
         )}
       >
-        <SidebarWorkspaceMenu workspaces={mockWorkspaces} collapsed={collapsed} />
+        <SidebarWorkspaceMenu workspaces={workspaceList} collapsed={collapsed} />
 
         {!collapsed ? (
           <div className="shrink-0 px-3 pb-2 pt-1">
@@ -192,7 +198,7 @@ export function Sidebar() {
               className="fixed bottom-0 left-0 right-0 z-50 max-h-[78vh] rounded-t-2xl border border-dashboard-border bg-dashboard-surface p-4 pb-8 shadow-sidebar md:hidden"
             >
               <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-dashboard-border" />
-              <SidebarWorkspaceMenu workspaces={mockWorkspaces} collapsed={false} />
+              <SidebarWorkspaceMenu workspaces={workspaceList} collapsed={false} />
               <div className="mt-3 px-1">
                 <label htmlFor="sidebar-dashboard-search-mobile" className="sr-only">
                   Buscar

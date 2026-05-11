@@ -1,16 +1,17 @@
 import { z } from "zod";
-import { NextResponse, type NextRequest } from "next/server";
-import { assertProtectedRoute } from "@/lib/api/route-protection";
+import { NextResponse } from "next/server";
+
+import { assertProtectedApiRoute } from "@/lib/api/route-protection";
 import { searchTargetingInterests } from "@/lib/meta/targeting";
 
 const bodySchema = z.object({
   q: z.string().trim().min(2).max(120),
 });
 
-export async function POST(request: NextRequest) {
-  const protection = assertProtectedRoute(request);
+export async function POST(request: Request) {
+  const protection = await assertProtectedApiRoute();
   if (!protection.ok) {
-    return NextResponse.json({ error: protection.message }, { status: protection.status });
+    return protection.response;
   }
 
   const rawBody = await request.json().catch(() => null);

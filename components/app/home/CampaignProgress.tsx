@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { Badge } from "@/components/ui/Badge";
 import { ProgressBar } from "@/components/app/ui/ProgressBar";
-import { mockActiveUploads } from "@/lib/mock-data";
-function statusBadge(status: (typeof mockActiveUploads)[number]["status"]) {
+import type { MockActiveUpload } from "@/lib/mock-data";
+
+function statusBadge(status: MockActiveUpload["status"]) {
   switch (status) {
     case "processing":
       return (
@@ -29,13 +30,20 @@ function statusBadge(status: (typeof mockActiveUploads)[number]["status"]) {
   }
 }
 
-export function CampaignProgress() {
+type Props = {
+  jobs?: MockActiveUpload[];
+};
+
+export function CampaignProgress({ jobs = [] }: Props) {
   return (
     <section className="rounded-card border border-neutral-border bg-neutral-white p-6 shadow-subtle">
       <h3 className="font-display text-xl font-bold tracking-[-0.02em] text-neutral-black">Campanhas em andamento</h3>
       <p className="mt-1 font-ui text-sm text-neutral-silver">Acompanhe uploads e publicações em tempo real</p>
+      {jobs.length === 0 ? (
+        <p className="mt-5 text-sm text-neutral-silver">Sem uploads em curso.</p>
+      ) : (
       <ul className="mt-5 space-y-4">
-        {mockActiveUploads.map((job) => {
+        {jobs.map((job) => {
           const pct = job.total ? Math.round((job.done / job.total) * 100) : 0;
           return (
             <li
@@ -70,6 +78,7 @@ export function CampaignProgress() {
           );
         })}
       </ul>
+      )}
     </section>
   );
 }

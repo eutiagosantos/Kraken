@@ -2,13 +2,11 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { ModalPortal } from "@/components/app/ui/ModalPortal";
-import { addDays } from "date-fns";
 import { AlertTriangle, Check, Eye, EyeOff, Key, Link2, Loader2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { StepIndicator } from "@/components/app/ui/StepIndicator";
 import { cn } from "@/lib/utils";
-import type { ContaMeta } from "@/lib/mock-contas";
 import { AccountAvatar } from "./AccountAvatar";
 import { CONECTAR_META_STEPS } from "./conectar-meta-steps";
 import { ContaStatusBadge } from "./ContaStatusBadge";
@@ -73,63 +71,14 @@ function MethodCard({
   );
 }
 
-function buildNewConta(nickname: string, detectedName: string, detectedId: string): ContaMeta {
-  const id = `CT_${Math.random().toString(36).slice(2, 9)}`;
-  const now = new Date();
-  return {
-    id,
-    accountId: detectedId,
-    name: nickname.trim() || detectedName,
-    status: "ativa",
-    tokenStatus: "valido",
-    tokenExpiresAt: addDays(now, 60),
-    connectedAt: now,
-    lastActivity: now,
-    monthlySpend: 0,
-    spendDelta: "—",
-    spendDeltaType: "neutral",
-    totalAds: 0,
-    adsThisMonth: 0,
-    approvalRate: 100,
-    approvalDelta: "—",
-    defaultBudget: 100,
-    defaultStructure: "1-50-1",
-    defaultAntiSpy: true,
-    spendHistory: [
-      { day: "Seg", value: 0 },
-      { day: "Ter", value: 0 },
-      { day: "Qua", value: 0 },
-      { day: "Qui", value: 0 },
-      { day: "Sex", value: 0 },
-      { day: "Sáb", value: 0 },
-      { day: "Dom", value: 0 },
-    ],
-    spendSeriesExtended: [
-      { day: "Seg", value: 0 },
-      { day: "Ter", value: 0 },
-      { day: "Qua", value: 0 },
-      { day: "Qui", value: 0 },
-      { day: "Sex", value: 0 },
-      { day: "Sáb", value: 0 },
-      { day: "Dom", value: 0 },
-    ],
-    recentUploads: [],
-    adsApproved: 0,
-    adsPending: 0,
-    adsRejected: 0,
-    uploadsInPeriod: 0,
-    uploadsWithError: 0,
-  };
-}
-
 export function ConectarContaModal({
   open,
   onClose,
-  onConnect,
+  onConnected,
 }: {
   open: boolean;
   onClose: () => void;
-  onConnect: (conta: ContaMeta) => void;
+  onConnected: () => void;
 }) {
   const [step, setStep] = useState(1);
   const [method, setMethod] = useState<"token" | "oauth">("token");
@@ -176,13 +125,26 @@ export function ConectarContaModal({
     }, 1500);
   };
 
-  const handleConnect = () => {
+  const handleConnect = async () => {
     setConnecting(true);
-    setTimeout(() => {
-      setConnecting(false);
-      onConnect(buildNewConta(nickname, detectedName, detectedId));
+    try {
+      const res = await fetch("/api/contas-meta", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "sync_with_token", token: token.trim() }),
+      });
+      const json = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) {
+        throw new Error(json.error ?? "Falha ao sincronizar");
+      }
+      onConnected();
       onClose();
-    }, 600);
+    } catch {
+      /* erro mostrado via toast no parent se necessário */
+    } finally {
+      setConnecting(false);
+    }
   };
 
   return (

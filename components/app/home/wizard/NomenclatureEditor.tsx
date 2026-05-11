@@ -1,7 +1,9 @@
-import { useMemo, useState } from "react";
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
 import { Wand2, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import { mockSavedPresets } from "@/lib/mock-data/wizard";
+import type { WizardPreset } from "@/lib/mock-data/wizard";
 import type { NomenclatureToken } from "@/lib/stores/wizardStore";
 import { VariableChip } from "./VariableChip";
 import { VariableGroup } from "./VariableGroup";
@@ -33,6 +35,25 @@ const variableCatalog = {
 
 export function NomenclatureEditor({ tokens, preview, onTokensChange }: NomenclatureEditorProps) {
   const [textValue, setTextValue] = useState("");
+  const [presets, setPresets] = useState<WizardPreset[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/wizard/presets", { credentials: "include" });
+        const json = (await res.json()) as { data?: WizardPreset[] };
+        if (!cancelled && res.ok && json.data) {
+          setPresets(json.data);
+        }
+      } catch {
+        if (!cancelled) setPresets([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const tokenCount = useMemo(() => tokens.length, [tokens.length]);
 
@@ -78,7 +99,7 @@ export function NomenclatureEditor({ tokens, preview, onTokensChange }: Nomencla
           <select
             className="rounded-md border border-gray-300 bg-white px-2 py-1 text-xs text-gray-900"
             onChange={(event) => {
-              const preset = mockSavedPresets.find((item) => item.id === event.target.value);
+              const preset = presets.find((item) => item.id === event.target.value);
               if (preset) onTokensChange(preset.tokens);
             }}
             defaultValue=""
@@ -86,7 +107,7 @@ export function NomenclatureEditor({ tokens, preview, onTokensChange }: Nomencla
             <option value="" disabled>
               Preset
             </option>
-            {mockSavedPresets.map((preset) => (
+            {presets.map((preset) => (
               <option key={preset.id} value={preset.id}>
                 {preset.name}
               </option>
