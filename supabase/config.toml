@@ -336,8 +336,9 @@ email_optional = false
 
 # Facebook / Meta login — hosted: enable in Supabase Dashboard → Authentication → Providers → Facebook.
 # Meta app → Valid OAuth Redirect URIs must include https://<project-ref>.supabase.co/auth/v1/callback
-# (see lib/auth/supabase-oauth-redirects.ts). Local: set enabled = true and env vars; Meta must also allow
-# http://127.0.0.1:54321/auth/v1/callback when using supabase start.
+# (see lib/auth/supabase-oauth-redirects.ts).
+# Local: copy supabase/.env.example → supabase/.env, set SUPABASE_AUTH_EXTERNAL_FACEBOOK_*,
+# set enabled = true below, and add http://127.0.0.1:54321/auth/v1/callback in Meta Valid OAuth Redirect URIs.
 [auth.external.facebook]
 enabled = false
 client_id = "env(SUPABASE_AUTH_EXTERNAL_FACEBOOK_CLIENT_ID)"
