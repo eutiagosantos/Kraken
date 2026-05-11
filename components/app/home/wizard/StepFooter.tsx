@@ -11,7 +11,7 @@ export function StepFooter({ left, right, className }: StepFooterProps) {
   return (
     <footer
       className={cn(
-        "flex items-center justify-between border-t border-[#1e2130] bg-[#141720] px-6 py-4",
+        "flex items-center justify-between border-t border-gray-200 bg-white px-6 py-4",
         className
       )}
     >

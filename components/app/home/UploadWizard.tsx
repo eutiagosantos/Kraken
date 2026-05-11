@@ -16,18 +16,18 @@ const adsetsByStructure: Record<Exclude<Structure, "custom">, number> = {
   "1-50-1": 50,
 };
 
-const darkSelectStyles = {
-  control: (base: object) => ({ ...base, background: "#0d0f14", borderColor: "#1e2130", color: "white" }),
-  menu: (base: object) => ({ ...base, background: "#141720", border: "1px solid #1e2130" }),
+const lightSelectStyles = {
+  control: (base: object) => ({ ...base, background: "#ffffff", borderColor: "#d1d5db", color: "#111827" }),
+  menu: (base: object) => ({ ...base, background: "#ffffff", border: "1px solid #d1d5db" }),
   option: (base: object, state: { isFocused: boolean }) => ({
     ...base,
-    background: state.isFocused ? "rgba(113,50,245,0.12)" : "transparent",
-    color: "white",
+    background: state.isFocused ? "rgba(113,50,245,0.1)" : "transparent",
+    color: "#111827",
   }),
-  multiValue: (base: object) => ({ ...base, background: "rgba(113,50,245,0.2)" }),
-  multiValueLabel: (base: object) => ({ ...base, color: "#9b72ff" }),
-  input: (base: object) => ({ ...base, color: "white" }),
-  singleValue: (base: object) => ({ ...base, color: "white" }),
+  multiValue: (base: object) => ({ ...base, background: "rgba(113,50,245,0.15)" }),
+  multiValueLabel: (base: object) => ({ ...base, color: "#5b21b6" }),
+  input: (base: object) => ({ ...base, color: "#111827" }),
+  singleValue: (base: object) => ({ ...base, color: "#111827" }),
 };
 
 export function UploadWizard() {
@@ -115,7 +115,7 @@ export function UploadWizard() {
   };
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-[#1e2130] bg-[#0d0f14]">
+    <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
       <WizardStepIndicator currentStep={wizard.step} />
       <AnimatePresence mode="wait">
         {wizard.step === 1 ? (
@@ -207,7 +207,7 @@ export function UploadWizard() {
               budget={wizard.budget}
               estimatedCampaigns={estimatedCampaigns}
               publishing={publishing}
-              darkSelectStyles={darkSelectStyles}
+              darkSelectStyles={lightSelectStyles}
               onSetPublicoTab={setPublicoTab}
               onSetPublico={wizard.setPublico}
               onLoadPublico={(publico) => wizard.setPublico(publico)}

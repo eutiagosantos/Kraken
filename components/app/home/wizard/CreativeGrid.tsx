@@ -16,8 +16,8 @@ export function CreativeGrid({ creatives, onRemove }: CreativeGridProps) {
   return (
     <div className="mt-4 grid grid-cols-2 gap-3 xl:grid-cols-4">
       {creatives.map((creative) => (
-        <article key={creative.id} className="group overflow-hidden rounded-lg border border-[#1e2130] bg-[#141720]">
-          <div className="relative aspect-square bg-[#0d0f14]">
+        <article key={creative.id} className="group overflow-hidden rounded-lg border border-gray-200 bg-white">
+          <div className="relative aspect-square bg-gray-100">
             {creative.type === "video" ? (
               <>
                 <video src={creative.preview} className="h-full w-full object-cover opacity-70" muted />
@@ -37,10 +37,10 @@ export function CreativeGrid({ creatives, onRemove }: CreativeGridProps) {
             </button>
           </div>
           <div className="p-2">
-            <p className="truncate text-xs font-medium text-white" title={creative.name}>
+            <p className="truncate text-xs font-medium text-gray-900" title={creative.name}>
               {creative.name}
             </p>
-            <p className="text-[11px] text-[#686b82]">{formatSize(creative.size)}</p>
+            <p className="text-[11px] text-gray-500">{formatSize(creative.size)}</p>
           </div>
         </article>
       ))}

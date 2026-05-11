@@ -93,8 +93,8 @@ export function Step2Config(props: Step2ConfigProps) {
   return (
     <>
       <div className="space-y-5 p-6">
-        <section className="rounded-xl border border-[#1e2130] bg-[#141720] p-4">
-          <h4 className="text-xs font-semibold uppercase tracking-wider text-[#686b82]">Tipo de campanha</h4>
+        <section className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-500">Tipo de campanha</h4>
           <div className="mt-3 grid gap-3 lg:grid-cols-3">
             <CampaignTypeCard
               selected={campaignType === "CBO"}
@@ -125,26 +125,26 @@ export function Step2Config(props: Step2ConfigProps) {
           </div>
         </section>
 
-        <section className="grid gap-3 rounded-xl border border-[#1e2130] bg-[#141720] p-4 lg:grid-cols-[1fr_180px]">
+        <section className="grid gap-3 rounded-xl border border-gray-200 bg-gray-50 p-4 lg:grid-cols-[1fr_180px]">
           <div>
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-[#686b82]">Orçamento da campanha</h4>
-            <div className="mt-2 flex items-center rounded-lg border border-[#1e2130] bg-[#0d0f14]">
-              <span className="px-3 text-sm text-[#686b82]">R$</span>
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-500">Orçamento da campanha</h4>
+            <div className="mt-2 flex items-center rounded-lg border border-gray-300 bg-white">
+              <span className="px-3 text-sm text-gray-500">R$</span>
               <input
                 type="number"
                 min={6}
                 value={budget}
                 onChange={(event) => onSetBudget(Number(event.target.value))}
-                className="w-full bg-transparent py-2 text-sm text-white outline-none"
+                className="w-full bg-transparent py-2 text-sm text-gray-900 outline-none"
               />
             </div>
           </div>
           <div>
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-[#686b82]">Periodicidade</h4>
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-500">Periodicidade</h4>
             <select
               value={budgetPeriod}
               onChange={(event) => onSetBudgetPeriod(event.target.value as BudgetPeriod)}
-              className="mt-2 w-full rounded-lg border border-[#1e2130] bg-[#0d0f14] px-2 py-2 text-sm text-white"
+              className="mt-2 w-full rounded-lg border border-gray-300 bg-white px-2 py-2 text-sm text-gray-900"
             >
               <option value="daily">Diário</option>
               <option value="lifetime">Vitalício</option>
@@ -152,8 +152,8 @@ export function Step2Config(props: Step2ConfigProps) {
           </div>
         </section>
 
-        <section className="rounded-xl border border-[#1e2130] bg-[#141720] p-4">
-          <h4 className="text-xs font-semibold uppercase tracking-wider text-[#686b82]">Estratégia de lance</h4>
+        <section className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-500">Estratégia de lance</h4>
           <div className="mt-3 grid gap-3 lg:grid-cols-2">
             <BidStrategyCard
               selected={bidStrategy === "LOWEST_COST"}
@@ -190,9 +190,9 @@ export function Step2Config(props: Step2ConfigProps) {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -8 }}
-                className="mt-3 rounded-lg border border-[#1e2130] bg-[#0d0f14] p-3"
+                className="mt-3 rounded-lg border border-gray-300 bg-white p-3"
               >
-                <label className="text-xs uppercase tracking-wider text-[#686b82]">
+                <label className="text-xs uppercase tracking-wider text-gray-500">
                   {bidStrategy === "ROAS" ? "Meta de ROAS" : "Limite de lance (BRL)"}
                 </label>
                 <input
@@ -203,15 +203,15 @@ export function Step2Config(props: Step2ConfigProps) {
                       ? onSetRoasTarget(event.target.value ? Number(event.target.value) : undefined)
                       : onSetBidLimit(event.target.value ? Number(event.target.value) : undefined)
                   }
-                  className="mt-2 w-44 rounded-md border border-[#1e2130] bg-[#141720] px-2 py-1.5 text-sm text-white"
+                  className="mt-2 w-44 rounded-md border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-900"
                 />
               </motion.div>
             ) : null}
           </AnimatePresence>
         </section>
 
-        <section className="rounded-xl border border-[#1e2130] bg-[#141720] p-4">
-          <h4 className="mb-3 text-xs font-semibold uppercase tracking-wider text-[#686b82]">Nomenclatura</h4>
+        <section className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+          <h4 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-500">Nomenclatura</h4>
           <NomenclatureEditor
             tokens={nomenclatureTokens}
             preview={nomenclaturePreview}
@@ -222,13 +222,13 @@ export function Step2Config(props: Step2ConfigProps) {
           />
         </section>
 
-        <section className="grid gap-4 rounded-xl border border-[#1e2130] bg-[#141720] p-4 lg:grid-cols-2">
+        <section className="grid gap-4 rounded-xl border border-gray-200 bg-gray-50 p-4 lg:grid-cols-2">
           <div>
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-[#686b82]">Objetivo</h4>
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-500">Objetivo</h4>
             <select
               value={objective}
               onChange={(event) => onSetObjective(event.target.value)}
-              className="mt-2 w-full rounded-lg border border-[#1e2130] bg-[#0d0f14] px-2 py-2 text-sm text-white"
+              className="mt-2 w-full rounded-lg border border-gray-300 bg-white px-2 py-2 text-sm text-gray-900"
             >
               {objectives.map((item) => (
                 <option key={item} value={item}>
@@ -238,11 +238,11 @@ export function Step2Config(props: Step2ConfigProps) {
             </select>
           </div>
           <div>
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-[#686b82]">Pixel</h4>
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-500">Pixel</h4>
             <select
               value={pixelId}
               onChange={(event) => onSetPixelId(event.target.value)}
-              className="mt-2 w-full rounded-lg border border-[#1e2130] bg-[#0d0f14] px-2 py-2 text-sm text-white"
+              className="mt-2 w-full rounded-lg border border-gray-300 bg-white px-2 py-2 text-sm text-gray-900"
             >
               <option value="">Selecionar pixel...</option>
               {pixelOptions.map((pixel) => (
@@ -253,7 +253,7 @@ export function Step2Config(props: Step2ConfigProps) {
             </select>
           </div>
           <div>
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-[#686b82]">Estrutura</h4>
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-500">Estrutura</h4>
             <div className="mt-2 grid grid-cols-4 gap-2">
               {(["1-1-1", "1-3-5", "1-50-1", "custom"] as Structure[]).map((item) => (
                 <button
@@ -263,7 +263,7 @@ export function Step2Config(props: Step2ConfigProps) {
                   className={`rounded-md border px-2 py-1.5 text-xs ${
                     item === structure
                       ? "border-[#7132f5] bg-[#7132f5] text-white"
-                      : "border-[#1e2130] bg-[#0d0f14] text-[#686b82]"
+                      : "border-gray-300 bg-white text-gray-600"
                   }`}
                 >
                   {item}
@@ -279,14 +279,14 @@ export function Step2Config(props: Step2ConfigProps) {
                     min={1}
                     value={customStructure[key]}
                     onChange={(event) => onSetCustomStructure({ [key]: Number(event.target.value) })}
-                    className="rounded-md border border-[#1e2130] bg-[#0d0f14] px-2 py-1.5 text-sm text-white"
+                    className="rounded-md border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-900"
                   />
                 ))}
               </div>
             ) : null}
           </div>
           <div>
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-[#686b82]">Status inicial</h4>
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-500">Status inicial</h4>
             <div className="mt-2 flex gap-2">
               {(["ACTIVE", "PAUSED"] as WizardStatus[]).map((value) => (
                 <button
@@ -296,7 +296,7 @@ export function Step2Config(props: Step2ConfigProps) {
                   className={`rounded-md border px-3 py-1.5 text-sm ${
                     status === value
                       ? "border-[#7132f5] bg-[rgba(113,50,245,0.2)] text-white"
-                      : "border-[#1e2130] bg-[#0d0f14] text-[#686b82]"
+                      : "border-gray-300 bg-white text-gray-600"
                   }`}
                 >
                   {value === "ACTIVE" ? "Ativa" : "Pausada"}

@@ -11,12 +11,12 @@ export function PublicosSalvosGrid({ publicos, onSelect, onDelete }: PublicosSal
   return (
     <div className="grid gap-3 md:grid-cols-2">
       {publicos.map((publico) => (
-        <article key={publico.id} className="rounded-xl border border-[#1e2130] bg-[#141720] p-4">
-          <p className="text-sm font-semibold text-white">{publico.name}</p>
-          <p className="mt-1 text-xs text-[#686b82]">
+        <article key={publico.id} className="rounded-xl border border-gray-200 bg-white p-4">
+          <p className="text-sm font-semibold text-gray-900">{publico.name}</p>
+          <p className="mt-1 text-xs text-gray-500">
             {publico.ageMin}–{publico.ageMax} anos • {publico.gender}
           </p>
-          <p className="mt-2 text-xs text-[#686b82]">
+          <p className="mt-2 text-xs text-gray-500">
             {publico.locations.length
               ? publico.locations.map((location) => location.name).join(", ")
               : "Sem localidade definida"}

@@ -19,23 +19,23 @@ export function AccountSelectItem({ account, selected, onToggle }: AccountSelect
         "flex w-full items-center gap-3 rounded-lg border p-3 text-left transition-colors",
         selected
           ? "border-[#7132f5] bg-[rgba(113,50,245,0.08)]"
-          : "border-[#1e2130] bg-[#141720] hover:border-[#2a2f45]"
+          : "border-gray-300 bg-white hover:border-gray-400"
       )}
     >
       <span
         className={cn(
           "flex h-5 w-5 items-center justify-center rounded border text-xs",
-          selected ? "border-[#7132f5] bg-[#7132f5] text-white" : "border-[#2a2f45] text-[#686b82]"
+          selected ? "border-[#7132f5] bg-[#7132f5] text-white" : "border-gray-300 text-gray-500"
         )}
       >
         {selected ? <Check className="h-3.5 w-3.5" /> : null}
       </span>
-      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#1e2130] text-sm font-semibold text-white">
+      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-100 text-sm font-semibold text-gray-700">
         {initial}
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-medium text-white">{account.name}</span>
-        <span className="block text-xs text-[#686b82]">{account.id}</span>
+        <span className="block truncate text-sm font-medium text-gray-900">{account.name}</span>
+        <span className="block text-xs text-gray-500">{account.id}</span>
       </span>
       <span
         className={cn(
