@@ -1,6 +1,7 @@
 import type { WizardPublishPayloadInput } from "@/lib/meta/map-wizard-to-graph";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { WIZARD_CREATIVES_BUCKET } from "@/lib/wizard/wizard-creatives-bucket";
+import * as tus from "tus-js-client";
 import type { MockAccount } from "@/lib/mock-data";
 import {
   type WizardInterestOption,
@@ -59,27 +60,108 @@ function extensionFromFileName(name: string): string {
   return ext.startsWith(".") ? ext : `.${ext}`;
 }
 
-async function uploadCreativesToWizardBucket(files: File[], userId: string): Promise<string[]> {
-  const supabase = createBrowserSupabaseClient();
-  const session = crypto.randomUUID();
-  const base = `${userId}/${session}`;
-  const paths: string[] = [];
+const MAX_FILE_BYTES =
+  typeof process !== "undefined" && process.env.NEXT_PUBLIC_UPLOAD_MAX_BYTES
+    ? Number(process.env.NEXT_PUBLIC_UPLOAD_MAX_BYTES)
+    : 500 * 1024 * 1024 * 1024; // 500 GB
 
-  for (let i = 0; i < files.length; i++) {
-    const path = `${base}/creative_${i}${extensionFromFileName(files[i].name)}`;
-    const { error } = await supabase.storage.from(WIZARD_CREATIVES_BUCKET).upload(path, files[i], {
-      cacheControl: "3600",
-      upsert: false,
-      contentType: files[i].type || undefined,
+const TUS_CHUNK_SIZE = 6 * 1024 * 1024; // 6 MB — required by Supabase TUS
+
+function tusEndpoint(supabaseUrl: string): string {
+  // Use direct storage hostname for optimal large-file performance
+  const url = new URL(supabaseUrl);
+  url.hostname = url.hostname.replace(/^([^.]+)\.supabase\.co$/, "$1.storage.supabase.co");
+  return `${url.origin}/storage/v1/upload/resumable`;
+}
+
+function uploadFileTus(
+  file: File,
+  path: string,
+  accessToken: string,
+  supabaseUrl: string,
+  anonKey: string
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const upload = new tus.Upload(file, {
+      endpoint: tusEndpoint(supabaseUrl),
+      retryDelays: [0, 3000, 5000, 10000, 20000],
+      headers: {
+        authorization: `Bearer ${accessToken}`,
+        apikey: anonKey,
+      },
+      uploadDataDuringCreation: true,
+      removeFingerprintOnSuccess: true,
+      chunkSize: TUS_CHUNK_SIZE,
+      metadata: {
+        bucketName: WIZARD_CREATIVES_BUCKET,
+        objectName: path,
+        contentType: file.type || "application/octet-stream",
+        cacheControl: "3600",
+      },
+      onError(error) {
+        reject(new Error(`Falha ao enviar "${file.name}": ${error.message ?? String(error)}`));
+      },
+      onSuccess() {
+        resolve();
+      },
     });
-    if (error) {
-      for (const p of paths) {
-        await supabase.storage.from(WIZARD_CREATIVES_BUCKET).remove([p]);
-      }
-      throw new Error(error.message);
+
+    upload.findPreviousUploads().then((previous) => {
+      if (previous.length) upload.resumeFromPreviousUpload(previous[0]);
+      upload.start();
+    });
+  });
+}
+
+async function uploadCreativesToWizardBucket(files: File[], userId: string): Promise<string[]> {
+  for (const file of files) {
+    if (file.size > MAX_FILE_BYTES) {
+      const limitGb = (MAX_FILE_BYTES / (1024 ** 3)).toFixed(0);
+      const sizeGb = (file.size / (1024 ** 3)).toFixed(2);
+      throw new Error(
+        `O arquivo "${file.name}" (${sizeGb} GB) ultrapassa o limite de ${limitGb} GB.`
+      );
     }
-    paths.push(path);
   }
+
+  const supabase = createBrowserSupabaseClient();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (!session) throw new Error("Sessão em falta. Inicia sessão para enviar ficheiros.");
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+  const sessionUuid = crypto.randomUUID();
+  const base = `${userId}/${sessionUuid}`;
+
+  const paths = files.map((f, i) => `${base}/creative_${i}${extensionFromFileName(f.name)}`);
+
+  const results = await Promise.allSettled(
+    files.map((file, i) =>
+      uploadFileTus(file, paths[i], session.access_token, supabaseUrl, anonKey)
+    )
+  );
+
+  const failedIndexes = results
+    .map((r, i) => (r.status === "rejected" ? i : -1))
+    .filter((i) => i >= 0);
+
+  if (failedIndexes.length > 0) {
+    // Rollback successful uploads
+    const successPaths = results
+      .map((r, i) => (r.status === "fulfilled" ? paths[i] : null))
+      .filter(Boolean) as string[];
+    if (successPaths.length > 0) {
+      await supabase.storage.from(WIZARD_CREATIVES_BUCKET).remove(successPaths);
+    }
+    const errors = failedIndexes
+      .map((i) => (results[i] as PromiseRejectedResult).reason as Error)
+      .map((e) => e.message)
+      .join("; ");
+    throw new Error(errors);
+  }
+
   return paths;
 }
 
