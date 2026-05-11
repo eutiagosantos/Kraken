@@ -5,6 +5,7 @@ import { ptBR } from "date-fns/locale";
 import {
   AlertTriangle,
   BarChart2,
+  Check,
   CheckCircle,
   Clock,
   Copy,
@@ -16,7 +17,7 @@ import {
   ShieldCheck,
   ShieldX,
 } from "lucide-react";
-import { motion, Variants } from "framer-motion";
+import { AnimatePresence, motion, Variants } from "framer-motion";
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
@@ -177,17 +178,38 @@ export function ContaCard({
               <span>ID: {conta.accountId}</span>
               <button
                 type="button"
-                className="rounded p-0.5 text-neutral-gray hover:bg-dashboard-sidebar-ghost hover:text-brand-purple"
-                aria-label="Copiar ID"
+                className={cn(
+                  "rounded p-0.5 transition-colors",
+                  copied
+                    ? "text-semantic-green"
+                    : "text-neutral-gray hover:bg-dashboard-sidebar-ghost hover:text-brand-purple"
+                )}
+                aria-label={copied ? "ID copiado" : "Copiar ID"}
+                aria-live="polite"
                 onClick={async () => {
                   await navigator.clipboard.writeText(conta.accountId);
                   setCopied(true);
                   setTimeout(() => setCopied(false), 1500);
                 }}
               >
-                <Copy className="h-3.5 w-3.5" />
+                {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
                 <span className="sr-only">{copied ? "Copiado" : "Copiar"}</span>
               </button>
+              <AnimatePresence>
+                {copied ? (
+                  <motion.span
+                    key="copied-pill"
+                    initial={{ opacity: 0, y: -2 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -2 }}
+                    transition={{ duration: 0.15 }}
+                    className="inline-flex items-center rounded-full bg-semantic-green-bg px-1.5 py-0.5 text-[10px] font-medium text-semantic-green"
+                    role="status"
+                  >
+                    Copiado
+                  </motion.span>
+                ) : null}
+              </AnimatePresence>
             </p>
           </div>
         </div>

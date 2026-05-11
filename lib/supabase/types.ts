@@ -211,6 +211,7 @@ export interface Database {
           trend: Json;
           creatives: Json;
           errors: Json | null;
+          meta_ids: Json | null;
         };
         Insert: {
           id?: string;
@@ -230,6 +231,7 @@ export interface Database {
           trend?: Json;
           creatives?: Json;
           errors?: Json | null;
+          meta_ids?: Json | null;
         };
         Update: {
           id?: string;
@@ -249,6 +251,7 @@ export interface Database {
           trend?: Json;
           creatives?: Json;
           errors?: Json | null;
+          meta_ids?: Json | null;
         };
         Relationships: [];
       };
