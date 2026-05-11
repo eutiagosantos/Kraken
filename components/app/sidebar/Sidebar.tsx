@@ -6,12 +6,11 @@ import {
   ChevronLeft,
   ChevronRight,
   HelpCircle,
+  House,
   Layers,
-  LayoutDashboard,
   Search,
   Settings,
   Upload,
-  Users,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -28,12 +27,13 @@ import {
   SIDEBAR_WIDTH_EXPANDED_PX,
 } from "./sidebar-layout";
 import { SidebarWorkspaceMenu } from "./SidebarWorkspaceMenu";
+import { MetaNavIcon } from "./MetaNavIcon";
 
 const mainNav = [
-  { href: "/home", label: "Home", icon: LayoutDashboard, shortcut: "⌘1" },
+  { href: "/home", label: "Home", icon: House, shortcut: "⌘1" },
   { href: "/upload", label: "Novo Upload", icon: Upload, shortcut: "⌘2" },
   { href: "/campanhas", label: "Campanhas", icon: Layers, shortcut: "⌘3" },
-  { href: "/contas-meta", label: "Contas Meta", icon: Users, shortcut: "⌘4" },
+  { href: "/contas-meta", label: "Contas Meta", icon: MetaNavIcon, shortcut: "⌘4" },
   { href: "/relatorios", label: "Relatórios", icon: BarChart2, shortcut: "⌘5" },
 ] as const;
 

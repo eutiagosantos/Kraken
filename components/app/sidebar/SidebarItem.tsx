@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import type { LucideIcon } from "lucide-react";
+import type { ComponentType, SVGProps } from "react";
 import { cn } from "@/lib/utils";
+
+export type SidebarNavIcon = ComponentType<SVGProps<SVGSVGElement>>;
 
 export function SidebarItem({
   href,
@@ -15,7 +17,7 @@ export function SidebarItem({
 }: {
   href: string;
   label: string;
-  icon: LucideIcon;
+  icon: SidebarNavIcon;
   active: boolean;
   collapsed: boolean;
   shortcut?: string;

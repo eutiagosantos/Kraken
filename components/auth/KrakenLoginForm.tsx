@@ -56,7 +56,7 @@ export function KrakenLoginForm() {
   async function handleMetaLogin() {
     setErrors({});
     setNotice(null);
-    const redirectTo = buildOAuthReturnRedirectTo(window.location.origin, safeNext);
+    const redirectTo = buildOAuthReturnRedirectTo(window.location.origin, "/home");
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "facebook",
       options: {
