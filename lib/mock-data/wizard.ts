@@ -48,7 +48,17 @@ export const variablePreviewValues: Record<string, string> = {
 
 export function buildPreview(tokens: NomenclatureToken[]): string {
   return tokens
-    .map((token) => (token.type === "variable" ? variablePreviewValues[token.value] ?? token.value : token.value))
+    .map((token, index) => {
+      if (token.type !== "variable") {
+        return token.value;
+      }
+
+      const resolvedValue = variablePreviewValues[token.value] ?? token.value;
+      const nextToken = tokens[index + 1];
+      const separator = nextToken?.type === "variable" ? "-" : "";
+
+      return `[${resolvedValue}]${separator}`;
+    })
     .join("");
 }
 

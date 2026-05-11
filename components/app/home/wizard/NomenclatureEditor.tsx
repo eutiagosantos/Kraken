@@ -102,7 +102,7 @@ export function NomenclatureEditor({ tokens, preview, onTokensChange }: Nomencla
                 className="inline-flex items-center gap-1 rounded-md border border-gray-300 px-2 py-1 text-xs font-semibold text-gray-900"
                 style={{ backgroundColor: token.type === "variable" ? `${token.color ?? "#7132f5"}33` : "#ffffff" }}
               >
-                {token.type === "variable" ? token.label ?? token.value : token.value}
+                {token.type === "variable" ? `[${token.label ?? token.value}]` : token.value}
                 <button type="button" onClick={() => removeToken(index)} className="text-gray-500 hover:text-gray-900">
                   <X className="h-3.5 w-3.5" />
                 </button>
