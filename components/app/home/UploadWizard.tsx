@@ -2,7 +2,7 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
-import type { WizardPublishPayload } from "@/lib/meta/map-wizard-to-graph";
+import type { WizardPublishPayloadInput } from "@/lib/meta/map-wizard-to-graph";
 import type { NomenclaturePreviewContext } from "@/lib/wizard/nomenclature-preview";
 import { ProgressBar } from "@/components/app/ui/ProgressBar";
 import { mockWizardDataAdapter } from "@/lib/wizard/data-adapter";
@@ -142,7 +142,7 @@ export function UploadWizard() {
       setPublishProgress((progress) => (progress < 90 ? progress + 5 + Math.random() * 6 : progress));
     }, 220);
     try {
-      const snapshot: WizardPublishPayload = {
+      const snapshot: WizardPublishPayloadInput = {
         selectedAccountIds: wizard.selectedAccountIds,
         creatives: wizard.creatives.map((c) => ({ id: c.id, name: c.name, type: c.type })),
         campaignType: wizard.campaignType,

@@ -1,4 +1,6 @@
-import type { WizardPublishPayload } from "@/lib/meta/map-wizard-to-graph";
+import type { WizardPublishPayloadInput } from "@/lib/meta/map-wizard-to-graph";
+import { createBrowserSupabaseClient } from "@/lib/supabase/client";
+import { WIZARD_CREATIVES_BUCKET } from "@/lib/wizard/wizard-creatives-bucket";
 import type { MockAccount } from "@/lib/mock-data";
 import {
   type WizardInterestOption,
@@ -9,9 +11,9 @@ import {
 import type { Publico } from "@/lib/stores/wizardStore";
 
 export interface PublishPayload {
-  /** Must match `wizardPublishPayloadSchema` (validated server-side). */
-  snapshot: WizardPublishPayload;
-  /** Same order as `snapshot.creatives` — binary files for multipart `creative_N`. */
+  /** Validated server-side together with `creativeStoragePaths` after Supabase upload. */
+  snapshot: WizardPublishPayloadInput;
+  /** Same order as `snapshot.creatives` — uploaded to Storage before `POST /api/wizard/publish`. */
   creativeFiles: File[];
 }
 
@@ -47,6 +49,38 @@ async function parseJson<T>(res: Response): Promise<T> {
     throw new Error("Missing data in response");
   }
   return json.data;
+}
+
+function extensionFromFileName(name: string): string {
+  const i = name.lastIndexOf(".");
+  if (i <= 0 || i === name.length - 1) return ".jpg";
+  const ext = name.slice(i).replace(/[^a-zA-Z0-9.]/g, "");
+  if (!ext || ext === ".") return ".jpg";
+  return ext.startsWith(".") ? ext : `.${ext}`;
+}
+
+async function uploadCreativesToWizardBucket(files: File[], userId: string): Promise<string[]> {
+  const supabase = createBrowserSupabaseClient();
+  const session = crypto.randomUUID();
+  const base = `${userId}/${session}`;
+  const paths: string[] = [];
+
+  for (let i = 0; i < files.length; i++) {
+    const path = `${base}/creative_${i}${extensionFromFileName(files[i].name)}`;
+    const { error } = await supabase.storage.from(WIZARD_CREATIVES_BUCKET).upload(path, files[i], {
+      cacheControl: "3600",
+      upsert: false,
+      contentType: files[i].type || undefined,
+    });
+    if (error) {
+      for (const p of paths) {
+        await supabase.storage.from(WIZARD_CREATIVES_BUCKET).remove([p]);
+      }
+      throw new Error(error.message);
+    }
+    paths.push(path);
+  }
+  return paths;
 }
 
 export function createFetchWizardDataAdapter(): WizardDataAdapter {
@@ -85,15 +119,22 @@ export function createFetchWizardDataAdapter(): WizardDataAdapter {
       return parseJson<Publico>(res);
     },
     async publishCampaigns(payload) {
-      const form = new FormData();
-      form.append("payload", JSON.stringify(payload.snapshot));
-      payload.creativeFiles.forEach((file, i) => {
-        form.append(`creative_${i}`, file, file.name);
-      });
+      const supabase = createBrowserSupabaseClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error("Sessão em falta. Inicia sessão para publicar.");
+      }
+
+      const creativeStoragePaths = await uploadCreativesToWizardBucket(payload.creativeFiles, user.id);
+      const body = { ...payload.snapshot, creativeStoragePaths };
+
       const res = await fetch("/api/wizard/publish", {
         ...opts,
         method: "POST",
-        body: form,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
       });
       const raw = await res.text();
 

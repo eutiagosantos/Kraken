@@ -13,6 +13,9 @@ import {
 const basePayload = {
   selectedAccountIds: ["123"],
   creatives: [{ id: "c1", name: "a.png", type: "image" as const }],
+  creativeStoragePaths: [
+    "00000000-0000-4000-8000-000000000001/aaaaaaaa-bbbb-4ccc-dddd-eeeeeeeeeeee/creative_0.png",
+  ],
   campaignType: "CBO" as const,
   budget: 12.5,
   budgetPeriod: "daily" as const,
@@ -41,7 +44,27 @@ describe("wizardPublishPayloadSchema", () => {
   it("parses minimal valid payload", () => {
     const p = wizardPublishPayloadSchema.parse(basePayload);
     expect(p.creatives).toHaveLength(1);
+    expect(p.creativeStoragePaths).toHaveLength(1);
     expect(p.antiSpy).toBe(true);
+  });
+
+  it("rejects when creativeStoragePaths length mismatches creatives", () => {
+    const res = wizardPublishPayloadSchema.safeParse({
+      ...basePayload,
+      creativeStoragePaths: [
+        "00000000-0000-4000-8000-000000000001/uuuuuuuu-uuuu-4uuu-uuuu-uuuuuuuuuuuu/a.png",
+        "00000000-0000-4000-8000-000000000001/uuuuuuuu-uuuu-4uuu-uuuu-uuuuuuuuuuuu/b.png",
+      ],
+    });
+    expect(res.success).toBe(false);
+  });
+
+  it("rejects paths with traversal segments", () => {
+    const res = wizardPublishPayloadSchema.safeParse({
+      ...basePayload,
+      creativeStoragePaths: ["user/../evil/creative_0.png"],
+    });
+    expect(res.success).toBe(false);
   });
 });
 

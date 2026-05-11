@@ -27,34 +27,49 @@ const creativeMetaSchema = z.object({
   type: z.enum(["image", "video"]),
 });
 
-/** JSON field `payload` inside multipart publish request */
-export const wizardPublishPayloadSchema = z.object({
-  selectedAccountIds: z.array(z.string().min(1)),
-  creatives: z.array(creativeMetaSchema).min(1),
-  campaignType: z.enum(["CBO", "ABO", "DPA"]),
-  budget: z.number().positive(),
-  budgetPeriod: z.enum(["daily", "lifetime"]),
-  bidStrategy: z.enum(["LOWEST_COST", "BID_CAP", "COST_CAP", "ROAS"]),
-  bidLimit: z.number().optional(),
-  roasTarget: z.number().optional(),
-  objective: z.string().min(1),
-  pixelId: z.string(),
-  status: z.enum(["ACTIVE", "PAUSED"]),
-  structure: z.enum(["1-1-1", "1-3-5", "1-50-1", "custom"]),
-  customStructure: z.object({
-    campaigns: z.number().int().positive(),
-    adsets: z.number().int().positive(),
-    ads: z.number().int().positive(),
-  }),
-  nomenclaturePreview: z.string(),
-  publico: publicoSchema,
-  antiSpy: z.boolean().optional().default(true),
-  workspaceId: z.string().uuid().nullable().optional(),
-  /** Facebook Page ID for object_story_spec (optional if META_DEFAULT_PAGE_ID is set server-side) */
-  pageId: z.string().min(1).optional(),
-});
+const storagePathString = z
+  .string()
+  .min(1)
+  .refine((s) => !s.includes("..") && !s.startsWith("/"), "caminho inválido");
+
+/** JSON body for `POST /api/wizard/publish` (creatives live in Supabase Storage; paths listed here). */
+export const wizardPublishPayloadSchema = z
+  .object({
+    selectedAccountIds: z.array(z.string().min(1)),
+    creatives: z.array(creativeMetaSchema).min(1),
+    campaignType: z.enum(["CBO", "ABO", "DPA"]),
+    budget: z.number().positive(),
+    budgetPeriod: z.enum(["daily", "lifetime"]),
+    bidStrategy: z.enum(["LOWEST_COST", "BID_CAP", "COST_CAP", "ROAS"]),
+    bidLimit: z.number().optional(),
+    roasTarget: z.number().optional(),
+    objective: z.string().min(1),
+    pixelId: z.string(),
+    status: z.enum(["ACTIVE", "PAUSED"]),
+    structure: z.enum(["1-1-1", "1-3-5", "1-50-1", "custom"]),
+    customStructure: z.object({
+      campaigns: z.number().int().positive(),
+      adsets: z.number().int().positive(),
+      ads: z.number().int().positive(),
+    }),
+    nomenclaturePreview: z.string(),
+    publico: publicoSchema,
+    antiSpy: z.boolean().optional().default(true),
+    workspaceId: z.string().uuid().nullable().optional(),
+    /** Facebook Page ID for object_story_spec (optional if META_DEFAULT_PAGE_ID is set server-side) */
+    pageId: z.string().min(1).optional(),
+    /** Object paths in bucket `wizard_creatives`, same order as `creatives` (browser upload, server download). */
+    creativeStoragePaths: z.array(storagePathString).min(1),
+  })
+  .refine((d) => d.creativeStoragePaths.length === d.creatives.length, {
+    message: "creativeStoragePaths deve ter uma entrada por criativo.",
+    path: ["creativeStoragePaths"],
+  });
 
 export type WizardPublishPayload = z.infer<typeof wizardPublishPayloadSchema>;
+
+/** Client-side wizard state before storage upload adds `creativeStoragePaths`. */
+export type WizardPublishPayloadInput = Omit<WizardPublishPayload, "creativeStoragePaths">;
 
 export type StructureCounts = {
   /** Meta campaigns we create per account×creative (always 1 per publish unit in MVP) */

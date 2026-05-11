@@ -85,6 +85,9 @@ describe("runWizardPublish", () => {
     const payload = wizardPublishPayloadSchema.parse({
       selectedAccountIds: ["111"],
       creatives: [{ id: "c1", name: "a.png", type: "image" }],
+      creativeStoragePaths: [
+        "00000000-0000-4000-8000-000000000001/aaaaaaaa-bbbb-4ccc-dddd-eeeeeeeeeeee/creative_0.png",
+      ],
       campaignType: "CBO",
       budget: 15,
       budgetPeriod: "daily",
@@ -122,6 +125,9 @@ describe("runWizardPublish", () => {
     const payload = wizardPublishPayloadSchema.parse({
       selectedAccountIds: ["111"],
       creatives: [{ id: "c1", name: "a.png", type: "image" }],
+      creativeStoragePaths: [
+        "00000000-0000-4000-8000-000000000001/bbbbbbbb-bbbb-4ccc-dddd-eeeeeeeeeeee/creative_0.png",
+      ],
       campaignType: "ABO",
       budget: 20,
       budgetPeriod: "daily",

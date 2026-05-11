@@ -1,3 +1,4 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 
 import { getSessionUser } from "@/lib/api/session";
@@ -5,6 +6,11 @@ import { normalizeActId } from "@/lib/meta/graph-campaign-publish";
 import { getMetaGraphAccessToken } from "@/lib/meta/graph-token";
 import { wizardPublishPayloadSchema } from "@/lib/meta/map-wizard-to-graph";
 import { runWizardPublish } from "@/lib/meta/publish-campaigns";
+import type { Database } from "@/lib/supabase/types";
+import {
+  validateCreativeStoragePathsForUser,
+  WIZARD_CREATIVES_BUCKET,
+} from "@/lib/wizard/wizard-creatives-bucket";
 
 function orderSelectedAccounts(
   selectedRaw: string[],
@@ -23,6 +29,22 @@ function orderSelectedAccounts(
   return ordered;
 }
 
+function mimeFromCreativeType(type: "image" | "video", blobType: string | undefined): string {
+  if (blobType && blobType.trim()) return blobType;
+  return type === "image" ? "image/jpeg" : "application/octet-stream";
+}
+
+async function removeStorageObjects(
+  supabase: SupabaseClient<Database>,
+  paths: string[]
+): Promise<void> {
+  if (paths.length === 0) return;
+  const { error } = await supabase.storage.from(WIZARD_CREATIVES_BUCKET).remove(paths);
+  if (error) {
+    console.warn("[wizard/publish] storage cleanup:", error.message);
+  }
+}
+
 export async function POST(request: Request) {
   const { supabase, user } = await getSessionUser();
   if (!user) {
@@ -30,33 +52,18 @@ export async function POST(request: Request) {
   }
 
   const contentType = request.headers.get("content-type") || "";
-  if (!contentType.includes("multipart/form-data")) {
+  if (!contentType.includes("application/json")) {
     return NextResponse.json(
-      {
-        error:
-          "Content-Type deve ser multipart/form-data com campo «payload» (JSON) e ficheiros «creative_0», …",
-      },
+      { error: "Content-Type deve ser application/json (inclui creativeStoragePaths)." },
       { status: 400 }
     );
   }
 
-  let form: FormData;
-  try {
-    form = await request.formData();
-  } catch {
-    return NextResponse.json({ error: "Corpo multipart inválido." }, { status: 400 });
-  }
-
-  const payloadField = form.get("payload");
-  if (typeof payloadField !== "string") {
-    return NextResponse.json({ error: "Campo «payload» (string JSON) em falta." }, { status: 400 });
-  }
-
   let jsonBody: unknown;
   try {
-    jsonBody = JSON.parse(payloadField);
+    jsonBody = await request.json();
   } catch {
-    return NextResponse.json({ error: "«payload» não é JSON válido." }, { status: 400 });
+    return NextResponse.json({ error: "JSON inválido." }, { status: 400 });
   }
 
   const parsed = wizardPublishPayloadSchema.safeParse(jsonBody);
@@ -64,57 +71,77 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid payload.", issues: parsed.error.flatten() }, { status: 400 });
   }
 
-  const pageId = parsed.data.pageId?.trim() || process.env.META_DEFAULT_PAGE_ID?.trim();
-  if (!pageId) {
-    return NextResponse.json(
-      {
-        error:
-          "Defina META_DEFAULT_PAGE_ID no servidor ou envie «pageId» no payload (ID da Página Facebook para o anúncio).",
-      },
-      { status: 400 }
-    );
-  }
-
-  const adLinkUrl = process.env.META_AD_LINK_URL?.trim() || "https://www.facebook.com/business";
-
-  const tokenRes = await getMetaGraphAccessToken(supabase, user.id);
-  if ("error" in tokenRes) {
-    return NextResponse.json({ error: tokenRes.error }, { status: 400 });
-  }
-
-  const normIds = Array.from(new Set(parsed.data.selectedAccountIds.map((id) => normalizeActId(id))));
-  const { data: accountRows, error: accErr } = await supabase
-    .from("meta_ad_accounts")
-    .select("meta_account_id, name")
-    .eq("user_id", user.id)
-    .in("meta_account_id", normIds);
-
-  if (accErr) {
-    return NextResponse.json({ error: accErr.message }, { status: 500 });
-  }
-  if (!accountRows?.length || accountRows.length !== normIds.length) {
-    return NextResponse.json(
-      { error: "Uma ou mais contas selecionadas não existem ou não pertencem ao teu utilizador." },
-      { status: 400 }
-    );
-  }
-
-  const accountsOrdered = orderSelectedAccounts(parsed.data.selectedAccountIds, accountRows);
-
-  const creativeFilesByIndex = new Map<number, { buffer: Buffer; mimeType: string }>();
-  for (let i = 0; i < parsed.data.creatives.length; i++) {
-    const field = form.get(`creative_${i}`);
-    if (field instanceof Blob) {
-      const buf = Buffer.from(await field.arrayBuffer());
-      const mimeType =
-        "type" in field && typeof (field as File).type === "string" && (field as File).type
-          ? (field as File).type
-          : "image/jpeg";
-      creativeFilesByIndex.set(i, { buffer: buf, mimeType });
-    }
-  }
+  const cleanupPaths = [...parsed.data.creativeStoragePaths];
 
   try {
+    const pathErr = validateCreativeStoragePathsForUser(
+      user.id,
+      parsed.data.creativeStoragePaths,
+      parsed.data.creatives.length
+    );
+    if (pathErr) {
+      return NextResponse.json({ error: pathErr }, { status: 400 });
+    }
+
+    const pageId = parsed.data.pageId?.trim() || process.env.META_DEFAULT_PAGE_ID?.trim();
+    if (!pageId) {
+      return NextResponse.json(
+        {
+          error:
+            "Defina META_DEFAULT_PAGE_ID no servidor ou envie «pageId» no payload (ID da Página Facebook para o anúncio).",
+        },
+        { status: 400 }
+      );
+    }
+
+    const adLinkUrl = process.env.META_AD_LINK_URL?.trim() || "https://www.facebook.com/business";
+
+    const tokenRes = await getMetaGraphAccessToken(supabase, user.id);
+    if ("error" in tokenRes) {
+      return NextResponse.json({ error: tokenRes.error }, { status: 400 });
+    }
+
+    const normIds = Array.from(new Set(parsed.data.selectedAccountIds.map((id) => normalizeActId(id))));
+    const { data: accountRows, error: accErr } = await supabase
+      .from("meta_ad_accounts")
+      .select("meta_account_id, name")
+      .eq("user_id", user.id)
+      .in("meta_account_id", normIds);
+
+    if (accErr) {
+      return NextResponse.json({ error: accErr.message }, { status: 500 });
+    }
+    if (!accountRows?.length || accountRows.length !== normIds.length) {
+      return NextResponse.json(
+        { error: "Uma ou mais contas selecionadas não existem ou não pertencem ao teu utilizador." },
+        { status: 400 }
+      );
+    }
+
+    const accountsOrdered = orderSelectedAccounts(parsed.data.selectedAccountIds, accountRows);
+    const storagePaths = parsed.data.creativeStoragePaths;
+    const creativeFilesByIndex = new Map<number, { buffer: Buffer; mimeType: string }>();
+
+    for (let i = 0; i < parsed.data.creatives.length; i++) {
+      const path = storagePaths[i];
+      const { data: blob, error: dlErr } = await supabase.storage.from(WIZARD_CREATIVES_BUCKET).download(path);
+      if (dlErr || !blob) {
+        return NextResponse.json(
+          { error: dlErr?.message ?? `Não foi possível descarregar o criativo em «${path}».` },
+          { status: 400 }
+        );
+      }
+      const buf = Buffer.from(await blob.arrayBuffer());
+      if (!buf.length) {
+        return NextResponse.json({ error: `Ficheiro vazio em «${path}».` }, { status: 400 });
+      }
+      const creative = parsed.data.creatives[i];
+      creativeFilesByIndex.set(i, {
+        buffer: buf,
+        mimeType: mimeFromCreativeType(creative.type, blob.type),
+      });
+    }
+
     const out = await runWizardPublish({
       supabase,
       userId: user.id,
@@ -133,5 +160,7 @@ export async function POST(request: Request) {
   } catch (e) {
     const message = e instanceof Error ? e.message : "publish_failed";
     return NextResponse.json({ error: message }, { status: 500 });
+  } finally {
+    await removeStorageObjects(supabase, cleanupPaths);
   }
 }
