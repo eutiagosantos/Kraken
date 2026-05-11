@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { Input } from "@/components/ui/Input";
+import { buildOAuthReturnRedirectTo } from "@/lib/auth/supabase-oauth-redirects";
 import { useSupabase } from "@/lib/hooks/useSupabase";
 import { cn } from "@/lib/utils";
 
@@ -76,8 +77,7 @@ export function RegisterForm() {
   async function handleMetaSignup() {
     setErrors({});
     setNotice(null);
-    const origin = window.location.origin;
-    const redirectTo = `${origin}/api/auth/callback?next=${encodeURIComponent("/home")}`;
+    const redirectTo = buildOAuthReturnRedirectTo(window.location.origin, "/home");
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "facebook",
       options: {

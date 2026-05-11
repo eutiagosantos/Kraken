@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { buildOAuthReturnRedirectTo } from "@/lib/auth/supabase-oauth-redirects";
 import { useSupabase } from "@/lib/hooks/useSupabase";
 
 const META_SCOPES = ["email", "public_profile", "ads_read", "ads_management", "business_management"].join(",");
@@ -55,8 +56,7 @@ export function KrakenLoginForm() {
   async function handleMetaLogin() {
     setErrors({});
     setNotice(null);
-    const origin = window.location.origin;
-    const redirectTo = `${origin}/api/auth/callback?next=${encodeURIComponent(safeNext)}`;
+    const redirectTo = buildOAuthReturnRedirectTo(window.location.origin, safeNext);
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "facebook",
       options: {
