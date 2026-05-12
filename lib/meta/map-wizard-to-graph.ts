@@ -367,6 +367,10 @@ export function buildTargetingFromPublico(publico: WizardPublishPayload["publico
     targeting.device_platforms = devicePlatforms;
   }
 
+  // Marketing API v23+: ad set targeting that is not Meta's strict "default" or "relaxed" setup must
+  // set `advantage_audience` explicitly (0 or 1); we opt in to 1 — Meta's default for new ad sets.
+  targeting.targeting_automation = { advantage_audience: 1 };
+
   return { targeting, usedFallbackGeo, fallbackCountry };
 }
 

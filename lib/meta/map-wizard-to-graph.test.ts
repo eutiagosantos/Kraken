@@ -315,6 +315,10 @@ describe("structureLabelForDb", () => {
 });
 
 describe("buildTargetingFromPublico", () => {
+  function expectAdvantageAudience(targeting: Record<string, unknown>) {
+    expect(targeting.targeting_automation).toEqual({ advantage_audience: 1 });
+  }
+
   it("uses BR fallback only when locations are empty", () => {
     const publico = {
       ...basePayload.publico,
@@ -327,6 +331,7 @@ describe("buildTargetingFromPublico", () => {
     expect(targeting.publisher_platforms).toContain("facebook");
     expect(targeting.device_platforms).toEqual(["mobile", "desktop"]);
     expect(targeting.user_os).toBeUndefined();
+    expectAdvantageAudience(targeting);
   });
 
   it("maps city-only selection without BR fallback", () => {
@@ -337,6 +342,7 @@ describe("buildTargetingFromPublico", () => {
     const { targeting, usedFallbackGeo } = buildTargetingFromPublico(publico);
     expect(usedFallbackGeo).toBe(false);
     expect(targeting.geo_locations).toEqual({ cities: [{ key: "2457168" }] });
+    expectAdvantageAudience(targeting);
   });
 
   it("maps state/region keys into geo_locations.regions", () => {
@@ -347,6 +353,7 @@ describe("buildTargetingFromPublico", () => {
     const { targeting, usedFallbackGeo } = buildTargetingFromPublico(publico);
     expect(usedFallbackGeo).toBe(false);
     expect(targeting.geo_locations).toEqual({ regions: [{ key: "3847" }] });
+    expectAdvantageAudience(targeting);
   });
 
   it("dedupes regions and cities from sub-national-only locations", () => {
@@ -367,6 +374,7 @@ describe("buildTargetingFromPublico", () => {
       regions: [{ key: "3847" }],
       cities: [{ key: "600000" }],
     });
+    expectAdvantageAudience(targeting);
   });
 
   it("dedupes ISO country codes from country-only locations", () => {
@@ -387,6 +395,7 @@ describe("buildTargetingFromPublico", () => {
     });
     expect(targeting.device_platforms).toEqual(["mobile", "desktop"]);
     expect(targeting.user_os).toBeUndefined();
+    expectAdvantageAudience(targeting);
   });
 
   it("maps mobile-only to device_platforms mobile", () => {
@@ -397,6 +406,7 @@ describe("buildTargetingFromPublico", () => {
     const { targeting } = buildTargetingFromPublico(p.publico);
     expect(targeting.device_platforms).toEqual(["mobile"]);
     expect(targeting.user_os).toBeUndefined();
+    expectAdvantageAudience(targeting);
   });
 
   it("maps desktop-only to device_platforms desktop", () => {
@@ -407,6 +417,7 @@ describe("buildTargetingFromPublico", () => {
     const { targeting } = buildTargetingFromPublico(p.publico);
     expect(targeting.device_platforms).toEqual(["desktop"]);
     expect(targeting.user_os).toBeUndefined();
+    expectAdvantageAudience(targeting);
   });
 
   it("omits device_platforms when no devices selected", () => {
@@ -417,6 +428,7 @@ describe("buildTargetingFromPublico", () => {
     const { targeting } = buildTargetingFromPublico(p.publico);
     expect(targeting.device_platforms).toBeUndefined();
     expect(targeting.user_os).toBeUndefined();
+    expectAdvantageAudience(targeting);
   });
 
   it("maps interests to flexible_spec with numeric id only (no name)", () => {
@@ -429,6 +441,22 @@ describe("buildTargetingFromPublico", () => {
     });
     const { targeting } = buildTargetingFromPublico(p.publico);
     expect(targeting.flexible_spec).toEqual([{ interests: [{ id: 6003139266461 }] }]);
+    expectAdvantageAudience(targeting);
+  });
+
+  it("includes targeting_automation when both country geo and interests are set", () => {
+    const p = wizardPublishPayloadSchema.parse({
+      ...basePayload,
+      publico: {
+        ...basePayload.publico,
+        locations: [{ type: "country" as const, key: "PT", name: "Portugal" }],
+        interests: [{ id: "6003139266461", name: "Movies" }],
+      },
+    });
+    const { targeting } = buildTargetingFromPublico(p.publico);
+    expect(targeting.geo_locations).toEqual({ countries: ["PT"] });
+    expect(targeting.flexible_spec).toEqual([{ interests: [{ id: 6003139266461 }] }]);
+    expectAdvantageAudience(targeting);
   });
 });
 
