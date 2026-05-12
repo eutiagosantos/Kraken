@@ -1,4 +1,7 @@
 // Publicação do assistente → Meta. Sandbox com app em Development: docs/meta-publicacao-app-development.md
+//
+// Escopo de agendamento (voo, dayparting, frequência): aplicado apenas na criação via este POST.
+// Alterar campanhas/conjuntos já existentes no Meta (PATCH / UI Campanhas) está fora do âmbito actual.
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 

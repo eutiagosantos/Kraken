@@ -1,4 +1,5 @@
 import type { WizardPublishPayloadInput } from "@/lib/meta/map-wizard-to-graph";
+import type { CampaignSchedule } from "@/lib/meta/campaign-schedule";
 import type {
   CampaignType,
   Creative,
@@ -27,6 +28,7 @@ export type WizardPublishStateSlice = {
   customStructure: { campaigns: number; adsets: number; ads: number };
   nomenclaturePreview: string;
   publico: Publico;
+  campaignSchedule: CampaignSchedule;
 };
 
 export function buildWizardPublishPayload(wizard: WizardPublishStateSlice): {
@@ -54,6 +56,7 @@ export function buildWizardPublishPayload(wizard: WizardPublishStateSlice): {
     customStructure: { ...wizard.customStructure },
     nomenclaturePreview: wizard.nomenclaturePreview.trim() || "Campanha Kraken",
     publico: { ...wizard.publico },
+    campaignSchedule: { ...wizard.campaignSchedule },
     antiSpy: true,
     pageId,
   };

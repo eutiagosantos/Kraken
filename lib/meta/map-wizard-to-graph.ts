@@ -1,6 +1,12 @@
 import { z } from "zod";
 
 import type { Structure } from "@/lib/stores/wizardStore";
+import {
+  campaignScheduleSchema,
+  defaultCampaignSchedule,
+} from "@/lib/meta/campaign-schedule";
+
+export { defaultLifetimeSchedule, type MetaLifetimeWindow } from "@/lib/meta/meta-datetime";
 
 const localidadeSchema = z.object({
   type: z.enum(["country", "state", "region", "city"]),
@@ -62,6 +68,8 @@ export const wizardPublishPayloadSchema = z
     publishOperationId: z.string().uuid(),
     /** Object paths in bucket `wizard_creatives`, same order as `creatives` (browser upload, server download). */
     creativeStoragePaths: z.array(storagePathString).min(1),
+    /** Flight dates, dayparting, frequency caps — applied at creation time only (see `app/api/wizard/publish/route.ts`). */
+    campaignSchedule: campaignScheduleSchema.default(() => defaultCampaignSchedule()),
   })
   .refine((d) => d.creativeStoragePaths.length === d.creatives.length, {
     message: "creativeStoragePaths deve ter uma entrada por criativo.",
@@ -75,6 +83,63 @@ export const wizardPublishPayloadSchema = z
           code: z.ZodIssueCode.custom,
           message: "Cada caminho deve usar publishOperationId como pasta da operação.",
           path: ["creativeStoragePaths", i],
+        });
+      }
+    }
+    const s = d.campaignSchedule;
+    if (s.flightMode === "custom_dates") {
+      if (d.budgetPeriod !== "lifetime") {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Datas de voo personalizadas só estão disponíveis com orçamento vitalício.",
+          path: ["campaignSchedule", "flightMode"],
+        });
+      }
+      const a = s.flightStart?.trim() ?? "";
+      const b = s.flightEnd?.trim() ?? "";
+      if (!a || !b) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Indica início e fim do voo (ISO 8601).",
+          path: ["campaignSchedule", "flightStart"],
+        });
+      } else {
+        const t0 = Date.parse(a);
+        const t1 = Date.parse(b);
+        if (Number.isNaN(t0) || Number.isNaN(t1)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Datas inválidas.",
+            path: ["campaignSchedule", "flightStart"],
+          });
+        } else if (t1 <= t0) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "A data de fim deve ser depois da data de início.",
+            path: ["campaignSchedule", "flightEnd"],
+          });
+        } else if (t1 - t0 < 24 * 60 * 60 * 1000) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "O voo deve durar pelo menos 24 horas.",
+            path: ["campaignSchedule", "flightEnd"],
+          });
+        }
+      }
+    }
+    if (s.dayparting.enabled) {
+      if (d.budgetPeriod !== "lifetime") {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Dayparting (horas/dias) requer orçamento vitalício, conforme o Marketing API.",
+          path: ["campaignSchedule", "dayparting", "enabled"],
+        });
+      }
+      if (s.dayparting.segments.length === 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Com dayparting ativo, define pelo menos um intervalo (dias e horas).",
+          path: ["campaignSchedule", "dayparting", "segments"],
         });
       }
     }
@@ -260,28 +325,6 @@ export function billingEventForOptimization(optimizationGoal: string): string {
     default:
       return "IMPRESSIONS";
   }
-}
-
-export type MetaLifetimeWindow = { startTime: string; endTime: string };
-
-/** Default flight for lifetime budgets: 30 days from now (UTC offset +0000, Meta-friendly). */
-export function defaultLifetimeSchedule(days = 30): MetaLifetimeWindow {
-  const start = new Date();
-  const end = new Date(start.getTime() + days * 24 * 60 * 60 * 1000);
-  return {
-    startTime: formatMetaDateTimeUtcOffset(start),
-    endTime: formatMetaDateTimeUtcOffset(end),
-  };
-}
-
-function formatMetaDateTimeUtcOffset(d: Date): string {
-  const y = d.getUTCFullYear();
-  const mo = String(d.getUTCMonth() + 1).padStart(2, "0");
-  const day = String(d.getUTCDate()).padStart(2, "0");
-  const h = String(d.getUTCHours()).padStart(2, "0");
-  const mi = String(d.getUTCMinutes()).padStart(2, "0");
-  const s = String(d.getUTCSeconds()).padStart(2, "0");
-  return `${y}-${mo}-${day}T${h}:${mi}:${s}+0000`;
 }
 
 export function mapBidStrategyToMeta(

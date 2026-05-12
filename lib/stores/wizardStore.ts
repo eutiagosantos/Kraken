@@ -2,6 +2,8 @@
 
 import { create } from "zustand";
 
+import { defaultCampaignSchedule, type CampaignSchedule } from "@/lib/meta/campaign-schedule";
+
 export interface Creative {
   id: string;
   file: File;
@@ -81,6 +83,7 @@ const initialState = {
   publico: defaultPublico,
   /** Facebook Page ID for ad creatives — chosen in step 1 after accounts are selected. */
   pageId: null as string | null,
+  campaignSchedule: defaultCampaignSchedule(),
   /** When `"wizard"`, the fila page should run `publishCampaigns` once (consumed synchronously). */
   publishJobTrigger: null as null | "wizard",
   /** In-flight publish UI (survives React Strict Mode remounts on the fila page). */
@@ -115,6 +118,7 @@ type WizardState = typeof initialState & {
   setNomenclaturePreview: (value: string) => void;
   setPublico: (publico: Partial<Publico>) => void;
   setPageId: (pageId: string | null) => void;
+  setCampaignSchedule: (patch: Partial<CampaignSchedule>) => void;
   resetCreatives: () => void;
   reset: () => void;
   requestPublishJob: () => void;
@@ -166,6 +170,14 @@ export const useWizardStore = create<WizardState>()((set, get) => ({
       publico: { ...s.publico, ...partial },
     })),
   setPageId: (pageId) => set({ pageId }),
+  setCampaignSchedule: (patch) =>
+    set((s) => ({
+      campaignSchedule: {
+        ...s.campaignSchedule,
+        ...patch,
+        dayparting: patch.dayparting ?? s.campaignSchedule.dayparting,
+      },
+    })),
   resetCreatives: () =>
     set((s) => {
       s.creatives.forEach((creative) => URL.revokeObjectURL(creative.preview));

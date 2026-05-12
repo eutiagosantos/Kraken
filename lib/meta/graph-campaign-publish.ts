@@ -72,6 +72,9 @@ export async function graphCreateAdSet(options: {
   dsaBeneficiary?: string;
   dsaPayor?: string;
   status: "ACTIVE" | "PAUSED";
+  /** Dayparting — times use ad account timezone on Meta. */
+  adsetSchedule?: Array<{ days: number[]; start_minute: number; end_minute: number }>;
+  frequencyControlSpecs?: Array<{ event: string; interval_days: number; max_frequency: number }>;
   fetchImpl?: GraphFetch;
 }): Promise<{ id: string }> {
   const body: Record<string, unknown> = {
@@ -110,6 +113,12 @@ export async function graphCreateAdSet(options: {
   if (options.dsaPayor?.trim()) {
     body.dsa_payor = options.dsaPayor.trim();
   }
+  if (options.adsetSchedule && options.adsetSchedule.length > 0) {
+    body.adset_schedule = options.adsetSchedule;
+  }
+  if (options.frequencyControlSpecs && options.frequencyControlSpecs.length > 0) {
+    body.frequency_control_specs = options.frequencyControlSpecs;
+  }
   return graphJsonPost<{ id: string }>({
     path: `${options.actId}/adsets`,
     accessToken: options.accessToken,
@@ -122,6 +131,41 @@ export type AdCreativeMedia =
   | { kind: "image"; imageHash: string }
   | { kind: "video"; videoId: string; thumbnailImageUrl: string };
 
+/** Builds `object_story_spec` for Marketing API `adcreatives` (exposed for tests). */
+export function buildAdCreativeObjectStorySpec(options: {
+  pageId: string;
+  media: AdCreativeMedia;
+  linkUrl: string;
+  message: string;
+}): Record<string, unknown> {
+  const message = options.message.slice(0, 2000);
+  return options.media.kind === "image"
+    ? {
+        page_id: options.pageId,
+        link_data: {
+          image_hash: options.media.imageHash,
+          link: options.linkUrl,
+          message,
+          call_to_action: {
+            type: "LEARN_MORE",
+            value: { link: options.linkUrl },
+          },
+        },
+      }
+    : {
+        page_id: options.pageId,
+        video_data: {
+          video_id: options.media.videoId,
+          image_url: options.media.thumbnailImageUrl,
+          message,
+          call_to_action: {
+            type: "LEARN_MORE",
+            value: { link: options.linkUrl },
+          },
+        },
+      };
+}
+
 export async function graphCreateAdCreative(options: {
   actId: string;
   accessToken: string;
@@ -132,29 +176,12 @@ export async function graphCreateAdCreative(options: {
   message: string;
   fetchImpl?: GraphFetch;
 }): Promise<{ id: string }> {
-  const message = options.message.slice(0, 2000);
-  const objectStorySpec: Record<string, unknown> =
-    options.media.kind === "image"
-      ? {
-          page_id: options.pageId,
-          link_data: {
-            image_hash: options.media.imageHash,
-            link: options.linkUrl,
-            message,
-          },
-        }
-      : {
-          page_id: options.pageId,
-          video_data: {
-            video_id: options.media.videoId,
-            image_url: options.media.thumbnailImageUrl,
-            message,
-            call_to_action: {
-              type: "LEARN_MORE",
-              value: { link: options.linkUrl },
-            },
-          },
-        };
+  const objectStorySpec = buildAdCreativeObjectStorySpec({
+    pageId: options.pageId,
+    media: options.media,
+    linkUrl: options.linkUrl,
+    message: options.message,
+  });
   const body = {
     name: options.name.slice(0, 256),
     object_story_spec: objectStorySpec,

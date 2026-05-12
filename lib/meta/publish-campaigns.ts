@@ -25,7 +25,6 @@ import {
   billingEventForOptimization,
   budgetMinorUnits,
   buildTargetingFromPublico,
-  defaultLifetimeSchedule,
   mapBidStrategyToMeta,
   publicoTargetsDsaRegion,
   resolveStructureCounts,
@@ -33,6 +32,11 @@ import {
   structureLabelForDb,
   type WizardPublishPayload,
 } from "@/lib/meta/map-wizard-to-graph";
+import {
+  buildAdsetSchedulePayload,
+  buildFrequencyControlSpecs,
+  resolveLifetimeScheduleForPublish,
+} from "@/lib/meta/campaign-schedule";
 import { buildUploadJobSummary } from "@/lib/meta/upload-job-summary";
 import type { Database, Json } from "@/lib/supabase/types";
 
@@ -126,7 +130,12 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
   }
   const bid = mapBidStrategyToMeta(ctx.payload.bidStrategy, ctx.payload.bidLimit);
   const isLifetime = ctx.payload.budgetPeriod === "lifetime";
-  const lifetimeSchedule = isLifetime ? defaultLifetimeSchedule(30) : null;
+  const lifetimeSchedule = resolveLifetimeScheduleForPublish(
+    ctx.payload.budgetPeriod,
+    ctx.payload.campaignSchedule
+  );
+  const adsetScheduleRows = buildAdsetSchedulePayload(ctx.payload.campaignSchedule);
+  const frequencyControlSpecs = buildFrequencyControlSpecs(ctx.payload.campaignSchedule);
   const billingEvent = billingEventForOptimization(opt.optimization_goal);
   const needsDsa = publicoTargetsDsaRegion(ctx.payload.publico);
   const dsaBeneficiary = process.env.META_DSA_BENEFICIARY?.trim();
@@ -139,6 +148,16 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
   const dsaForAdset =
     needsDsa && dsaBeneficiary && dsaPayor ? { dsaBeneficiary, dsaPayor } : {};
   const destinationType = ctx.payload.objective === "OUTCOME_TRAFFIC" ? "WEBSITE" : undefined;
+  if (ctx.payload.campaignSchedule.dayparting.enabled) {
+    warnings.push(
+      "Dayparting: os intervalos são aplicados na timezone da conta de anúncios no Meta (não na hora local do browser)."
+    );
+  }
+  if (ctx.payload.campaignSchedule.frequencyCap) {
+    warnings.push(
+      "Limite de frequência: se o Meta rejeitar a combinação com o objetivo, ajusta ou remove o limite e volta a publicar."
+    );
+  }
 
   const units: Array<{ actId: string; accountName: string; creativeIndex: number }> = [];
   for (const acc of ctx.accounts) {
@@ -293,6 +312,8 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
           destinationType,
           ...dsaForAdset,
           status: ctx.payload.status,
+          adsetSchedule: adsetScheduleRows,
+          frequencyControlSpecs,
           fetchImpl,
         });
         adSetIds.push(adset.id);

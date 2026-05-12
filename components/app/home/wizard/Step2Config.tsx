@@ -11,6 +11,7 @@ import type {
   Structure,
   WizardStatus,
 } from "@/lib/stores/wizardStore";
+import type { CampaignSchedule } from "@/lib/meta/campaign-schedule";
 import {
   buildNomenclaturePreview,
   type NomenclaturePreviewContext,
@@ -18,6 +19,7 @@ import {
 import { BidStrategyCard } from "./BidStrategyCard";
 import { CampaignTypeCard } from "./CampaignTypeCard";
 import { NomenclatureEditor } from "./NomenclatureEditor";
+import { Step2Schedule } from "./Step2Schedule";
 import { StepFooter } from "./StepFooter";
 
 interface Step2ConfigProps {
@@ -37,6 +39,8 @@ interface Step2ConfigProps {
   nomenclaturePreviewContext: NomenclaturePreviewContext;
   pixelOptions: { id: string; name: string }[];
   pixelsLoading?: boolean;
+  campaignSchedule: CampaignSchedule;
+  onSetCampaignSchedule: (patch: Partial<CampaignSchedule>) => void;
   onSetCampaignType: (value: CampaignType) => void;
   onSetBudget: (value: number) => void;
   onSetBudgetPeriod: (value: BudgetPeriod) => void;
@@ -81,6 +85,8 @@ export function Step2Config(props: Step2ConfigProps) {
     nomenclaturePreviewContext,
     pixelOptions,
     pixelsLoading = false,
+    campaignSchedule,
+    onSetCampaignSchedule,
     onSetCampaignType,
     onSetBudget,
     onSetBudgetPeriod,
@@ -126,8 +132,8 @@ export function Step2Config(props: Step2ConfigProps) {
               selected={campaignType === "DPA"}
               onClick={() => onSetCampaignType("DPA")}
               icon={<ShoppingBag className="h-4 w-4" />}
-              title="Catálogo DPA"
-              description="Dynamic Product Ads"
+              title="CBO (rótulo catálogo)"
+              description="Orçamento ao nível da campanha como CBO. Catálogo DPA real (produtos dinâmicos) ainda não está implementado na API deste fluxo."
               badge={
                 <Badge variant="success" className="text-[10px]">
                   Anti-Spy
@@ -163,6 +169,12 @@ export function Step2Config(props: Step2ConfigProps) {
             </select>
           </div>
         </section>
+
+        <Step2Schedule
+          budgetPeriod={budgetPeriod}
+          campaignSchedule={campaignSchedule}
+          onSetCampaignSchedule={onSetCampaignSchedule}
+        />
 
         <section className="rounded-xl border border-gray-200 bg-gray-50 p-4">
           <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-500">Estratégia de lance</h4>

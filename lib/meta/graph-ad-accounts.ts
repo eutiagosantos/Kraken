@@ -1,3 +1,5 @@
+import { META_GRAPH_ORIGIN } from "@/lib/meta/constants";
+
 export type GraphAdAccount = {
   id: string;
   name: string;
@@ -13,7 +15,7 @@ export async function fetchGraphAdAccounts(accessToken: string): Promise<GraphAd
   const collected: GraphAdAccount[] = [];
   let nextUrl: string | null = null;
 
-  const first = new URL("https://graph.facebook.com/v21.0/me/adaccounts");
+  const first = new URL(`${META_GRAPH_ORIGIN}/me/adaccounts`);
   first.searchParams.set("fields", "id,name,account_status");
   first.searchParams.set("limit", "100");
   first.searchParams.set("access_token", accessToken);

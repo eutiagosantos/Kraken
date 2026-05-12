@@ -217,6 +217,8 @@ export function UploadWizard() {
               nomenclaturePreviewContext={nomenclaturePreviewContext}
               pixelOptions={pixelOptions}
               pixelsLoading={wizardDataLoading}
+              campaignSchedule={wizard.campaignSchedule}
+              onSetCampaignSchedule={wizard.setCampaignSchedule}
               onSetCampaignType={wizard.setCampaignType}
               onSetBudget={wizard.setBudget}
               onSetBudgetPeriod={wizard.setBudgetPeriod}

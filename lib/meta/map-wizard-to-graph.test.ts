@@ -4,7 +4,6 @@ import {
   billingEventForOptimization,
   buildTargetingFromPublico,
   budgetMinorUnits,
-  defaultLifetimeSchedule,
   mapBidStrategyToMeta,
   publicoTargetsDsaRegion,
   resolveStructureCounts,
@@ -12,6 +11,7 @@ import {
   structureLabelForDb,
   wizardPublishPayloadSchema,
 } from "@/lib/meta/map-wizard-to-graph";
+import { defaultLifetimeSchedule } from "@/lib/meta/meta-datetime";
 
 const basePayload = {
   selectedAccountIds: ["123"],
@@ -78,6 +78,68 @@ describe("wizardPublishPayloadSchema", () => {
       creativeStoragePaths: [
         "00000000-0000-4000-8000-000000000001/bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb/creative_0.png",
       ],
+    });
+    expect(res.success).toBe(false);
+  });
+
+  it("defaults campaignSchedule when omitted", () => {
+    const p = wizardPublishPayloadSchema.parse(basePayload);
+    expect(p.campaignSchedule.flightMode).toBe("automatic");
+    expect(p.campaignSchedule.dayparting.enabled).toBe(false);
+  });
+
+  it("rejects custom flight with daily budget", () => {
+    const res = wizardPublishPayloadSchema.safeParse({
+      ...basePayload,
+      budgetPeriod: "daily",
+      campaignSchedule: {
+        flightMode: "custom_dates",
+        flightStart: new Date().toISOString(),
+        flightEnd: new Date(Date.now() + 86400000 * 2).toISOString(),
+        dayparting: { enabled: false, segments: [] },
+        frequencyCap: null,
+      },
+    });
+    expect(res.success).toBe(false);
+  });
+
+  it("rejects dayparting without lifetime budget", () => {
+    const res = wizardPublishPayloadSchema.safeParse({
+      ...basePayload,
+      budgetPeriod: "daily",
+      campaignSchedule: {
+        flightMode: "automatic",
+        dayparting: { enabled: true, segments: [{ days: [1], startMinute: 100, endMinute: 200 }] },
+        frequencyCap: null,
+      },
+    });
+    expect(res.success).toBe(false);
+  });
+
+  it("accepts lifetime custom_dates with valid range", () => {
+    const res = wizardPublishPayloadSchema.safeParse({
+      ...basePayload,
+      budgetPeriod: "lifetime",
+      campaignSchedule: {
+        flightMode: "custom_dates",
+        flightStart: new Date().toISOString(),
+        flightEnd: new Date(Date.now() + 3 * 86400000).toISOString(),
+        dayparting: { enabled: false, segments: [] },
+        frequencyCap: null,
+      },
+    });
+    expect(res.success).toBe(true);
+  });
+
+  it("rejects dayparting enabled with zero segments", () => {
+    const res = wizardPublishPayloadSchema.safeParse({
+      ...basePayload,
+      budgetPeriod: "lifetime",
+      campaignSchedule: {
+        flightMode: "automatic",
+        dayparting: { enabled: true, segments: [] },
+        frequencyCap: null,
+      },
     });
     expect(res.success).toBe(false);
   });

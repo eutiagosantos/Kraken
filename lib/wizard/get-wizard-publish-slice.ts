@@ -22,5 +22,6 @@ export function getWizardPublishSliceFromStore(): WizardPublishStateSlice {
     customStructure: w.customStructure,
     nomenclaturePreview: w.nomenclaturePreview,
     publico: w.publico,
+    campaignSchedule: w.campaignSchedule,
   };
 }
