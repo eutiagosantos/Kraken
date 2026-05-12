@@ -6,10 +6,7 @@ import { useRouter } from "next/navigation";
 import type { NomenclaturePreviewContext } from "@/lib/wizard/nomenclature-preview";
 import { buildWizardPublishPayload } from "@/lib/wizard/build-wizard-publish-payload";
 import { getWizardPublishSliceFromStore } from "@/lib/wizard/get-wizard-publish-slice";
-import {
-  publicoCountryRegionRequirementMessagePt,
-  publicoHasCountryAndRegion,
-} from "@/lib/wizard/publico-geo-validation";
+import { getPublicoGeoValidationErrorPt } from "@/lib/wizard/publico-geo-validation";
 import { mockWizardDataAdapter } from "@/lib/wizard/data-adapter";
 import { isUploadJobInFlightStatus } from "@/lib/wizard/upload-jobs-in-flight";
 import { useWizardStore, type Publico, type Structure } from "@/lib/stores/wizardStore";
@@ -148,8 +145,9 @@ export function UploadWizard() {
     if (!wizard.pageId?.trim()) {
       parts.push("Escolhe uma Página Facebook no passo 1 (Criativos e contas).");
     }
-    if (!publicoHasCountryAndRegion(wizard.publico)) {
-      parts.push(publicoCountryRegionRequirementMessagePt());
+    const geoErr = getPublicoGeoValidationErrorPt(wizard.publico);
+    if (geoErr) {
+      parts.push(geoErr);
     }
     return parts.length > 0 ? parts.join(" ") : null;
   }, [wizard.pageId, wizard.publico]);

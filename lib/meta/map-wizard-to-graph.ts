@@ -1,10 +1,7 @@
 import { z } from "zod";
 
 import type { Structure } from "@/lib/stores/wizardStore";
-import {
-  publicoCountryRegionRequirementMessagePt,
-  publicoHasCountryAndRegion,
-} from "@/lib/wizard/publico-geo-validation";
+import { getPublicoGeoValidationErrorPt } from "@/lib/wizard/publico-geo-validation";
 import {
   campaignScheduleSchema,
   defaultCampaignSchedule,
@@ -205,10 +202,11 @@ export const wizardPublishPayloadSchema = z
         });
       }
     }
-    if (!publicoHasCountryAndRegion(d.publico)) {
+    const geoErr = getPublicoGeoValidationErrorPt(d.publico);
+    if (geoErr) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: publicoCountryRegionRequirementMessagePt(),
+        message: geoErr,
         path: ["publico", "locations"],
       });
     }

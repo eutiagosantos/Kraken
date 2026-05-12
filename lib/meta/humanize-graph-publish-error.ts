@@ -40,7 +40,7 @@ export function humanizeMetaAppDevelopmentModeError(e: GraphApiError): string {
 }
 
 const META_AUDIENCE_TOO_NARROW_HINT_PT =
-  "O Meta estimou este público como demasiado pequeno ou inelegível para veicular. Alarga a localização (região ou país em vez de uma área muito pequena), a faixa etária, os placements e os dispositivos; simplifica ou remove interesses. Um teste útil: país inteiro + idades amplas + sem interesses — se passar, volta a estreitar até encontrar o filtro problemático. Nota: com a app OAuth ainda em modo Desenvolvimento, o universo de entrega também é muito limitado (ver documentação interna de publicação em Dev).";
+  "O Meta estimou este público como demasiado pequeno ou inelegível para veicular. Alarga a faixa etária, os placements e os dispositivos; simplifica ou remove interesses. Em localização, alarga o conjunto: só país(és) no assistente, ou várias cidades/estados sem misturar com país na mesma lista. Um teste útil: país (ex.: BR) só + idades amplas + sem interesses — se passar, volta a estreitar até encontrar o filtro problemático.";
 
 /** Meta often returns PT/EN variants of “expand your audience” on ad set creation. */
 export function isMetaAudienceTooNarrowError(e: unknown): boolean {

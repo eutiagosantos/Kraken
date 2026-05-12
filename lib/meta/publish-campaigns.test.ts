@@ -9,10 +9,7 @@ const publicoFixture = {
   id: "p1",
   name: "Público",
   type: "custom" as const,
-  locations: [
-    { type: "country" as const, key: "BR", name: "Brasil" },
-    { type: "state" as const, key: "3847", name: "São Paulo" },
-  ],
+  locations: [{ type: "state" as const, key: "3847", name: "São Paulo" }],
   ageMin: 18,
   ageMax: 65,
   gender: "all" as const,

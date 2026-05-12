@@ -8,6 +8,22 @@ import type { LocationOption } from "@/lib/meta/types";
 
 const SEARCH_DEBOUNCE_MS = 350;
 
+function isSubnationalLocalidade(l: Localidade): boolean {
+  return l.type === "state" || l.type === "region" || l.type === "city";
+}
+
+/** When country rows and sub-national rows are both selected, keep only the mode implied by the last pick. */
+function resolveLocalidadesModeConflict(parsed: Localidade[]): Localidade[] {
+  const hasCountry = parsed.some((l) => l.type === "country");
+  const hasSub = parsed.some(isSubnationalLocalidade);
+  if (!hasCountry || !hasSub) return parsed;
+  const last = parsed[parsed.length - 1];
+  if (isSubnationalLocalidade(last)) {
+    return parsed.filter(isSubnationalLocalidade);
+  }
+  return parsed.filter((l) => l.type === "country");
+}
+
 type LocationSelectProps = {
   value: Localidade[];
   onChange: (value: Localidade[]) => void;
@@ -81,7 +97,7 @@ export function LocationSelect({ value, onChange, styles }: LocationSelectProps)
         </div>
       )}
       onChange={(selected: MultiValue<LocationOption>) => {
-        const parsed = selected.map(locationOptionToLocalidade);
+        const parsed = resolveLocalidadesModeConflict(selected.map(locationOptionToLocalidade));
         onChange(parsed);
       }}
       noOptionsMessage={({ inputValue }) =>

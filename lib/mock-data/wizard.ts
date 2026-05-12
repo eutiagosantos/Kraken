@@ -60,10 +60,7 @@ export const mockSavedPublicos: Publico[] = [
     id: "pub1",
     name: "Brasil 25-45",
     type: "saved",
-    locations: [
-      { type: "country", key: "BR", name: "Brasil" },
-      { type: "state", key: "3847", name: "São Paulo (estado)" },
-    ],
+    locations: [{ type: "country", key: "BR", name: "Brasil" }],
     ageMin: 25,
     ageMax: 45,
     gender: "all",
@@ -76,7 +73,6 @@ export const mockSavedPublicos: Publico[] = [
     name: "SP + RJ Masculino",
     type: "saved",
     locations: [
-      { type: "country", key: "BR", name: "Brasil" },
       { type: "state", key: "BR-SP", name: "São Paulo" },
       { type: "state", key: "BR-RJ", name: "Rio de Janeiro" },
     ],

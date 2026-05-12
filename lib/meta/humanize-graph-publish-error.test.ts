@@ -142,7 +142,7 @@ describe("humanizeMetaAudienceTooNarrowError", () => {
       rawBody: "{}",
     });
     const out = humanizeMetaAudienceTooNarrowError(e);
-    expect(out).toContain("país inteiro");
+    expect(out).toContain("só país");
     expect(out).toContain("resposta Meta:");
     expect(out).toContain("Amplie seu público");
   });

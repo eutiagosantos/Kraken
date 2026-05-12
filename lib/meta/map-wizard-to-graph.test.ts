@@ -34,10 +34,7 @@ const basePayload = {
     id: "p1",
     name: "Público",
     type: "custom" as const,
-    locations: [
-      { type: "country" as const, key: "PT", name: "Portugal" },
-      { type: "state" as const, key: "999", name: "Região teste" },
-    ],
+    locations: [{ type: "country" as const, key: "PT", name: "Portugal" }],
     ageMin: 21,
     ageMax: 55,
     gender: "all" as const,
@@ -245,7 +242,7 @@ describe("wizardPublishPayloadSchema", () => {
     expect(res.success).toBe(false);
   });
 
-  it("rejects publico with country but no region/state", () => {
+  it("accepts publico with country only (ISO2)", () => {
     const res = wizardPublishPayloadSchema.safeParse({
       ...basePayload,
       publico: {
@@ -253,15 +250,29 @@ describe("wizardPublishPayloadSchema", () => {
         locations: [{ type: "country", key: "PT", name: "Portugal" }],
       },
     });
-    expect(res.success).toBe(false);
+    expect(res.success).toBe(true);
   });
 
-  it("rejects publico with region but no ISO country", () => {
+  it("accepts publico with sub-national only", () => {
     const res = wizardPublishPayloadSchema.safeParse({
       ...basePayload,
       publico: {
         ...basePayload.publico,
         locations: [{ type: "state", key: "3847", name: "São Paulo" }],
+      },
+    });
+    expect(res.success).toBe(true);
+  });
+
+  it("rejects publico mixing ISO country with sub-national", () => {
+    const res = wizardPublishPayloadSchema.safeParse({
+      ...basePayload,
+      publico: {
+        ...basePayload.publico,
+        locations: [
+          { type: "country", key: "BR", name: "Brasil" },
+          { type: "city", key: "600000", name: "Campinas" },
+        ],
       },
     });
     expect(res.success).toBe(false);
@@ -338,13 +349,12 @@ describe("buildTargetingFromPublico", () => {
     expect(targeting.geo_locations).toEqual({ regions: [{ key: "3847" }] });
   });
 
-  it("combines countries, regions and cities with dedupe", () => {
+  it("dedupes regions and cities from sub-national-only locations", () => {
     const p = wizardPublishPayloadSchema.parse({
       ...basePayload,
       publico: {
         ...basePayload.publico,
         locations: [
-          { type: "country" as const, key: "BR", name: "Brasil" },
           { type: "state" as const, key: "3847", name: "SP" },
           { type: "city" as const, key: "600000", name: "Campinas" },
           { type: "state" as const, key: "3847", name: "SP dup" },
@@ -359,7 +369,7 @@ describe("buildTargetingFromPublico", () => {
     });
   });
 
-  it("dedupes countries from locations", () => {
+  it("dedupes ISO country codes from country-only locations", () => {
     const p = wizardPublishPayloadSchema.parse({
       ...basePayload,
       publico: {
@@ -367,14 +377,13 @@ describe("buildTargetingFromPublico", () => {
         locations: [
           { type: "country" as const, key: "br", name: "Brasil" },
           { type: "country" as const, key: "BR", name: "Brasil" },
-          { type: "state" as const, key: "3847", name: "SP" },
         ],
       },
     });
     const { targeting, usedFallbackGeo } = buildTargetingFromPublico(p.publico);
     expect(usedFallbackGeo).toBe(false);
     expect(targeting.geo_locations).toEqual({
-      regions: [{ key: "3847" }],
+      countries: ["BR"],
     });
     expect(targeting.device_platforms).toEqual(["mobile", "desktop"]);
     expect(targeting.user_os).toBeUndefined();
@@ -478,10 +487,7 @@ describe("publicoTargetsDsaRegion", () => {
       ...basePayload,
       publico: {
         ...basePayload.publico,
-        locations: [
-          { type: "country", key: "DE", name: "Germany" },
-          { type: "state", key: "1", name: "Região" },
-        ],
+        locations: [{ type: "country", key: "DE", name: "Germany" }],
       },
     });
     expect(publicoTargetsDsaRegion(p.publico)).toBe(true);
@@ -492,10 +498,7 @@ describe("publicoTargetsDsaRegion", () => {
       ...basePayload,
       publico: {
         ...basePayload.publico,
-        locations: [
-          { type: "country", key: "BR", name: "Brasil" },
-          { type: "state", key: "2", name: "Região" },
-        ],
+        locations: [{ type: "country", key: "BR", name: "Brasil" }],
       },
     });
     expect(publicoTargetsDsaRegion(p.publico)).toBe(false);

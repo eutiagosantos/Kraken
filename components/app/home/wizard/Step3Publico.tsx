@@ -3,10 +3,7 @@ import { Button } from "@/components/ui/Button";
 import type { GroupBase, StylesConfig } from "react-select";
 import type { InterestOption, LocationOption } from "@/lib/meta/types";
 import type { Publico } from "@/lib/stores/wizardStore";
-import {
-  publicoCountryRegionRequirementMessagePt,
-  publicoHasCountryAndRegion,
-} from "@/lib/wizard/publico-geo-validation";
+import { getPublicoGeoValidationErrorPt, publicoGeoHelpTextPt } from "@/lib/wizard/publico-geo-validation";
 import { InterestSelect } from "./InterestSelect";
 import { LocationSelect } from "./LocationSelect";
 import { PublicosSalvosGrid } from "./PublicosSalvosGrid";
@@ -68,6 +65,8 @@ export function Step3Publico(props: Step3PublicoProps) {
     onPublish,
   } = props;
 
+  const geoValidationError = getPublicoGeoValidationErrorPt(publico);
+
   return (
     <>
       <div className="space-y-5 p-6">
@@ -90,12 +89,10 @@ export function Step3Publico(props: Step3PublicoProps) {
                   styles={darkSelectStyles as StylesConfig<LocationOption, true, GroupBase<LocationOption>>}
                   onChange={(locations) => onSetPublico({ locations })}
                 />
-                <p className="mt-2 text-xs leading-relaxed text-gray-600">
-                  {publicoCountryRegionRequirementMessagePt()}
-                </p>
-                {!publicoHasCountryAndRegion(publico) ? (
+                <p className="mt-2 text-xs leading-relaxed text-gray-600">{publicoGeoHelpTextPt()}</p>
+                {geoValidationError ? (
                   <p className="mt-1 text-xs font-medium text-amber-800">
-                    Publicação bloqueada até cumprires país + região, estado ou cidade na lista acima.
+                    Publicação bloqueada: {geoValidationError}
                   </p>
                 ) : null}
               </div>
