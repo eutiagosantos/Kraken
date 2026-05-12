@@ -18,5 +18,6 @@ describe("uploadAdImageToAccount", () => {
       fetchImpl,
     });
     expect(out.hash).toBe("abc123hash");
+    expect(out.url).toBe("https://x");
   });
 });

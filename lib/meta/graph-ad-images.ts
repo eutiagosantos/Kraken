@@ -16,7 +16,7 @@ export async function uploadAdImageToAccount(options: {
   buffer: Buffer;
   mimeType: string;
   fetchImpl?: GraphFetch;
-}): Promise<{ hash: string }> {
+}): Promise<{ hash: string; url?: string }> {
   const form = new FormData();
   const bytes = new Uint8Array(options.buffer);
   const blob = new Blob([bytes], { type: options.mimeType || "image/jpeg" });
@@ -38,5 +38,6 @@ export async function uploadAdImageToAccount(options: {
   if (!hash) {
     throw new Error("Resposta adimages sem hash.");
   }
-  return { hash };
+  const url = typeof first?.url === "string" && first.url.trim() ? first.url.trim() : undefined;
+  return url ? { hash, url } : { hash };
 }

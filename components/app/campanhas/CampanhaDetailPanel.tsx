@@ -3,7 +3,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Download, Pause, Play, X } from "lucide-react";
+import { Download, Film, Image as ImageIcon, Pause, Play, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { ProgressBar } from "@/components/app/ui/ProgressBar";
@@ -13,6 +13,37 @@ import { cn } from "@/lib/utils";
 import type { Campanha } from "@/lib/mock-campanhas";
 import { StatusBadge } from "./StatusBadge";
 
+function CreativeSquare({ cr }: { cr: Campanha["creatives"][number] }) {
+  const [broken, setBroken] = useState(false);
+  const thumb = cr.thumb?.trim() ?? "";
+  const showImg = Boolean(thumb) && !broken;
+
+  return (
+    <div className="aspect-square overflow-hidden rounded-lg bg-dashboard-track">
+      {showImg ? (
+        <img
+          src={thumb}
+          alt=""
+          className="h-full w-full object-cover"
+          loading="lazy"
+          onError={() => setBroken(true)}
+        />
+      ) : (
+        <div
+          className="flex h-full w-full flex-col items-center justify-center gap-1 text-dashboard-muted"
+          aria-hidden
+        >
+          {cr.type === "video" ? (
+            <Film className="h-8 w-8 opacity-60" strokeWidth={1.5} />
+          ) : (
+            <ImageIcon className="h-8 w-8 opacity-60" strokeWidth={1.5} />
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function CreativeGrid({ creatives }: { creatives: Campanha["creatives"] }) {
   if (creatives.length === 0) {
     return <p className="text-sm text-neutral-gray">Nenhum criativo.</p>;
@@ -21,9 +52,7 @@ function CreativeGrid({ creatives }: { creatives: Campanha["creatives"] }) {
     <div className="grid grid-cols-3 gap-2">
       {creatives.map((cr) => (
         <div key={cr.id} className="min-w-0">
-          <div className="aspect-square overflow-hidden rounded-lg bg-dashboard-track">
-            <img src={cr.thumb} alt="" className="h-full w-full object-cover" loading="lazy" />
-          </div>
+          <CreativeSquare cr={cr} />
           <p className="mt-1 truncate text-xs font-medium text-neutral-black">{cr.name}</p>
         </div>
       ))}

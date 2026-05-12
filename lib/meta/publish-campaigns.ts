@@ -197,6 +197,7 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
       continue;
     }
 
+    let creativeThumbForRow = "";
     let createdCampaignId: string | undefined;
     try {
       let media: AdCreativeMedia;
@@ -219,9 +220,10 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
           accessToken: ctx.accessToken,
           fetchImpl,
         });
+        creativeThumbForRow = imageUrl;
         media = { kind: "video", videoId, thumbnailImageUrl: imageUrl };
       } else {
-        const { hash } = await uploadAdImageToAccount({
+        const { hash, url: imagePreviewUrl } = await uploadAdImageToAccount({
           actId: unit.actId,
           accessToken: ctx.accessToken,
           fileName: creative.name,
@@ -229,6 +231,7 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
           mimeType: file.mimeType || "image/jpeg",
           fetchImpl,
         });
+        if (imagePreviewUrl) creativeThumbForRow = imagePreviewUrl;
         media = { kind: "image", imageHash: hash };
       }
 
@@ -337,7 +340,7 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
               id: creative.id,
               name: creative.name,
               type: creative.type,
-              thumb: "",
+              thumb: creativeThumbForRow,
             },
           ] as unknown as Json,
           errors: null,
@@ -372,7 +375,13 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
       }
       const msg = graphErrorMessage(e);
       results.push({ ...baseResult, error: msg });
-      await persistFailedCampanha(ctx, { unit, creative, structureDb, error: msg });
+      await persistFailedCampanha(ctx, {
+        unit,
+        creative,
+        structureDb,
+        error: msg,
+        thumb: creativeThumbForRow,
+      });
     }
 
     done += 1;
@@ -407,10 +416,12 @@ async function persistFailedCampanha(
     creative: WizardPublishPayload["creatives"][number];
     structureDb: string;
     error: string;
+    thumb?: string;
   }
 ): Promise<void> {
   const sc = resolveStructureCounts(ctx.payload);
   const adsTotal = sc.adsets * sc.adsPerAdset;
+  const thumb = args.thumb?.trim() ?? "";
   await ctx.supabase.from("campanhas").insert({
     user_id: ctx.userId,
     workspace_id: ctx.payload.workspaceId ?? null,
@@ -426,7 +437,7 @@ async function persistFailedCampanha(
     ads_total: adsTotal,
     trend: [] as unknown as Json,
     creatives: [
-      { id: args.creative.id, name: args.creative.name, type: args.creative.type, thumb: "" },
+      { id: args.creative.id, name: args.creative.name, type: args.creative.type, thumb },
     ] as unknown as Json,
     errors: [{ id: "publish", message: args.error, adName: args.creative.name }] as unknown as Json,
     meta_ids: null,

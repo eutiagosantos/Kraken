@@ -26,8 +26,10 @@ function requestUrl(input: Parameters<typeof fetch>[0]) {
 
 function createSupabaseMock() {
   const uploadJobUpdatePayloads: Record<string, unknown>[] = [];
+  const insertCampanhaRows: Record<string, unknown>[] = [];
 
   const insertCampanhas = vi.fn((row: Record<string, unknown>) => {
+    insertCampanhaRows.push(row);
     if (row.status === "erro") {
       return Promise.resolve({ error: null });
     }
@@ -76,6 +78,7 @@ function createSupabaseMock() {
   return {
     supabase: { from } as unknown as SupabaseClient<Database>,
     uploadJobUpdatePayloads,
+    insertCampanhaRows,
   };
 }
 
@@ -83,7 +86,10 @@ function graphFetchOk() {
   const fetchImpl: typeof fetch = vi.fn(async (input) => {
     const url = requestUrl(input);
     if (url.includes("/adimages")) {
-      return new Response(JSON.stringify({ images: { f: { hash: "img_hash" } } }), { status: 200 });
+      return new Response(
+        JSON.stringify({ images: { f: { hash: "img_hash", url: "https://cdn.example/preview.png" } } }),
+        { status: 200 }
+      );
     }
     if (url.includes("/campaigns")) {
       return new Response(JSON.stringify({ id: "meta-camp-1" }), { status: 200 });
@@ -124,7 +130,7 @@ describe("runWizardPublish", () => {
       publico: publicoFixture,
     });
 
-    const { supabase, uploadJobUpdatePayloads } = createSupabaseMock();
+    const { supabase, uploadJobUpdatePayloads, insertCampanhaRows } = createSupabaseMock();
     const out = await runWizardPublish({
       supabase,
       userId: "00000000-0000-4000-8000-000000000001",
@@ -152,6 +158,10 @@ describe("runWizardPublish", () => {
     expect(lastJobUpdate?.finished_at).toEqual(expect.any(String));
     expect(lastJobUpdate?.status).toBe("completed");
     expect(lastJobUpdate?.error_details).toBeNull();
+
+    const concluida = insertCampanhaRows.find((r) => r.status === "concluida");
+    const imageCreatives = concluida?.creatives as Array<{ thumb?: string }> | undefined;
+    expect(imageCreatives?.[0]?.thumb).toBe("https://cdn.example/preview.png");
   });
 
   it("marks error when image file is missing", async () => {
@@ -291,7 +301,7 @@ describe("runWizardPublish", () => {
       publico: publicoFixture,
     });
 
-    const { supabase } = createSupabaseMock();
+    const { supabase, insertCampanhaRows } = createSupabaseMock();
     const out = await runWizardPublish({
       supabase,
       userId: "00000000-0000-4000-8000-000000000001",
@@ -321,6 +331,10 @@ describe("runWizardPublish", () => {
     const cta = videoData?.call_to_action as { type?: string; value?: { link?: string } } | undefined;
     expect(cta?.type).toBe("LEARN_MORE");
     expect(cta?.value?.link).toBe("https://example.com");
+
+    const concluida = insertCampanhaRows.find((r) => r.status === "concluida");
+    const videoCreatives = concluida?.creatives as Array<{ thumb?: string }> | undefined;
+    expect(videoCreatives?.[0]?.thumb).toBe("https://thumb.example/p.jpg");
   });
 
   it("marks unit as error when video status returns error before creating campaign", async () => {
@@ -390,7 +404,7 @@ describe("runWizardPublish", () => {
       publico: publicoFixture,
     });
 
-    const { supabase } = createSupabaseMock();
+    const { supabase, insertCampanhaRows } = createSupabaseMock();
     const out = await runWizardPublish({
       supabase,
       userId: "00000000-0000-4000-8000-000000000001",
@@ -420,7 +434,12 @@ describe("runWizardPublish", () => {
         return new Response(JSON.stringify({ success: true }), { status: 200 });
       }
       if (url.includes("/adimages")) {
-        return new Response(JSON.stringify({ images: { f: { hash: "img_hash" } } }), { status: 200 });
+        return new Response(
+          JSON.stringify({
+            images: { f: { hash: "img_hash", url: "https://cdn.example/preview-fail.png" } },
+          }),
+          { status: 200 }
+        );
       }
       if (url.includes("/campaigns")) {
         return new Response(JSON.stringify({ id: "meta-camp-orphan" }), { status: 200 });
@@ -457,7 +476,7 @@ describe("runWizardPublish", () => {
       publico: publicoFixture,
     });
 
-    const { supabase } = createSupabaseMock();
+    const { supabase, insertCampanhaRows } = createSupabaseMock();
     const out = await runWizardPublish({
       supabase,
       userId: "00000000-0000-4000-8000-000000000001",
@@ -474,5 +493,9 @@ describe("runWizardPublish", () => {
     expect(out.results[0].ok).toBe(false);
     expect(out.results[0].error).toMatch(/Ad set invalid|OAuthException/i);
     expect(deleteCalled).toBe(true);
+
+    const erroRow = insertCampanhaRows.find((r) => r.status === "erro");
+    const failCreatives = erroRow?.creatives as Array<{ thumb?: string }> | undefined;
+    expect(failCreatives?.[0]?.thumb).toBe("https://cdn.example/preview-fail.png");
   });
 });
