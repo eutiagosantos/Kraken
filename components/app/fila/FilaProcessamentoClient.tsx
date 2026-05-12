@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { MetaAppDevModePublishHelp } from "@/components/app/fila/MetaAppDevModePublishHelp";
 import { UploadJobsList, type UploadJobListRow } from "@/components/app/fila/UploadJobsList";
 import { ProgressBar } from "@/components/app/ui/ProgressBar";
 import { mockWizardDataAdapter } from "@/lib/wizard/data-adapter";
 import { buildWizardPublishPayload } from "@/lib/wizard/build-wizard-publish-payload";
 import { getWizardPublishSliceFromStore } from "@/lib/wizard/get-wizard-publish-slice";
+import { partitionUploadJobsByActive } from "@/lib/wizard/upload-jobs-in-flight";
 import { useWizardStore } from "@/lib/stores/wizardStore";
 
 type UploadJobsApiResponse = {
@@ -103,70 +104,116 @@ export function FilaProcessamentoClient() {
     })();
   }, [loadJobs]);
 
+  const { activeJobs, historyJobs } = useMemo(() => partitionUploadJobsByActive(jobs), [jobs]);
+
   const queueIdle =
     !queuePublish.active && !queuePublish.success && !queuePublish.error && queuePublish.progress === 0;
-  const liveJob = queuePublish.active && !queuePublish.success && !queuePublish.error ? inFlightJob(jobs) : undefined;
+
+  const liveJob =
+    queuePublish.active && !queuePublish.success && !queuePublish.error ? inFlightJob(jobs) : undefined;
+
+  const serverOnlyActive = queueIdle && activeJobs.length > 0;
+  const showRecentSection = !queueIdle || activeJobs.length > 0;
+
+  const embeddedRecentJob =
+    queuePublish.active && !queuePublish.success && !queuePublish.error
+      ? liveJob ?? activeJobs[0]
+      : serverOnlyActive
+        ? activeJobs[0]
+        : undefined;
+
   const publishCardProgress = queuePublish.error
     ? 0
     : queuePublish.success
       ? 100
       : liveJob
         ? progressFromJob(liveJob)
-        : queuePublish.progress;
+        : serverOnlyActive
+          ? progressFromJob(activeJobs[0])
+          : queuePublish.progress;
+
+  const recentTitle = queuePublish.error
+    ? "Erro na publicação"
+    : queuePublish.success
+      ? "Publicação concluída"
+      : serverOnlyActive && queueIdle
+        ? "Envio em curso"
+        : "Publicando campanhas";
+
+  const recentDescription = queuePublish.error ? null : queuePublish.success ? (
+    <p className="mt-2 text-sm text-dashboard-muted">
+      Concluído — o registo passa para o histórico abaixo.
+    </p>
+  ) : serverOnlyActive && queueIdle ? (
+    <p className="mt-2 text-sm text-dashboard-muted">Há um envio em curso na tua conta (por exemplo, outro separador ou sessão).</p>
+  ) : (
+    <p className="mt-2 text-sm text-dashboard-muted">
+      {liveJob?.status === "awaiting_creatives"
+        ? "A enviar criativos e a preparar a publicação no Meta…"
+        : "A processar no Meta Ads…"}
+    </p>
+  );
+
+  const showEmptyAll = jobs.length === 0 && queueIdle && !jobsLoading;
+  const showHistoryBlock = !jobsLoading && !jobsError && (!showEmptyAll || showRecentSection);
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-8">
-      {!queueIdle ? (
-        <div className="rounded-2xl border border-dashboard-border bg-dashboard-surface p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-neutral-black">
-            {queuePublish.error
-              ? "Erro na publicação"
-              : queuePublish.success
-                ? "Publicação concluída"
-                : "Publicando campanhas"}
-          </h2>
-          {queuePublish.error ? (
-            <div className="mt-2">
-              <p className="text-sm whitespace-pre-wrap text-red-600">{queuePublish.error}</p>
-              <MetaAppDevModePublishHelp errorMessage={queuePublish.error} />
+      {showRecentSection ? (
+        <section className="space-y-3">
+          <div>
+            <h2 className="font-display text-xl font-bold tracking-tight text-neutral-black">Envio recente</h2>
+            <p className="mt-1 text-sm text-dashboard-muted">Estado do envio actual ou em curso na plataforma.</p>
+          </div>
+
+          <div className="rounded-2xl border border-dashboard-border bg-dashboard-surface p-6 shadow-sm">
+            <h3 className="text-lg font-semibold text-neutral-black">{recentTitle}</h3>
+            {queuePublish.error ? (
+              <div className="mt-2">
+                <p className="text-sm whitespace-pre-wrap text-red-600">{queuePublish.error}</p>
+                <MetaAppDevModePublishHelp errorMessage={queuePublish.error} />
+              </div>
+            ) : (
+              recentDescription
+            )}
+            <div className="mt-4">
+              <ProgressBar value={publishCardProgress} />
+              {!queuePublish.error ? (
+                <p className="mt-2 text-right text-xs font-semibold text-brand-purple">
+                  {Math.round(publishCardProgress)}%
+                </p>
+              ) : null}
             </div>
-          ) : (
-            <p className="mt-2 text-sm text-dashboard-muted">
-              {queuePublish.success
-                ? "Concluído — o envio aparece na lista abaixo."
-                : liveJob?.status === "awaiting_creatives"
-                  ? "A enviar criativos e a preparar a publicação no Meta…"
-                  : "A processar no Meta Ads…"}
-            </p>
-          )}
-          <div className="mt-4">
-            <ProgressBar value={publishCardProgress} />
-            {!queuePublish.error ? (
-              <p className="mt-2 text-right text-xs font-semibold text-brand-purple">
-                {Math.round(publishCardProgress)}%
-              </p>
+            {embeddedRecentJob ? (
+              <UploadJobsList
+                variant="recent"
+                className="mt-5 border-dashboard-border"
+                jobs={[embeddedRecentJob]}
+              />
+            ) : queuePublish.active && !queuePublish.success && !queuePublish.error ? (
+              <p className="mt-4 text-sm text-dashboard-muted">A preparar o registo do envio…</p>
+            ) : null}
+            {queuePublish.error ? (
+              <button
+                type="button"
+                className="mt-4 w-full rounded-lg border border-dashboard-border bg-dashboard-base py-2 text-sm font-semibold text-neutral-black hover:bg-neutral-white"
+                onClick={() => {
+                  patchQueuePublish({ error: null, progress: 0, success: false, active: false });
+                  void loadJobs();
+                }}
+              >
+                Fechar
+              </button>
             ) : null}
           </div>
-          {queuePublish.error ? (
-            <button
-              type="button"
-              className="mt-4 w-full rounded-lg border border-dashboard-border bg-dashboard-base py-2 text-sm font-semibold text-neutral-black hover:bg-neutral-white"
-              onClick={() => {
-                patchQueuePublish({ error: null, progress: 0, success: false, active: false });
-                void loadJobs();
-              }}
-            >
-              Fechar
-            </button>
-          ) : null}
-        </div>
+        </section>
       ) : null}
 
       <section className="space-y-4">
         <div className="flex flex-wrap items-end justify-between gap-2">
           <div>
-            <h2 className="font-display text-xl font-bold tracking-tight text-neutral-black">Os teus uploads</h2>
-            <p className="mt-1 text-sm text-dashboard-muted">Histórico de envios e publicações no Meta.</p>
+            <h2 className="font-display text-xl font-bold tracking-tight text-neutral-black">Histórico</h2>
+            <p className="mt-1 text-sm text-dashboard-muted">Envios já terminados (concluídos ou com erro), sem o envio em curso.</p>
           </div>
           <Link
             href="/campanhas"
@@ -192,7 +239,7 @@ export function FilaProcessamentoClient() {
               Tentar novamente
             </button>
           </div>
-        ) : jobs.length === 0 && queueIdle ? (
+        ) : showEmptyAll ? (
           <div className="rounded-2xl border border-dashboard-border bg-dashboard-surface p-8 text-center shadow-sm">
             <p className="text-sm font-medium text-neutral-black">Ainda não há envios registados</p>
             <p className="mt-2 text-sm text-dashboard-muted">
@@ -205,14 +252,17 @@ export function FilaProcessamentoClient() {
               Ir para Novo upload
             </Link>
           </div>
-        ) : (
+        ) : showHistoryBlock ? (
           <>
-            <UploadJobsList jobs={jobs} />
-            {jobs.length === 0 && !queueIdle ? (
-              <p className="text-sm text-dashboard-muted">A preparar o registo do envio na lista…</p>
-            ) : null}
+            {historyJobs.length > 0 ? (
+              <UploadJobsList jobs={historyJobs} />
+            ) : (
+              <p className="text-sm text-dashboard-muted">
+                Ainda não há entradas no histórico — o envio activo aparece em «Envio recente».
+              </p>
+            )}
           </>
-        )}
+        ) : null}
       </section>
     </div>
   );

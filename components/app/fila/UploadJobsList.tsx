@@ -211,7 +211,15 @@ const DESKTOP_GRID =
 const HEADER_GRID =
   "hidden md:grid md:grid-cols-[minmax(0,7.5rem)_minmax(0,1.35fr)_minmax(0,1.1fr)_minmax(0,9.5rem)_minmax(0,5.5rem)_minmax(0,6.5rem)_minmax(0,1fr)_2.5rem] md:gap-x-4 md:px-4 md:pb-2";
 
-export function UploadJobsList({ jobs }: { jobs: UploadJobListRow[] }) {
+export function UploadJobsList({
+  jobs,
+  variant = "default",
+  className,
+}: {
+  jobs: UploadJobListRow[];
+  variant?: "default" | "recent";
+  className?: string;
+}) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   if (jobs.length === 0) {
@@ -219,11 +227,17 @@ export function UploadJobsList({ jobs }: { jobs: UploadJobListRow[] }) {
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-dashboard-border bg-dashboard-surface">
+    <div
+      className={cn(
+        "overflow-hidden rounded-xl border border-dashboard-border bg-dashboard-surface",
+        variant === "recent" && "rounded-xl border-dashboard-border bg-dashboard-base/40",
+        className
+      )}
+    >
       <div
         className={cn(
-          HEADER_GRID,
-          "border-b border-dashboard-border text-[11px] font-semibold uppercase tracking-wide text-dashboard-muted"
+          "border-b border-dashboard-border text-[11px] font-semibold uppercase tracking-wide text-dashboard-muted",
+          variant === "recent" ? "hidden" : HEADER_GRID
         )}
       >
         <span>Envio</span>
@@ -406,7 +420,9 @@ export function UploadJobsList({ jobs }: { jobs: UploadJobListRow[] }) {
                 </div>
               </div>
 
-              {(job.status === "processing" || job.status === "awaiting_creatives") && job.total > 0 ? (
+              {(job.status === "processing" || job.status === "awaiting_creatives") &&
+              job.total > 0 &&
+              variant !== "recent" ? (
                 <div className="border-t border-dashboard-border px-4 pb-3 pt-2 md:px-4 md:pb-3 md:pt-2">
                   <div className="md:ml-[calc(7.5rem+1rem)] md:mr-10">
                     <ProgressBar value={pct} className="h-1.5" />
@@ -420,7 +436,7 @@ export function UploadJobsList({ jobs }: { jobs: UploadJobListRow[] }) {
                 </div>
               ) : null}
 
-              {job.status === "awaiting_creatives" && job.total === 0 ? (
+              {job.status === "awaiting_creatives" && job.total === 0 && variant !== "recent" ? (
                 <div className="border-t border-dashboard-border px-4 py-3 text-sm text-dashboard-muted md:px-4">
                   Operação criada; à espera que os criativos sejam enviados ao servidor.
                 </div>

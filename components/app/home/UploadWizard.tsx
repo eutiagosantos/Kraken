@@ -11,6 +11,7 @@ import {
   publicoHasCountryAndRegion,
 } from "@/lib/wizard/publico-geo-validation";
 import { mockWizardDataAdapter } from "@/lib/wizard/data-adapter";
+import { isUploadJobInFlightStatus } from "@/lib/wizard/upload-jobs-in-flight";
 import { useWizardStore, type Publico, type Structure } from "@/lib/stores/wizardStore";
 import { Step1Creatives } from "./wizard/Step1Creatives";
 import { Step2Config } from "./wizard/Step2Config";
@@ -43,6 +44,7 @@ export function UploadWizard() {
   const selectedAccountIds = useWizardStore((s) => s.selectedAccountIds);
   const selectedAccountIdsKey = selectedAccountIds.join(",");
   const [isNavigatingToQueue, startTransition] = useTransition();
+  const [publishBusy, setPublishBusy] = useState(false);
   const [publishNavigateError, setPublishNavigateError] = useState<string | null>(null);
   const [accountQuery, setAccountQuery] = useState("");
   const [publicoTab, setPublicoTab] = useState<"custom" | "salvos">("custom");
@@ -174,10 +176,35 @@ export function UploadWizard() {
       setPublishNavigateError(e instanceof Error ? e.message : "Não foi possível preparar a publicação.");
       return;
     }
-    wizard.requestPublishJob();
-    startTransition(() => {
-      router.push("/fila-de-processamento");
-    });
+
+    void (async () => {
+      setPublishBusy(true);
+      try {
+        const res = await fetch("/api/upload-jobs?limit=50", { credentials: "include" });
+        const body = (await res.json()) as { data?: { jobs: { status: string }[] }; error?: string };
+        if (!res.ok) {
+          setPublishNavigateError(body.error ?? "Não foi possível verificar a fila de envios.");
+          return;
+        }
+        const hasInFlight = (body.data?.jobs ?? []).some((j) => isUploadJobInFlightStatus(j.status));
+        if (hasInFlight) {
+          setPublishNavigateError(
+            "Já existe um envio em curso. Abre a fila de processamento e aguarda que termine antes de publicar outro."
+          );
+          return;
+        }
+      } catch {
+        setPublishNavigateError("Não foi possível verificar a fila de envios.");
+        return;
+      } finally {
+        setPublishBusy(false);
+      }
+
+      wizard.requestPublishJob();
+      startTransition(() => {
+        router.push("/fila-de-processamento");
+      });
+    })();
   };
 
   return (
@@ -277,7 +304,7 @@ export function UploadWizard() {
               status={wizard.status}
               budget={wizard.budget}
               estimatedCampaigns={estimatedCampaigns}
-              publishing={isNavigatingToQueue}
+              publishing={publishBusy || isNavigatingToQueue}
               publishBlockedReason={step3PublishBlockedReason}
               darkSelectStyles={lightSelectStyles}
               onSetPublicoTab={setPublicoTab}

@@ -256,7 +256,6 @@ describe("buildTargetingFromPublico", () => {
     const { targeting, usedFallbackGeo } = buildTargetingFromPublico(p.publico);
     expect(usedFallbackGeo).toBe(false);
     expect(targeting.geo_locations).toEqual({
-      countries: ["BR"],
       regions: [{ key: "3847" }],
       cities: [{ key: "600000" }],
     });
@@ -277,7 +276,6 @@ describe("buildTargetingFromPublico", () => {
     const { targeting, usedFallbackGeo } = buildTargetingFromPublico(p.publico);
     expect(usedFallbackGeo).toBe(false);
     expect(targeting.geo_locations).toEqual({
-      countries: ["BR"],
       regions: [{ key: "3847" }],
     });
     expect(targeting.device_platforms).toEqual(["mobile", "desktop"]);

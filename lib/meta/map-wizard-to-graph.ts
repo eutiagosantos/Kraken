@@ -272,8 +272,11 @@ export function buildTargetingFromPublico(publico: WizardPublishPayload["publico
           })()
         : [];
 
+  // Meta rejects geo_locations that combine `countries` with `cities`/`regions`.
+  // When sub-national locations exist, omit countries — the keys already imply country.
+  const hasSubNational = effectiveRegions.length > 0 || effectiveCities.length > 0;
   const geo_locations: Record<string, unknown> = {};
-  if (finalCountries.length > 0) geo_locations.countries = finalCountries;
+  if (!hasSubNational && finalCountries.length > 0) geo_locations.countries = finalCountries;
   if (effectiveRegions.length > 0) geo_locations.regions = effectiveRegions;
   if (effectiveCities.length > 0) geo_locations.cities = effectiveCities;
 

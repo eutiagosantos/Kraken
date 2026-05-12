@@ -226,6 +226,10 @@ export function createFetchWizardDataAdapter(): WizardDataAdapter {
       }
 
       const initRes = await fetch("/api/wizard/publish/init", { ...opts, method: "POST" });
+      if (initRes.status === 409) {
+        const body = (await initRes.json()) as { error?: string };
+        throw new Error(body.error ?? "Já existe um envio em curso. Abre a fila de processamento.");
+      }
       const { operationId } = await parseJson<{ operationId: string }>(initRes);
 
       const creativeStoragePaths = await uploadCreativesToWizardBucket(
