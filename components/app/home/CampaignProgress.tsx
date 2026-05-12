@@ -7,6 +7,12 @@ import type { MockActiveUpload } from "@/lib/mock-data";
 
 function statusBadge(status: MockActiveUpload["status"]) {
   switch (status) {
+    case "awaiting_creatives":
+      return (
+        <span className="inline-flex rounded-[6px] bg-[rgba(104,107,130,0.14)] px-2.5 py-1 font-ui text-xs font-semibold text-[#484b5e]">
+          À espera
+        </span>
+      );
     case "processing":
       return (
         <span className="inline-flex rounded-[6px] bg-[rgba(217,119,6,0.12)] px-2.5 py-1 font-ui text-xs font-semibold text-[#b45309]">

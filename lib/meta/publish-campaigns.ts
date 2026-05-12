@@ -33,6 +33,7 @@ import {
   structureLabelForDb,
   type WizardPublishPayload,
 } from "@/lib/meta/map-wizard-to-graph";
+import { buildUploadJobSummary } from "@/lib/meta/upload-job-summary";
 import type { Database, Json } from "@/lib/supabase/types";
 
 export type WizardPublishContext = {
@@ -132,6 +133,8 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
     throw new Error("Nenhuma conta válida para publicar.");
   }
 
+  const summary = buildUploadJobSummary(ctx.payload, ctx.accounts);
+
   const { data: jobRow, error: jobErr } = await ctx.supabase
     .from("upload_jobs")
     .update({
@@ -139,6 +142,7 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
       total: units.length,
       done: 0,
       status: "processing",
+      summary,
     })
     .eq("id", ctx.existingPublishJobId)
     .eq("user_id", ctx.userId)
@@ -358,7 +362,11 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
 
   const okCount = results.filter((r) => r.ok).length;
   const jobStatus: "completed" | "error" = okCount === 0 ? "error" : "completed";
-  await ctx.supabase.from("upload_jobs").update({ status: jobStatus }).eq("id", publishId);
+  const finishedAt = new Date().toISOString();
+  await ctx.supabase
+    .from("upload_jobs")
+    .update({ status: jobStatus, finished_at: finishedAt })
+    .eq("id", publishId);
 
   if (okCount > 0) {
     await ctx.supabase.from("activity_events").insert({

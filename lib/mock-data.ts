@@ -39,7 +39,7 @@ export const mockActivities: MockActivity[] = [];
 
 export const mockHomeActivities: MockActivity[] = [];
 
-export type UploadJobStatus = "processing" | "completed" | "error";
+export type UploadJobStatus = "awaiting_creatives" | "processing" | "completed" | "error";
 
 export type MockActiveUpload = {
   id: string;

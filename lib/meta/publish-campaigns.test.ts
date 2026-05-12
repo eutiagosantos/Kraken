@@ -21,6 +21,8 @@ const publicoFixture = {
 const PUBLISH_JOB_ID = "aaaaaaaa-bbbb-4ccc-a000-eeeeeeeeeeee";
 
 function createSupabaseMock() {
+  const uploadJobUpdatePayloads: Record<string, unknown>[] = [];
+
   const insertCampanhas = vi.fn((row: Record<string, unknown>) => {
     if (row.status === "erro") {
       return Promise.resolve({ error: null });
@@ -35,15 +37,23 @@ function createSupabaseMock() {
   const from = vi.fn((table: string) => {
     if (table === "upload_jobs") {
       return {
-        update: () => ({
-          eq: () => ({
-            eq: () => ({
-              select: () => ({
-                single: async () => ({ data: { id: PUBLISH_JOB_ID }, error: null }),
+        update: (payload: Record<string, unknown>) => {
+          uploadJobUpdatePayloads.push(payload);
+          if ("summary" in payload && payload.status === "processing") {
+            return {
+              eq: () => ({
+                eq: () => ({
+                  select: () => ({
+                    single: async () => ({ data: { id: PUBLISH_JOB_ID }, error: null }),
+                  }),
+                }),
               }),
-            }),
-          }),
-        }),
+            };
+          }
+          return {
+            eq: async () => ({ error: null }),
+          };
+        },
       };
     }
     if (table === "campanhas") {
@@ -59,7 +69,10 @@ function createSupabaseMock() {
     return {};
   });
 
-  return { from } as unknown as SupabaseClient<Database>;
+  return {
+    supabase: { from } as unknown as SupabaseClient<Database>,
+    uploadJobUpdatePayloads,
+  };
 }
 
 function graphFetchOk() {
@@ -105,8 +118,9 @@ describe("runWizardPublish", () => {
       publico: publicoFixture,
     });
 
+    const { supabase, uploadJobUpdatePayloads } = createSupabaseMock();
     const out = await runWizardPublish({
-      supabase: createSupabaseMock(),
+      supabase,
       userId: "00000000-0000-4000-8000-000000000001",
       accessToken: "token",
       payload,
@@ -124,6 +138,13 @@ describe("runWizardPublish", () => {
     expect(out.results[0].metaCampaignId).toBe("meta-camp-1");
     expect(out.results[0].krakenCampanhaId).toBe("camp-row-id");
     expect(out.warnings.length).toBe(0);
+
+    const firstJobUpdate = uploadJobUpdatePayloads.find((p) => p.summary != null);
+    expect(firstJobUpdate?.status).toBe("processing");
+    expect(firstJobUpdate?.summary).toMatchObject({ v: 1, objective: "OUTCOME_TRAFFIC" });
+    const lastJobUpdate = uploadJobUpdatePayloads[uploadJobUpdatePayloads.length - 1];
+    expect(lastJobUpdate?.finished_at).toEqual(expect.any(String));
+    expect(lastJobUpdate?.status).toBe("completed");
   });
 
   it("marks error when image file is missing", async () => {
@@ -148,8 +169,9 @@ describe("runWizardPublish", () => {
     });
 
     const fetchImpl = graphFetchOk();
+    const { supabase } = createSupabaseMock();
     const out = await runWizardPublish({
-      supabase: createSupabaseMock(),
+      supabase,
       userId: "00000000-0000-4000-8000-000000000001",
       accessToken: "token",
       payload,
@@ -249,8 +271,9 @@ describe("runWizardPublish", () => {
       publico: publicoFixture,
     });
 
+    const { supabase } = createSupabaseMock();
     const out = await runWizardPublish({
-      supabase: createSupabaseMock(),
+      supabase,
       userId: "00000000-0000-4000-8000-000000000001",
       accessToken: "token",
       payload,
@@ -347,8 +370,9 @@ describe("runWizardPublish", () => {
       publico: publicoFixture,
     });
 
+    const { supabase } = createSupabaseMock();
     const out = await runWizardPublish({
-      supabase: createSupabaseMock(),
+      supabase,
       userId: "00000000-0000-4000-8000-000000000001",
       accessToken: "token",
       payload,
@@ -412,8 +436,9 @@ describe("runWizardPublish", () => {
       publico: publicoFixture,
     });
 
+    const { supabase } = createSupabaseMock();
     const out = await runWizardPublish({
-      supabase: createSupabaseMock(),
+      supabase,
       userId: "00000000-0000-4000-8000-000000000001",
       accessToken: "token",
       payload,
