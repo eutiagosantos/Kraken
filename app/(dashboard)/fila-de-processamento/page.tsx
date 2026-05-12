@@ -10,7 +10,7 @@ export default function FilaDeProcessamentoPage() {
   return (
     <div className="mx-auto max-w-[1680px]">
       <div className="flex flex-col gap-6">
-        <header className="max-w-3xl">
+        <header className="max-w-7xl">
           <h1 className="font-display text-[1.75rem] font-bold leading-tight tracking-tight text-neutral-black">
             Fila de processamento
           </h1>

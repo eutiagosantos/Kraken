@@ -2,10 +2,13 @@
 
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { MoreHorizontal } from "lucide-react";
+import { useState } from "react";
 
 import { InfoRow } from "@/components/app/ui/InfoRow";
 import { ProgressBar } from "@/components/app/ui/ProgressBar";
 import { Badge } from "@/components/ui/Badge";
+import { cn } from "@/lib/utils";
 import type {
   UploadJobErrorDetailsV1,
   UploadJobSummaryV1,
@@ -29,39 +32,87 @@ function budgetPeriodLabel(period?: string) {
   return period ?? "—";
 }
 
-function statusBadge(status: string) {
+function statusPillClasses(status: string) {
   switch (status) {
     case "processing":
-      return (
-        <span className="inline-flex rounded-[6px] bg-[rgba(217,119,6,0.12)] px-2.5 py-1 font-ui text-xs font-semibold text-[#b45309]">
-          A processar
-        </span>
-      );
+      return "bg-[rgba(217,119,6,0.14)] text-[#b45309]";
     case "completed":
-      return (
-        <Badge variant="success" className="font-ui text-xs font-semibold">
-          Concluído
-        </Badge>
-      );
+      return "bg-semantic-green-bg text-semantic-green-dark";
     case "error":
-      return (
-        <Badge variant="neutral" className="bg-semantic-red-bg font-ui text-xs font-semibold text-semantic-red">
-          Erro
-        </Badge>
-      );
+      return "bg-semantic-red-bg text-semantic-red";
     case "awaiting_creatives":
-      return (
-        <span className="inline-flex rounded-[6px] bg-[rgba(104,107,130,0.14)] px-2.5 py-1 font-ui text-xs font-semibold text-[#484b5e]">
-          À espera de criativos
-        </span>
-      );
+      return "bg-[rgba(104,107,130,0.14)] text-[#484b5e]";
     default:
-      return (
-        <span className="inline-flex rounded-[6px] bg-[rgba(104,107,130,0.14)] px-2.5 py-1 font-ui text-xs font-semibold text-[#484b5e]">
-          {status}
-        </span>
-      );
+      return "bg-[rgba(104,107,130,0.14)] text-[#484b5e]";
   }
+}
+
+function statusLabel(status: string) {
+  switch (status) {
+    case "processing":
+      return "A processar";
+    case "completed":
+      return "Concluído";
+    case "error":
+      return "Erro";
+    case "awaiting_creatives":
+      return "À espera de criativos";
+    default:
+      return status;
+  }
+}
+
+function statusBadge(status: string) {
+  const label = statusLabel(status);
+  if (status === "completed") {
+    return (
+      <Badge variant="success" className="rounded-full px-3 py-1 font-ui text-xs font-semibold">
+        {label}
+      </Badge>
+    );
+  }
+  return (
+    <span
+      className={cn(
+        "inline-flex max-w-full shrink-0 rounded-full px-3 py-1 font-ui text-xs font-semibold",
+        statusPillClasses(status)
+      )}
+    >
+      {label}
+    </span>
+  );
+}
+
+function statusIconTint(status: string) {
+  switch (status) {
+    case "processing":
+      return "bg-[#f59e0b]";
+    case "completed":
+      return "bg-semantic-green";
+    case "error":
+      return "bg-semantic-red";
+    case "awaiting_creatives":
+      return "bg-[#94a3b8]";
+    default:
+      return "bg-neutral-gray";
+  }
+}
+
+function shortJobId(id: string) {
+  const compact = id.replace(/-/g, "");
+  const slice = compact.slice(0, 6).toUpperCase();
+  return `#${slice || "—"}`;
+}
+
+function entityInitials(accountName: string, s: UploadJobSummaryV1 | null) {
+  const first = s?.accounts?.[0]?.name?.trim();
+  const name = (first || accountName || "").trim();
+  if (!name) return "?";
+  const parts = name.split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) {
+    return `${parts[0][0] ?? ""}${parts[parts.length - 1][0] ?? ""}`.toUpperCase();
+  }
+  return name.slice(0, 2).toUpperCase();
 }
 
 function formatAccounts(s: UploadJobSummaryV1 | null, accountName: string) {
@@ -80,6 +131,37 @@ function creativeLine(s: UploadJobSummaryV1 | null) {
   return `${names.join(", ")}${tail}`;
 }
 
+function formatDateRange(startedAt: string, finishedAt: string | null) {
+  const start = new Date(startedAt);
+  const y = format(start, "yyyy", { locale: ptBR });
+  if (!finishedAt) {
+    return `${format(start, "d MMM", { locale: ptBR })} ${y} — em curso`;
+  }
+  const end = new Date(finishedAt);
+  const yEnd = format(end, "yyyy", { locale: ptBR });
+  if (y === yEnd) {
+    return `${format(start, "d MMM", { locale: ptBR })} – ${format(end, "d MMM yyyy", { locale: ptBR })}`;
+  }
+  return `${format(start, "d MMM yyyy", { locale: ptBR })} – ${format(end, "d MMM yyyy", { locale: ptBR })}`;
+}
+
+function valueColumnText(
+  s: UploadJobSummaryV1 | null,
+  job: Pick<UploadJobListRow, "status" | "total" | "done">
+) {
+  if (s?.budget != null) {
+    return `${s.budget} €`;
+  }
+  if (job.total > 0 && (job.status === "processing" || job.status === "awaiting_creatives")) {
+    const pct = Math.round((job.done / job.total) * 100);
+    return `${pct}%`;
+  }
+  if (job.total > 0) {
+    return `${job.done}/${job.total}`;
+  }
+  return "—";
+}
+
 function UploadJobErrorBlock({
   details,
   status,
@@ -95,7 +177,7 @@ function UploadJobErrorBlock({
   const mutedClass = isFullError ? "text-red-700" : "text-amber-800";
 
   return (
-    <div className={`mt-4 rounded-xl border p-4 ${boxClass}`}>
+    <div className={`rounded-xl border p-4 ${boxClass}`}>
       <p className="font-ui text-sm font-semibold">{title}</p>
       <p className="mt-1 whitespace-pre-wrap font-ui text-sm">{details.message}</p>
       {details.items?.length ? (
@@ -123,89 +205,264 @@ function UploadJobErrorBlock({
   );
 }
 
+const DESKTOP_GRID =
+  "hidden md:grid md:grid-cols-[minmax(0,7.5rem)_minmax(0,1.35fr)_minmax(0,1.1fr)_minmax(0,9.5rem)_minmax(0,5.5rem)_minmax(0,6.5rem)_minmax(0,1fr)_2.5rem] md:items-center md:gap-x-4 md:px-4 md:py-3.5";
+
+const HEADER_GRID =
+  "hidden md:grid md:grid-cols-[minmax(0,7.5rem)_minmax(0,1.35fr)_minmax(0,1.1fr)_minmax(0,9.5rem)_minmax(0,5.5rem)_minmax(0,6.5rem)_minmax(0,1fr)_2.5rem] md:gap-x-4 md:px-4 md:pb-2";
+
 export function UploadJobsList({ jobs }: { jobs: UploadJobListRow[] }) {
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
   if (jobs.length === 0) {
     return null;
   }
 
   return (
-    <ul className="space-y-4">
-      {jobs.map((job) => {
-        const pct = job.total > 0 ? Math.round((job.done / job.total) * 100) : 0;
-        const started = format(new Date(job.started_at), "dd/MM/yyyy HH:mm", { locale: ptBR });
-        const finished =
-          job.finished_at != null
-            ? format(new Date(job.finished_at), "dd/MM/yyyy HH:mm", { locale: ptBR })
-            : null;
-        const s = job.summary;
+    <div className="overflow-hidden rounded-xl border border-dashboard-border bg-dashboard-surface">
+      <div
+        className={cn(
+          HEADER_GRID,
+          "border-b border-dashboard-border text-[11px] font-semibold uppercase tracking-wide text-dashboard-muted"
+        )}
+      >
+        <span>Envio</span>
+        <span>Conta</span>
+        <span>Criativos</span>
+        <span>Datas</span>
+        <span>Orç. / prog.</span>
+        <span>Estado</span>
+        <span>Campanha</span>
+        <span className="sr-only">Acções</span>
+      </div>
 
-        return (
-          <li
-            key={job.id}
-            className="rounded-2xl border border-dashboard-border bg-dashboard-surface p-5 shadow-sm"
-          >
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div className="min-w-0 flex-1">
-                <p className="font-ui text-base font-semibold text-neutral-black">
-                  {s?.nomenclaturePreview?.trim() || "Upload"}
-                </p>
-                <p className="mt-1 font-ui text-xs text-dashboard-muted">
-                  {formatAccounts(s, job.account_name)} · iniciado {started}
-                  {finished ? ` · concluído ${finished}` : ""}
-                </p>
-                <p className="mt-0.5 font-mono text-[11px] text-neutral-gray">{job.id}</p>
-              </div>
-              {statusBadge(job.status)}
-            </div>
+      <ul className="divide-y divide-dashboard-border">
+        {jobs.map((job) => {
+          const pct = job.total > 0 ? Math.round((job.done / job.total) * 100) : 0;
+          const s = job.summary;
+          const expanded = expandedId === job.id;
+          const title = s?.nomenclaturePreview?.trim() || "Upload";
+          const accounts = formatAccounts(s, job.account_name);
+          const creatives = creativeLine(s);
+          const dateRange = formatDateRange(job.started_at, job.finished_at);
+          const valueMain = valueColumnText(s, job);
+          const detailLine = s?.objective?.trim() || s?.campaignType?.trim() || "—";
+          const initials = entityInitials(job.account_name, s);
 
-            {(job.status === "processing" || job.status === "awaiting_creatives") && job.total > 0 ? (
-              <div className="mt-4">
-                <ProgressBar value={pct} className="h-2" />
-                <div className="mt-2 flex flex-wrap justify-between gap-2 font-ui text-xs text-neutral-gray">
-                  <span>
-                    {job.done} de {job.total} unidades
+          const toggle = () => setExpandedId((id) => (id === job.id ? null : job.id));
+
+          return (
+            <li key={job.id} className="bg-dashboard-surface">
+              {/* Mobile row */}
+              <div className="flex flex-col gap-3 p-4 md:hidden">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex min-w-0 items-center gap-2.5">
+                    <span
+                      className={cn(
+                        "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[10px] font-bold text-white shadow-sm",
+                        statusIconTint(job.status)
+                      )}
+                      aria-hidden
+                    >
+                      #
+                    </span>
+                    <div className="min-w-0">
+                      <p className="font-mono text-xs font-medium text-neutral-black">{shortJobId(job.id)}</p>
+                      <p className="mt-0.5 truncate font-mono text-[10px] text-neutral-gray">{job.id}</p>
+                    </div>
+                  </div>
+                  {statusBadge(job.status)}
+                </div>
+
+                <div className="flex min-w-0 items-center gap-2.5">
+                  <span
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-purple-subtle text-xs font-semibold text-brand-purple"
+                    aria-hidden
+                  >
+                    {initials}
                   </span>
-                  <span className="font-semibold text-brand-purple">{pct}%</span>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-ui text-sm font-semibold text-neutral-black">{title}</p>
+                    <p className="mt-0.5 font-ui text-xs text-dashboard-muted">{accounts}</p>
+                  </div>
+                </div>
+
+                <div className="space-y-2 text-sm">
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-dashboard-muted">Criativos</p>
+                    <p className="mt-0.5 font-ui text-sm text-neutral-black">{creatives}</p>
+                  </div>
+                  <div className="flex flex-wrap gap-x-4 gap-y-1">
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-dashboard-muted">Datas</p>
+                      <p className="mt-0.5 font-ui text-sm text-dashboard-muted">{dateRange}</p>
+                    </div>
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-dashboard-muted">
+                        Orç. / prog.
+                      </p>
+                      <p className="mt-0.5 font-ui text-sm font-semibold tabular-nums text-neutral-black">
+                        {valueMain}
+                      </p>
+                      {s?.budget != null ? (
+                        <p className="font-ui text-[11px] text-dashboard-muted">{budgetPeriodLabel(s.budgetPeriod)}</p>
+                      ) : job.total > 0 ? (
+                        <p className="font-ui text-[11px] text-dashboard-muted">
+                          {job.done} de {job.total}
+                        </p>
+                      ) : null}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-dashboard-muted">Campanha</p>
+                    <p className="mt-0.5 font-ui text-sm text-neutral-black">{detailLine}</p>
+                  </div>
+                </div>
+
+                <div className="flex justify-end border-t border-dashboard-border pt-2">
+                  <button
+                    type="button"
+                    className={cn(
+                      "rounded-lg p-2 text-neutral-gray transition-colors hover:bg-dashboard-base hover:text-neutral-black",
+                      expanded && "bg-dashboard-base text-neutral-black"
+                    )}
+                    aria-expanded={expanded}
+                    aria-label={expanded ? "Fechar detalhes" : "Ver detalhes"}
+                    onClick={toggle}
+                  >
+                    <MoreHorizontal className="h-5 w-5" strokeWidth={1.75} />
+                  </button>
                 </div>
               </div>
-            ) : null}
 
-            {job.status === "awaiting_creatives" && job.total === 0 ? (
-              <p className="mt-3 text-sm text-dashboard-muted">
-                Operação criada; à espera que os criativos sejam enviados ao servidor.
-              </p>
-            ) : null}
+              {/* Desktop row */}
+              <div className={DESKTOP_GRID}>
+                <div className="flex min-w-0 items-center gap-2">
+                  <span
+                    className={cn(
+                      "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[10px] font-bold text-white shadow-sm",
+                      statusIconTint(job.status)
+                    )}
+                    aria-hidden
+                  >
+                    #
+                  </span>
+                  <div className="min-w-0">
+                    <p className="font-mono text-xs font-medium text-neutral-black">{shortJobId(job.id)}</p>
+                  </div>
+                </div>
 
-            {job.error_details ? (
-              <UploadJobErrorBlock details={job.error_details} status={job.status} />
-            ) : null}
+                <div className="flex min-w-0 items-center gap-2.5">
+                  <span
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-purple-subtle text-xs font-semibold text-brand-purple"
+                    aria-hidden
+                  >
+                    {initials}
+                  </span>
+                  <div className="min-w-0">
+                    <p className="truncate font-ui text-sm font-semibold text-neutral-black">{title}</p>
+                    <p className="mt-0.5 truncate font-ui text-xs text-dashboard-muted">{accounts}</p>
+                  </div>
+                </div>
 
-            {s ? (
-              <div className="mt-4 rounded-xl border border-dashboard-border bg-dashboard-base px-4">
-                <InfoRow label="Objectivo" value={s.objective ?? "—"} />
-                <InfoRow
-                  label="Orçamento"
-                  value={
-                    s.budget != null
-                      ? `${s.budget} € (${budgetPeriodLabel(s.budgetPeriod)})`
-                      : "—"
-                  }
-                />
-                <InfoRow label="Tipo de campanha" value={s.campaignType ?? "—"} />
-                <InfoRow label="Estrutura" value={s.structureDisplay ?? s.structure ?? "—"} />
-                <InfoRow label="Público" value={s.publicoName ?? "—"} />
-                <InfoRow label="Criativos" value={creativeLine(s)} />
-                {s.pixelId ? <InfoRow label="Pixel" value={s.pixelId} /> : null}
-                <InfoRow label="Estado no Meta" value={s.campaignStatus ?? "—"} />
+                <p className="truncate font-ui text-sm text-neutral-black" title={creatives}>
+                  {creatives}
+                </p>
+
+                <p className="font-ui text-sm text-dashboard-muted">{dateRange}</p>
+
+                <div>
+                  <p className="font-ui text-sm font-semibold tabular-nums text-neutral-black">{valueMain}</p>
+                  {s?.budget != null ? (
+                    <p className="mt-0.5 truncate font-ui text-[11px] text-dashboard-muted">
+                      {budgetPeriodLabel(s.budgetPeriod)}
+                    </p>
+                  ) : job.total > 0 ? (
+                    <p className="mt-0.5 font-ui text-[11px] text-dashboard-muted">
+                      {job.done} de {job.total}
+                    </p>
+                  ) : null}
+                </div>
+
+                <div className="flex justify-start">{statusBadge(job.status)}</div>
+
+                <p className="truncate font-ui text-sm text-neutral-black" title={detailLine}>
+                  {detailLine}
+                </p>
+
+                <div className="flex justify-center">
+                  <button
+                    type="button"
+                    className={cn(
+                      "rounded-lg p-2 text-neutral-gray transition-colors hover:bg-dashboard-base hover:text-neutral-black",
+                      expanded && "bg-dashboard-base text-neutral-black"
+                    )}
+                    aria-expanded={expanded}
+                    aria-label={expanded ? "Fechar detalhes" : "Ver detalhes"}
+                    onClick={toggle}
+                  >
+                    <MoreHorizontal className="h-5 w-5" strokeWidth={1.75} />
+                  </button>
+                </div>
               </div>
-            ) : job.status !== "awaiting_creatives" ? (
-              <p className="mt-3 text-xs text-dashboard-muted">
-                Resumo indisponível para este envio (dados anteriores à actualização da plataforma).
-              </p>
-            ) : null}
-          </li>
-        );
-      })}
-    </ul>
+
+              {(job.status === "processing" || job.status === "awaiting_creatives") && job.total > 0 ? (
+                <div className="border-t border-dashboard-border px-4 pb-3 pt-2 md:px-4 md:pb-3 md:pt-2">
+                  <div className="md:ml-[calc(7.5rem+1rem)] md:mr-10">
+                    <ProgressBar value={pct} className="h-1.5" />
+                    <div className="mt-1.5 flex justify-between gap-2 font-ui text-[11px] text-neutral-gray">
+                      <span>
+                        {job.done} de {job.total} unidades
+                      </span>
+                      <span className="font-semibold text-brand-purple">{pct}%</span>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+
+              {job.status === "awaiting_creatives" && job.total === 0 ? (
+                <div className="border-t border-dashboard-border px-4 py-3 text-sm text-dashboard-muted md:px-4">
+                  Operação criada; à espera que os criativos sejam enviados ao servidor.
+                </div>
+              ) : null}
+
+              {expanded ? (
+                <div className="border-t border-dashboard-border bg-dashboard-base px-4 py-4 md:px-6">
+                  {job.error_details ? (
+                    <div className="mb-4">
+                      <UploadJobErrorBlock details={job.error_details} status={job.status} />
+                    </div>
+                  ) : null}
+                  {s ? (
+                    <div className="rounded-xl border border-dashboard-border bg-dashboard-surface px-4">
+                      <InfoRow label="Objectivo" value={s.objective ?? "—"} />
+                      <InfoRow
+                        label="Orçamento"
+                        value={
+                          s.budget != null
+                            ? `${s.budget} € (${budgetPeriodLabel(s.budgetPeriod)})`
+                            : "—"
+                        }
+                      />
+                      <InfoRow label="Tipo de campanha" value={s.campaignType ?? "—"} />
+                      <InfoRow label="Estrutura" value={s.structureDisplay ?? s.structure ?? "—"} />
+                      <InfoRow label="Público" value={s.publicoName ?? "—"} />
+                      <InfoRow label="Criativos" value={creativeLine(s)} />
+                      {s.pixelId ? <InfoRow label="Pixel" value={s.pixelId} /> : null}
+                      <InfoRow label="Estado no Meta" value={s.campaignStatus ?? "—"} />
+                      <InfoRow label="ID do envio" value={job.id} />
+                    </div>
+                  ) : job.status !== "awaiting_creatives" ? (
+                    <p className="text-xs text-dashboard-muted">
+                      Resumo indisponível para este envio (dados anteriores à actualização da plataforma).
+                    </p>
+                  ) : null}
+                </div>
+              ) : null}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
   );
 }

@@ -115,7 +115,7 @@ export function FilaProcessamentoClient() {
         : queuePublish.progress;
 
   return (
-    <div className="mx-auto max-w-3xl space-y-8">
+    <div className="mx-auto w-full max-w-7xl space-y-8">
       {!queueIdle ? (
         <div className="rounded-2xl border border-dashboard-border bg-dashboard-surface p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-neutral-black">
