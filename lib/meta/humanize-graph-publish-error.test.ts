@@ -4,6 +4,7 @@ import { GraphApiError } from "@/lib/meta/graph-client";
 import {
   humanizeMetaAppDevelopmentModeError,
   isMetaAppDevelopmentModeError,
+  messageIndicatesMetaAppDevelopmentMode,
 } from "@/lib/meta/humanize-graph-publish-error";
 
 describe("isMetaAppDevelopmentModeError", () => {
@@ -43,6 +44,28 @@ describe("isMetaAppDevelopmentModeError", () => {
 
   it("returns false for non-Graph errors", () => {
     expect(isMetaAppDevelopmentModeError(new Error("network"))).toBe(false);
+  });
+});
+
+describe("messageIndicatesMetaAppDevelopmentMode", () => {
+  it("detects Kraken humanized hint substring", () => {
+    expect(
+      messageIndicatesMetaAppDevelopmentMode(
+        "A app Meta usada no login (Facebook) está em modo Desenvolvimento. …"
+      )
+    ).toBe(true);
+  });
+
+  it("detects raw Portuguese Meta message in a thrown error string", () => {
+    expect(
+      messageIndicatesMetaAppDevelopmentMode(
+        "Conta — f.mp4: O post do criativo dos anúncios foi criada por um app que está em modo de desenvolvimento: Invalid parameter"
+      )
+    ).toBe(true);
+  });
+
+  it("returns false for unrelated errors", () => {
+    expect(messageIndicatesMetaAppDevelopmentMode("Invalid OAuth access token.")).toBe(false);
   });
 });
 

@@ -10,15 +10,24 @@ function combinedGraphText(e: GraphApiError): string {
   return msg || title;
 }
 
-/** When Meta rejects creatives because the OAuth app is still in Development mode. */
-export function isMetaAppDevelopmentModeError(e: unknown): boolean {
-  if (!(e instanceof GraphApiError)) return false;
-  const blob = combinedGraphText(e).toLowerCase();
+/**
+ * True when `text` looks like Meta’s “app in development mode” rejection or the
+ * Kraken humanized message built from it (used client-side on publish error strings).
+ */
+export function messageIndicatesMetaAppDevelopmentMode(text: string): boolean {
+  const blob = text.toLowerCase();
   return (
     blob.includes("modo de desenvolvimento") ||
     blob.includes("development mode") ||
-    (blob.includes("created by an app") && blob.includes("development"))
+    (blob.includes("created by an app") && blob.includes("development")) ||
+    blob.includes("app meta usada no login")
   );
+}
+
+/** When Meta rejects creatives because the OAuth app is still in Development mode. */
+export function isMetaAppDevelopmentModeError(e: unknown): boolean {
+  if (!(e instanceof GraphApiError)) return false;
+  return messageIndicatesMetaAppDevelopmentMode(combinedGraphText(e));
 }
 
 /** Actionable PT message + original Meta text for support. */

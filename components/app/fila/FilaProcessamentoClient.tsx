@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect } from "react";
+import { MetaAppDevModePublishHelp } from "@/components/app/fila/MetaAppDevModePublishHelp";
 import { ProgressBar } from "@/components/app/ui/ProgressBar";
 import { mockWizardDataAdapter } from "@/lib/wizard/data-adapter";
 import { buildWizardPublishPayload } from "@/lib/wizard/build-wizard-publish-payload";
@@ -81,7 +82,10 @@ export function FilaProcessamentoClient() {
                 : "Publicando campanhas"}
           </h2>
           {queuePublish.error ? (
-            <p className="mt-2 text-sm text-red-600">{queuePublish.error}</p>
+            <div className="mt-2">
+              <p className="text-sm whitespace-pre-wrap text-red-600">{queuePublish.error}</p>
+              <MetaAppDevModePublishHelp errorMessage={queuePublish.error} />
+            </div>
           ) : (
             <p className="mt-2 text-sm text-dashboard-muted">
               {queuePublish.success
