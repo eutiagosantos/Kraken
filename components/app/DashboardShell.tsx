@@ -17,6 +17,8 @@ function MainColumn({ children }: { children: ReactNode }) {
     <div
       className={cn(
         "ml-0 flex min-h-screen flex-1 flex-col transition-[margin-left] duration-300 ease-in-out",
+        // md:pt-[12px] must match SIDEBAR_FLOAT_INSET_PX (sidebar-layout.ts / Sidebar.tsx)
+        "md:pt-[12px]",
         sidebarMainMarginTwClass(collapsed, ready)
       )}
     >

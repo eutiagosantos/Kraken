@@ -41,7 +41,8 @@ export function Topbar({ pathname }: { pathname: string }) {
   return (
     <header
       className={cn(
-        "sticky top-0 z-30 flex h-14 shrink-0 items-center gap-4 border-b border-dashboard-border",
+        // md:top-[12px] must match SIDEBAR_FLOAT_INSET_PX when sticky (desktop floating sidebar)
+        "sticky top-0 z-30 flex h-14 shrink-0 items-center gap-4 border-b border-dashboard-border md:top-[12px]",
         "bg-dashboard-surface px-4 shadow-[rgba(0,0,0,0.03)_0px_1px_4px] md:px-6"
       )}
     >
