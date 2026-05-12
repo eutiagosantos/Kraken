@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { checkInFlightUploadJob, partitionUploadJobsByActive } from "./upload-jobs-in-flight";
+import { checkInFlightUploadJob, partitionUploadJobsByActive, uploadJobShouldPollForUpdates } from "./upload-jobs-in-flight";
 
 describe("partitionUploadJobsByActive", () => {
   it("splits in-flight vs history and sorts active by started_at desc", () => {
@@ -23,6 +23,24 @@ describe("partitionUploadJobsByActive", () => {
     ]);
     expect(activeJobs.map((j) => j.id)).toEqual(["c", "b"]);
     expect(historyJobs.map((j) => j.id)).toEqual(["a"]);
+  });
+});
+
+describe("uploadJobShouldPollForUpdates", () => {
+  const base = { id: "x", status: "processing" as const, started_at: "2026-01-15T12:00:00.000Z" };
+
+  it("returns false for terminal statuses", () => {
+    expect(uploadJobShouldPollForUpdates({ ...base, status: "completed" }, Date.UTC(2026, 0, 20))).toBe(false);
+  });
+
+  it("returns true for fresh in-flight job", () => {
+    const now = Date.parse("2026-01-15T13:00:00.000Z");
+    expect(uploadJobShouldPollForUpdates(base, now)).toBe(true);
+  });
+
+  it("returns false when job started longer ago than max poll age", () => {
+    const now = Date.parse("2026-01-15T15:00:01.000Z");
+    expect(uploadJobShouldPollForUpdates(base, now)).toBe(false);
   });
 });
 

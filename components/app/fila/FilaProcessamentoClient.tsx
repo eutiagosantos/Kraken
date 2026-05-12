@@ -1,14 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { MetaAppDevModePublishHelp } from "@/components/app/fila/MetaAppDevModePublishHelp";
 import { UploadJobsList, type UploadJobListRow } from "@/components/app/fila/UploadJobsList";
 import { ProgressBar } from "@/components/app/ui/ProgressBar";
 import { mockWizardDataAdapter } from "@/lib/wizard/data-adapter";
 import { buildWizardPublishPayload } from "@/lib/wizard/build-wizard-publish-payload";
 import { getWizardPublishSliceFromStore } from "@/lib/wizard/get-wizard-publish-slice";
-import { partitionUploadJobsByActive } from "@/lib/wizard/upload-jobs-in-flight";
+import { partitionUploadJobsByActive, uploadJobShouldPollForUpdates } from "@/lib/wizard/upload-jobs-in-flight";
 import { useWizardStore } from "@/lib/stores/wizardStore";
 
 type UploadJobsApiResponse = {
@@ -37,8 +37,11 @@ export function FilaProcessamentoClient() {
   const [jobs, setJobs] = useState<UploadJobListRow[]>([]);
   const [jobsLoading, setJobsLoading] = useState(true);
   const [jobsError, setJobsError] = useState<string | null>(null);
+  const loadJobsInFlight = useRef(false);
 
   const loadJobs = useCallback(async () => {
+    if (loadJobsInFlight.current) return;
+    loadJobsInFlight.current = true;
     try {
       const res = await fetch("/api/upload-jobs?limit=50", { credentials: "include" });
       const body = (await res.json()) as UploadJobsApiResponse;
@@ -51,6 +54,7 @@ export function FilaProcessamentoClient() {
     } catch {
       setJobsError("Não foi possível carregar os uploads.");
     } finally {
+      loadJobsInFlight.current = false;
       setJobsLoading(false);
     }
   }, []);
@@ -60,12 +64,24 @@ export function FilaProcessamentoClient() {
   }, [loadJobs]);
 
   const needsPolling =
-    jobs.some((j) => j.status === "processing" || j.status === "awaiting_creatives") || queuePublish.active;
+    jobs.some((j) => uploadJobShouldPollForUpdates(j)) || queuePublish.active;
 
   useEffect(() => {
     if (!needsPolling) return;
-    const t = setInterval(() => void loadJobs(), 2500);
+    const t = setInterval(() => {
+      if (document.visibilityState !== "visible") return;
+      void loadJobs();
+    }, 2500);
     return () => clearInterval(t);
+  }, [needsPolling, loadJobs]);
+
+  useEffect(() => {
+    if (!needsPolling) return;
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void loadJobs();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
   }, [needsPolling, loadJobs]);
 
   useEffect(() => {
