@@ -3,8 +3,10 @@ import { describe, expect, it } from "vitest";
 import { GraphApiError } from "@/lib/meta/graph-client";
 import {
   humanizeMetaAppDevelopmentModeError,
+  humanizeMetaAudienceTooNarrowError,
   humanizeVideoProcessingError,
   isMetaAppDevelopmentModeError,
+  isMetaAudienceTooNarrowError,
   messageIndicatesMetaAppDevelopmentMode,
 } from "@/lib/meta/humanize-graph-publish-error";
 
@@ -95,5 +97,51 @@ describe("humanizeMetaAppDevelopmentModeError", () => {
     expect(out).toContain("developers.facebook.com");
     expect(out).toContain("Invalid parameter");
     expect(out).toContain("modo de desenvolvimento");
+  });
+});
+
+describe("isMetaAudienceTooNarrowError", () => {
+  it("detects Portuguese Amplie seu público with title", () => {
+    const e = new GraphApiError("Invalid parameter", {
+      status: 400,
+      errorUserTitle: "O público configurado é inválido",
+      errorUserMsg: "Amplie seu público para permitir que este anúncio seja veiculado.",
+      rawBody: "{}",
+    });
+    expect(isMetaAudienceTooNarrowError(e)).toBe(true);
+  });
+
+  it("detects English expand your audience", () => {
+    const e = new GraphApiError("Invalid parameter", {
+      status: 400,
+      errorUserTitle: "Invalid audience",
+      errorUserMsg: "Expand your audience to run this ad.",
+      rawBody: "{}",
+    });
+    expect(isMetaAudienceTooNarrowError(e)).toBe(true);
+  });
+
+  it("returns false for unrelated Graph errors", () => {
+    const e = new GraphApiError("Invalid parameter", {
+      status: 400,
+      errorUserTitle: "Budget too low",
+      rawBody: "{}",
+    });
+    expect(isMetaAudienceTooNarrowError(e)).toBe(false);
+  });
+});
+
+describe("humanizeMetaAudienceTooNarrowError", () => {
+  it("includes checklist hint and original Meta text", () => {
+    const e = new GraphApiError("Invalid parameter", {
+      status: 400,
+      errorUserTitle: "O público configurado é inválido",
+      errorUserMsg: "Amplie seu público para permitir que este anúncio seja veiculado.",
+      rawBody: "{}",
+    });
+    const out = humanizeMetaAudienceTooNarrowError(e);
+    expect(out).toContain("país inteiro");
+    expect(out).toContain("resposta Meta:");
+    expect(out).toContain("Amplie seu público");
   });
 });

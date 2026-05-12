@@ -39,6 +39,23 @@ export function humanizeMetaAppDevelopmentModeError(e: GraphApiError): string {
   return `${META_APP_DEV_MODE_HINT_PT} (resposta Meta: ${combinedGraphText(e)})`;
 }
 
+const META_AUDIENCE_TOO_NARROW_HINT_PT =
+  "O Meta estimou este público como demasiado pequeno ou inelegível para veicular. Alarga a localização (região ou país em vez de uma área muito pequena), a faixa etária, os placements e os dispositivos; simplifica ou remove interesses. Um teste útil: país inteiro + idades amplas + sem interesses — se passar, volta a estreitar até encontrar o filtro problemático. Nota: com a app OAuth ainda em modo Desenvolvimento, o universo de entrega também é muito limitado (ver documentação interna de publicação em Dev).";
+
+/** Meta often returns PT/EN variants of “expand your audience” on ad set creation. */
+export function isMetaAudienceTooNarrowError(e: unknown): boolean {
+  if (!(e instanceof GraphApiError)) return false;
+  const blob = combinedGraphText(e).toLowerCase();
+  if (blob.includes("expand your audience") || blob.includes("broaden your audience")) return true;
+  if (blob.includes("amplie") && blob.includes("público")) return true;
+  if (blob.includes("ampliar") && blob.includes("público")) return true;
+  return false;
+}
+
+export function humanizeMetaAudienceTooNarrowError(e: GraphApiError): string {
+  return `${META_AUDIENCE_TOO_NARROW_HINT_PT} (resposta Meta: ${combinedGraphText(e)})`;
+}
+
 /**
  * Appends a short PT hint for common Meta video processing failures (codec, duration, size).
  * Callers should pass Meta's own `processing_phase.errors[].message` when available.

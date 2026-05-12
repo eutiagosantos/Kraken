@@ -17,7 +17,9 @@ import {
 } from "@/lib/meta/graph-campaign-publish";
 import {
   humanizeMetaAppDevelopmentModeError,
+  humanizeMetaAudienceTooNarrowError,
   isMetaAppDevelopmentModeError,
+  isMetaAudienceTooNarrowError,
 } from "@/lib/meta/humanize-graph-publish-error";
 import type { GraphFetch } from "@/lib/meta/graph-client";
 import { GraphApiError } from "@/lib/meta/graph-client";
@@ -93,6 +95,9 @@ function buildUploadJobErrorDetails(results: PublishUnitResult[], warnings: stri
 function graphErrorMessage(e: unknown): string {
   if (e instanceof GraphApiError && isMetaAppDevelopmentModeError(e)) {
     return humanizeMetaAppDevelopmentModeError(e);
+  }
+  if (e instanceof GraphApiError && isMetaAudienceTooNarrowError(e)) {
+    return humanizeMetaAudienceTooNarrowError(e);
   }
   if (e instanceof GraphApiError) {
     const title = e.errorUserTitle ? `${e.errorUserTitle}: ` : "";
@@ -178,7 +183,7 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
   }
   if (dailyAdsetFlight) {
     warnings.push(
-      "Voo (início/fim): o Meta recebe `start_time`/`end_time` em UTC+0000 após conversão a partir da hora local deste dispositivo (não é a timezone da conta de anúncios)."
+      "Voo (início/fim): o assistente grava as datas como ISO no browser (hora local ao escolher no calendário); o Meta recebe `start_time`/`end_time` em UTC+0000 para esse instante. Isto não substitui a timezone da conta de anúncios para outros campos (ex.: dayparting)."
     );
   }
 
