@@ -409,6 +409,18 @@ describe("buildTargetingFromPublico", () => {
     expect(targeting.device_platforms).toBeUndefined();
     expect(targeting.user_os).toBeUndefined();
   });
+
+  it("maps interests to flexible_spec with numeric id only (no name)", () => {
+    const p = wizardPublishPayloadSchema.parse({
+      ...basePayload,
+      publico: {
+        ...basePayload.publico,
+        interests: [{ id: "6003139266461", name: "Movies" }],
+      },
+    });
+    const { targeting } = buildTargetingFromPublico(p.publico);
+    expect(targeting.flexible_spec).toEqual([{ interests: [{ id: 6003139266461 }] }]);
+  });
 });
 
 describe("budgetMinorUnits", () => {

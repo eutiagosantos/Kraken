@@ -7,11 +7,22 @@ export class GraphApiError extends Error {
   readonly graphCode?: number;
   readonly errorSubcode?: number;
   readonly errorUserTitle?: string;
+  readonly errorUserMsg?: string;
+  /** Short JSON snippet from `error_data` when serializable (debugging / Meta blame hints). */
+  readonly errorDataSummary?: string;
   readonly rawBody: string;
 
   constructor(
     message: string,
-    opts: { status: number; graphCode?: number; errorSubcode?: number; errorUserTitle?: string; rawBody: string }
+    opts: {
+      status: number;
+      graphCode?: number;
+      errorSubcode?: number;
+      errorUserTitle?: string;
+      errorUserMsg?: string;
+      errorDataSummary?: string;
+      rawBody: string;
+    }
   ) {
     super(message);
     this.name = "GraphApiError";
@@ -19,22 +30,54 @@ export class GraphApiError extends Error {
     this.graphCode = opts.graphCode;
     this.errorSubcode = opts.errorSubcode;
     this.errorUserTitle = opts.errorUserTitle;
+    this.errorUserMsg = opts.errorUserMsg;
+    this.errorDataSummary = opts.errorDataSummary;
     this.rawBody = opts.rawBody;
   }
 }
 
-function parseGraphErrorJson(body: string): { message: string; code?: number; errorSubcode?: number; errorUserTitle?: string } {
+function parseGraphErrorJson(body: string): {
+  message: string;
+  code?: number;
+  errorSubcode?: number;
+  errorUserTitle?: string;
+  errorUserMsg?: string;
+  errorDataSummary?: string;
+} {
   try {
     const j = JSON.parse(body) as {
-      error?: { message?: string; code?: number; error_subcode?: number; error_user_title?: string };
+      error?: {
+        message?: string;
+        code?: number;
+        error_subcode?: number;
+        error_user_title?: string;
+        error_user_msg?: string;
+        error_data?: unknown;
+      };
     };
     const e = j.error;
-    if (e?.message) {
+    if (e) {
+      let errorDataSummary: string | undefined;
+      if (e.error_data != null) {
+        try {
+          const s = typeof e.error_data === "string" ? e.error_data : JSON.stringify(e.error_data);
+          if (s.length > 0) {
+            errorDataSummary = s.length <= 600 ? s : `${s.slice(0, 600)}…`;
+          }
+        } catch {
+          /* ignore */
+        }
+      }
+      const msg = e.message?.trim();
+      const userMsg = typeof e.error_user_msg === "string" ? e.error_user_msg.trim() : undefined;
+      const message = msg || userMsg || body.slice(0, 400);
       return {
-        message: e.message,
+        message,
         code: typeof e.code === "number" ? e.code : undefined,
         errorSubcode: typeof e.error_subcode === "number" ? e.error_subcode : undefined,
         errorUserTitle: typeof e.error_user_title === "string" ? e.error_user_title : undefined,
+        errorUserMsg: userMsg,
+        errorDataSummary,
       };
     }
   } catch {
@@ -83,6 +126,8 @@ export async function graphJsonPost<T = unknown>(options: {
         graphCode: parsed.code,
         errorSubcode: parsed.errorSubcode,
         errorUserTitle: parsed.errorUserTitle,
+        errorUserMsg: parsed.errorUserMsg,
+        errorDataSummary: parsed.errorDataSummary,
         rawBody: raw,
       });
       if (res.status >= 500 && attempt < 2) {
@@ -127,6 +172,8 @@ export async function graphJsonGet<T = unknown>(options: {
       graphCode: parsed.code,
       errorSubcode: parsed.errorSubcode,
       errorUserTitle: parsed.errorUserTitle,
+      errorUserMsg: parsed.errorUserMsg,
+      errorDataSummary: parsed.errorDataSummary,
       rawBody: raw,
     });
   }
@@ -159,6 +206,8 @@ export async function graphDelete(options: {
       graphCode: parsed.code,
       errorSubcode: parsed.errorSubcode,
       errorUserTitle: parsed.errorUserTitle,
+      errorUserMsg: parsed.errorUserMsg,
+      errorDataSummary: parsed.errorDataSummary,
       rawBody: raw,
     });
   }
@@ -183,6 +232,8 @@ export async function graphFormPost<T = unknown>(options: {
       graphCode: parsed.code,
       errorSubcode: parsed.errorSubcode,
       errorUserTitle: parsed.errorUserTitle,
+      errorUserMsg: parsed.errorUserMsg,
+      errorDataSummary: parsed.errorDataSummary,
       rawBody: raw,
     });
   }

@@ -6,8 +6,12 @@ const META_APP_DEV_MODE_HINT_PT =
 function combinedGraphText(e: GraphApiError): string {
   const title = e.errorUserTitle?.trim() ?? "";
   const msg = e.message?.trim() ?? "";
-  if (title && msg) return `${title}: ${msg}`;
-  return msg || title;
+  const userMsg = e.errorUserMsg?.trim() ?? "";
+  let core = title && msg ? `${title}: ${msg}` : msg || title;
+  if (userMsg && !core.includes(userMsg)) {
+    core = core ? `${core} — ${userMsg}` : userMsg;
+  }
+  return core;
 }
 
 /**

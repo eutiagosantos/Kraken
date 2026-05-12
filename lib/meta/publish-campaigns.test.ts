@@ -547,7 +547,7 @@ describe("runWizardPublish", () => {
     expect(videoCreatives?.[0]?.thumb).toBe("https://thumb.example/p.jpg");
   });
 
-  it("marks unit as error when video status returns error before creating campaign", async () => {
+  it("marks unit as error when video processing fails after campaign and ad sets are created", async () => {
     let campaignCalled = false;
     const fetchImpl: typeof fetch = vi.fn(async (input, init) => {
       const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
@@ -589,7 +589,10 @@ describe("runWizardPublish", () => {
       }
       if (url.includes("/campaigns")) {
         campaignCalled = true;
-        return new Response(JSON.stringify({ id: "should-not-create" }), { status: 200 });
+        return new Response(JSON.stringify({ id: "meta-camp-vid-err" }), { status: 200 });
+      }
+      if (url.includes("/adsets")) {
+        return new Response(JSON.stringify({ id: "meta-as-1" }), { status: 200 });
       }
       return new Response("unexpected", { status: 500 });
     });
@@ -632,7 +635,7 @@ describe("runWizardPublish", () => {
 
     expect(out.results[0].ok).toBe(false);
     expect(out.results[0].error).toMatch(/codec inv\u00e1lido/);
-    expect(campaignCalled).toBe(false);
+    expect(campaignCalled).toBe(true);
   });
 
   it("deletes campaign when ad set creation fails after campaign exists", async () => {
@@ -706,6 +709,6 @@ describe("runWizardPublish", () => {
 
     const erroRow = insertCampanhaRows.find((r) => r.status === "erro");
     const failCreatives = erroRow?.creatives as Array<{ thumb?: string }> | undefined;
-    expect(failCreatives?.[0]?.thumb).toBe("https://cdn.example/preview-fail.png");
+    expect(failCreatives?.[0]?.thumb).toBe("");
   });
 });

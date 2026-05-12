@@ -96,7 +96,16 @@ function graphErrorMessage(e: unknown): string {
   }
   if (e instanceof GraphApiError) {
     const title = e.errorUserTitle ? `${e.errorUserTitle}: ` : "";
-    return `${title}${e.message}`;
+    let out = `${title}${e.message}`;
+    const u = e.errorUserMsg?.trim();
+    if (u && !e.message.includes(u)) {
+      out = `${out} — ${u}`;
+    }
+    const d = e.errorDataSummary?.trim();
+    if (d && !out.includes(d.slice(0, Math.min(80, d.length)))) {
+      out = `${out} [${d}]`;
+    }
+    return out;
   }
   if (e instanceof Error) return e.message;
   return "Erro desconhecido.";
@@ -233,41 +242,6 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
     let creativeThumbForRow = "";
     let createdCampaignId: string | undefined;
     try {
-      let media: AdCreativeMedia;
-      if (creative.type === "video") {
-        const { videoId } = await uploadAdVideoChunked({
-          actId: unit.actId,
-          accessToken: ctx.accessToken,
-          fileName: creative.name,
-          buffer: file.buffer,
-          mimeType: file.mimeType || "video/mp4",
-          fetchImpl,
-        });
-        await waitForAdVideoReady({
-          videoId,
-          accessToken: ctx.accessToken,
-          fetchImpl,
-        });
-        const { imageUrl } = await fetchPreferredAdVideoThumbnail({
-          videoId,
-          accessToken: ctx.accessToken,
-          fetchImpl,
-        });
-        creativeThumbForRow = imageUrl;
-        media = { kind: "video", videoId, thumbnailImageUrl: imageUrl };
-      } else {
-        const { hash, url: imagePreviewUrl } = await uploadAdImageToAccount({
-          actId: unit.actId,
-          accessToken: ctx.accessToken,
-          fileName: creative.name,
-          buffer: file.buffer,
-          mimeType: file.mimeType || "image/jpeg",
-          fetchImpl,
-        });
-        if (imagePreviewUrl) creativeThumbForRow = imagePreviewUrl;
-        media = { kind: "image", imageHash: hash };
-      }
-
       const campaignDaily = isCbo && !isLifetime ? totalMinor : undefined;
       const campaignLifetime = isCbo && isLifetime ? totalMinor : undefined;
       const campaign = await graphCreateCampaign({
@@ -285,20 +259,7 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
       });
       createdCampaignId = campaign.id;
 
-      const creativeName = `${creative.name} · ${unit.accountName}`.slice(0, 240);
-      const adCreative = await graphCreateAdCreative({
-        actId: unit.actId,
-        accessToken: ctx.accessToken,
-        name: creativeName,
-        pageId: ctx.pageId,
-        media,
-        linkUrl: ctx.adLinkUrl,
-        message: creative.name,
-        fetchImpl,
-      });
-
       const adSetIds: string[] = [];
-      const adIds: string[] = [];
       const perAdsetDaily =
         !isCbo && !isLifetime && counts.adsets > 0
           ? Math.max(100, Math.floor(totalMinor / counts.adsets))
@@ -342,13 +303,63 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
           fetchImpl,
         });
         adSetIds.push(adset.id);
+      }
 
+      let media: AdCreativeMedia;
+      if (creative.type === "video") {
+        const { videoId } = await uploadAdVideoChunked({
+          actId: unit.actId,
+          accessToken: ctx.accessToken,
+          fileName: creative.name,
+          buffer: file.buffer,
+          mimeType: file.mimeType || "video/mp4",
+          fetchImpl,
+        });
+        await waitForAdVideoReady({
+          videoId,
+          accessToken: ctx.accessToken,
+          fetchImpl,
+        });
+        const { imageUrl } = await fetchPreferredAdVideoThumbnail({
+          videoId,
+          accessToken: ctx.accessToken,
+          fetchImpl,
+        });
+        creativeThumbForRow = imageUrl;
+        media = { kind: "video", videoId, thumbnailImageUrl: imageUrl };
+      } else {
+        const { hash, url: imagePreviewUrl } = await uploadAdImageToAccount({
+          actId: unit.actId,
+          accessToken: ctx.accessToken,
+          fileName: creative.name,
+          buffer: file.buffer,
+          mimeType: file.mimeType || "image/jpeg",
+          fetchImpl,
+        });
+        if (imagePreviewUrl) creativeThumbForRow = imagePreviewUrl;
+        media = { kind: "image", imageHash: hash };
+      }
+
+      const creativeName = `${creative.name} · ${unit.accountName}`.slice(0, 240);
+      const adCreative = await graphCreateAdCreative({
+        actId: unit.actId,
+        accessToken: ctx.accessToken,
+        name: creativeName,
+        pageId: ctx.pageId,
+        media,
+        linkUrl: ctx.adLinkUrl,
+        message: creative.name,
+        fetchImpl,
+      });
+
+      const adIds: string[] = [];
+      for (let si = 0; si < counts.adsets; si++) {
         for (let ai = 0; ai < counts.adsPerAdset; ai++) {
           const ad = await graphCreateAd({
             actId: unit.actId,
             accessToken: ctx.accessToken,
             name: `Anúncio ${si + 1}-${ai + 1}`.slice(0, 240),
-            adSetId: adset.id,
+            adSetId: adSetIds[si]!,
             creativeId: adCreative.id,
             status: ctx.payload.status,
             fetchImpl,

@@ -347,11 +347,19 @@ export function buildTargetingFromPublico(publico: WizardPublishPayload["publico
   };
 
   if (publico.interests.length > 0) {
-    targeting.flexible_spec = [
-      {
-        interests: publico.interests.map((i) => ({ id: i.id, name: i.name })),
-      },
-    ];
+    const interestRows = publico.interests
+      .map((i) => {
+        const raw = i.id?.trim() ?? "";
+        if (!raw) return null;
+        if (/^\d+$/.test(raw)) {
+          return { id: Number(raw) };
+        }
+        return { id: raw };
+      })
+      .filter((row): row is { id: number } | { id: string } => row != null);
+    if (interestRows.length > 0) {
+      targeting.flexible_spec = [{ interests: interestRows }];
+    }
   }
 
   const devicePlatforms: string[] = [];
