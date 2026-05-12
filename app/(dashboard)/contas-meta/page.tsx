@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Loader2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
   defaultContasFilters,
@@ -18,6 +18,7 @@ import { DesconectarConfirmModal } from "@/components/app/contas-meta/Desconecta
 import { EditarContaModal } from "@/components/app/contas-meta/EditarContaModal";
 import { ReconectarModal } from "@/components/app/contas-meta/ReconectarModal";
 import { StatusFilterTabs } from "@/components/app/contas-meta/StatusFilterTabs";
+import { Button } from "@/components/ui/Button";
 import { useSuccessFeedback } from "@/components/app/ui/SuccessFeedback";
 import { useContasMeta } from "@/lib/hooks/useContasMeta";
 
@@ -25,7 +26,7 @@ type OpenModal = "conectar" | "editar" | "reconectar" | "desconectar" | null;
 
 export default function ContasMetaPage() {
   const { showSuccess } = useSuccessFeedback();
-  const { contas, refetch } = useContasMeta();
+  const { contas, loading, error, refetch } = useContasMeta();
   const [activeTab, setActiveTab] = useState<ContaTabId>("todas");
   const [filters, setFilters] = useState<ContasPageFiltersState>(() => defaultContasFilters());
   const [selectedConta, setSelectedConta] = useState<ContaMeta | null>(null);
@@ -70,23 +71,39 @@ export default function ContasMetaPage() {
         onConnect={() => openModalFor("conectar", null)}
       />
 
-      <ContasMetaFilterBar
-        filters={filters}
-        onChange={(next) => setFilters((f) => ({ ...f, ...next }))}
-        onClear={() => setFilters(defaultContasFilters())}
-        hasActiveFilters={hasActiveContasFilters(filters)}
-      />
+      {loading && contas.length === 0 ? (
+        <div className="flex min-h-[280px] flex-col items-center justify-center gap-3 py-16 text-sm text-neutral-silver">
+          <Loader2 className="h-10 w-10 shrink-0 animate-spin text-brand-purple" aria-hidden />
+          <p>A carregar contas Meta…</p>
+        </div>
+      ) : !loading && error ? (
+        <div className="flex min-h-[280px] flex-col items-center justify-center gap-4 rounded-xl border border-dashboard-border bg-white px-6 py-16 text-center">
+          <p className="max-w-md text-sm text-semantic-red">{error}</p>
+          <Button type="button" variant="subtle" onClick={() => void refetch()}>
+            Tentar novamente
+          </Button>
+        </div>
+      ) : (
+        <>
+          <ContasMetaFilterBar
+            filters={filters}
+            onChange={(next) => setFilters((f) => ({ ...f, ...next }))}
+            onClear={() => setFilters(defaultContasFilters())}
+            hasActiveFilters={hasActiveContasFilters(filters)}
+          />
 
-      <StatusFilterTabs activeTab={activeTab} onChange={setActiveTab} counts={counts}>
-        <ContasGrid
-          contas={filtered}
-          onOpenMetrics={openMetrics}
-          onEdit={(c) => openModalFor("editar", c)}
-          onReconnect={(c) => openModalFor("reconectar", c)}
-          onDisconnect={(c) => openModalFor("desconectar", c)}
-          onConnectNew={() => openModalFor("conectar", null)}
-        />
-      </StatusFilterTabs>
+          <StatusFilterTabs activeTab={activeTab} onChange={setActiveTab} counts={counts}>
+            <ContasGrid
+              contas={filtered}
+              onOpenMetrics={openMetrics}
+              onEdit={(c) => openModalFor("editar", c)}
+              onReconnect={(c) => openModalFor("reconectar", c)}
+              onDisconnect={(c) => openModalFor("desconectar", c)}
+              onConnectNew={() => openModalFor("conectar", null)}
+            />
+          </StatusFilterTabs>
+        </>
+      )}
 
       <ContaMetricsPanel
         conta={selectedConta}
