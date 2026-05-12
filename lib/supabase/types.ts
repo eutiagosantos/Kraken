@@ -266,6 +266,7 @@ export interface Database {
           started_at: string;
           summary: Json | null;
           finished_at: string | null;
+          error_details: Json | null;
         };
         Insert: {
           id?: string;
@@ -277,6 +278,7 @@ export interface Database {
           started_at?: string;
           summary?: Json | null;
           finished_at?: string | null;
+          error_details?: Json | null;
         };
         Update: {
           id?: string;
@@ -288,6 +290,7 @@ export interface Database {
           started_at?: string;
           summary?: Json | null;
           finished_at?: string | null;
+          error_details?: Json | null;
         };
         Relationships: [];
       };

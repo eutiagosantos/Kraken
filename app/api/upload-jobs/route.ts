@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import { parseUploadJobSummary } from "@/lib/api/upload-job-summary-schema";
+import {
+  parseUploadJobErrorDetails,
+  parseUploadJobSummary,
+} from "@/lib/api/upload-job-summary-schema";
 import { getSessionUser } from "@/lib/api/session";
 
 export const runtime = "nodejs";
@@ -22,7 +25,7 @@ export async function GET(request: Request) {
 
   const { data, error } = await supabase
     .from("upload_jobs")
-    .select("id,account_name,total,done,status,started_at,finished_at,summary")
+    .select("id,account_name,total,done,status,started_at,finished_at,summary,error_details")
     .eq("user_id", user.id)
     .order("started_at", { ascending: false })
     .limit(limit);
@@ -40,6 +43,7 @@ export async function GET(request: Request) {
     started_at: row.started_at,
     finished_at: row.finished_at,
     summary: parseUploadJobSummary(row.summary),
+    error_details: parseUploadJobErrorDetails(row.error_details),
   }));
 
   return NextResponse.json({ data: { jobs } });

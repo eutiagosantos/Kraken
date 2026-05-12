@@ -20,6 +20,10 @@ const publicoFixture = {
 
 const PUBLISH_JOB_ID = "aaaaaaaa-bbbb-4ccc-a000-eeeeeeeeeeee";
 
+function requestUrl(input: Parameters<typeof fetch>[0]) {
+  return typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+}
+
 function createSupabaseMock() {
   const uploadJobUpdatePayloads: Record<string, unknown>[] = [];
 
@@ -76,7 +80,8 @@ function createSupabaseMock() {
 }
 
 function graphFetchOk() {
-  return vi.fn(async (url: string) => {
+  const fetchImpl: typeof fetch = vi.fn(async (input) => {
+    const url = requestUrl(input);
     if (url.includes("/adimages")) {
       return new Response(JSON.stringify({ images: { f: { hash: "img_hash" } } }), { status: 200 });
     }
@@ -94,6 +99,7 @@ function graphFetchOk() {
     }
     return new Response("unexpected", { status: 500 });
   });
+  return fetchImpl;
 }
 
 describe("runWizardPublish", () => {
@@ -145,6 +151,7 @@ describe("runWizardPublish", () => {
     const lastJobUpdate = uploadJobUpdatePayloads[uploadJobUpdatePayloads.length - 1];
     expect(lastJobUpdate?.finished_at).toEqual(expect.any(String));
     expect(lastJobUpdate?.status).toBe("completed");
+    expect(lastJobUpdate?.error_details).toBeNull();
   });
 
   it("marks error when image file is missing", async () => {
@@ -169,7 +176,7 @@ describe("runWizardPublish", () => {
     });
 
     const fetchImpl = graphFetchOk();
-    const { supabase } = createSupabaseMock();
+    const { supabase, uploadJobUpdatePayloads } = createSupabaseMock();
     const out = await runWizardPublish({
       supabase,
       userId: "00000000-0000-4000-8000-000000000001",
@@ -186,6 +193,19 @@ describe("runWizardPublish", () => {
     expect(out.results[0].ok).toBe(false);
     expect(out.results[0].error).toMatch(/Ficheiro/);
     expect(fetchImpl).not.toHaveBeenCalled();
+
+    const lastJobUpdate = uploadJobUpdatePayloads[uploadJobUpdatePayloads.length - 1];
+    expect(lastJobUpdate?.status).toBe("error");
+    expect(lastJobUpdate?.error_details).toMatchObject({
+      message: "Nenhuma publicação concluiu com sucesso no Meta.",
+      items: [
+        {
+          accountName: "Conta A",
+          creativeName: "a.png",
+          error: expect.stringMatching(/Ficheiro/),
+        },
+      ],
+    });
   });
 
   it("publishes a video creative via /advideos (chunked) + thumbnail + video_data", async () => {
@@ -393,7 +413,8 @@ describe("runWizardPublish", () => {
 
   it("deletes campaign when ad set creation fails after campaign exists", async () => {
     let deleteCalled = false;
-    const fetchImpl = vi.fn(async (url: string, init?: RequestInit) => {
+    const fetchImpl: typeof fetch = vi.fn(async (input, init) => {
+      const url = requestUrl(input);
       if (init?.method === "DELETE" && url.includes("meta-camp-orphan")) {
         deleteCalled = true;
         return new Response(JSON.stringify({ success: true }), { status: 200 });

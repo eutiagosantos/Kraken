@@ -66,6 +66,25 @@ export type PublishUnitResult = {
   krakenCampanhaId?: string;
 };
 
+function buildUploadJobErrorDetails(results: PublishUnitResult[], warnings: string[]): Json | null {
+  const failed = results.filter((r) => !r.ok && r.error);
+  if (failed.length === 0) return null;
+
+  return {
+    v: 1,
+    message:
+      failed.length === results.length
+        ? "Nenhuma publicação concluiu com sucesso no Meta."
+        : "Algumas publicações falharam no Meta.",
+    items: failed.map((r) => ({
+      accountName: r.accountName,
+      creativeName: r.creativeName,
+      error: r.error ?? "Erro desconhecido.",
+    })),
+    ...(warnings.length > 0 ? { warnings } : {}),
+  } as Json;
+}
+
 function graphErrorMessage(e: unknown): string {
   if (e instanceof GraphApiError && isMetaAppDevelopmentModeError(e)) {
     return humanizeMetaAppDevelopmentModeError(e);
@@ -363,9 +382,10 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
   const okCount = results.filter((r) => r.ok).length;
   const jobStatus: "completed" | "error" = okCount === 0 ? "error" : "completed";
   const finishedAt = new Date().toISOString();
+  const errorDetails = buildUploadJobErrorDetails(results, warnings);
   await ctx.supabase
     .from("upload_jobs")
-    .update({ status: jobStatus, finished_at: finishedAt })
+    .update({ status: jobStatus, finished_at: finishedAt, error_details: errorDetails })
     .eq("id", publishId);
 
   if (okCount > 0) {

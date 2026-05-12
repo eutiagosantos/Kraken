@@ -41,8 +41,33 @@ export const uploadJobSummaryV1Schema = z
 
 export type UploadJobSummaryV1 = z.infer<typeof uploadJobSummaryV1Schema>;
 
+export const uploadJobErrorDetailsV1Schema = z
+  .object({
+    v: z.literal(1).optional(),
+    message: z.string(),
+    items: z
+      .array(
+        z.object({
+          accountName: z.string(),
+          creativeName: z.string(),
+          error: z.string(),
+        })
+      )
+      .optional(),
+    warnings: z.array(z.string()).optional(),
+  })
+  .passthrough();
+
+export type UploadJobErrorDetailsV1 = z.infer<typeof uploadJobErrorDetailsV1Schema>;
+
 export function parseUploadJobSummary(raw: unknown): UploadJobSummaryV1 | null {
   if (raw == null || typeof raw !== "object") return null;
   const parsed = uploadJobSummaryV1Schema.safeParse(raw);
+  return parsed.success ? parsed.data : null;
+}
+
+export function parseUploadJobErrorDetails(raw: unknown): UploadJobErrorDetailsV1 | null {
+  if (raw == null || typeof raw !== "object") return null;
+  const parsed = uploadJobErrorDetailsV1Schema.safeParse(raw);
   return parsed.success ? parsed.data : null;
 }
