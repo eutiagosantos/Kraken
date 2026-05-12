@@ -35,6 +35,7 @@ import {
 import {
   buildAdsetSchedulePayload,
   buildFrequencyControlSpecs,
+  resolveDailyAdsetFlightForPublish,
   resolveLifetimeScheduleForPublish,
 } from "@/lib/meta/campaign-schedule";
 import { buildUploadJobSummary } from "@/lib/meta/upload-job-summary";
@@ -129,11 +130,19 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
     );
   }
   const bid = mapBidStrategyToMeta(ctx.payload.bidStrategy, ctx.payload.bidLimit);
+  const campaignBidStrategy = isCbo ? bid.bid_strategy : undefined;
+  const adSetBidStrategy = isCbo ? undefined : bid.bid_strategy;
+  const adSetBidAmount = !isCbo
+    ? bid.bid_amount
+    : bid.bid_strategy === "LOWEST_COST_WITH_BID_CAP" || bid.bid_strategy === "COST_CAP"
+      ? bid.bid_amount
+      : undefined;
   const isLifetime = ctx.payload.budgetPeriod === "lifetime";
   const lifetimeSchedule = resolveLifetimeScheduleForPublish(
     ctx.payload.budgetPeriod,
     ctx.payload.campaignSchedule
   );
+  const dailyAdsetFlight = !isLifetime ? resolveDailyAdsetFlightForPublish(ctx.payload.campaignSchedule) : null;
   const adsetScheduleRows = buildAdsetSchedulePayload(ctx.payload.campaignSchedule);
   const frequencyControlSpecs = buildFrequencyControlSpecs(ctx.payload.campaignSchedule);
   const billingEvent = billingEventForOptimization(opt.optimization_goal);
@@ -156,6 +165,11 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
   if (ctx.payload.campaignSchedule.frequencyCap) {
     warnings.push(
       "Limite de frequência: se o Meta rejeitar a combinação com o objetivo, ajusta ou remove o limite e volta a publicar."
+    );
+  }
+  if (dailyAdsetFlight) {
+    warnings.push(
+      "Voo (início/fim): o Meta recebe `start_time`/`end_time` em UTC+0000 após conversão a partir da hora local deste dispositivo (não é a timezone da conta de anúncios)."
     );
   }
 
@@ -266,6 +280,7 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
         lifetimeBudgetMinor: campaignLifetime ?? undefined,
         startTime: isCbo && isLifetime && lifetimeSchedule ? lifetimeSchedule.startTime : undefined,
         endTime: isCbo && isLifetime && lifetimeSchedule ? lifetimeSchedule.endTime : undefined,
+        bidStrategy: campaignBidStrategy,
         fetchImpl,
       });
       createdCampaignId = campaign.id;
@@ -293,6 +308,16 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
           ? Math.max(100, Math.floor(totalMinor / counts.adsets))
           : undefined;
 
+      let adsetStartTime: string | undefined;
+      let adsetEndTime: string | number | undefined;
+      if (isLifetime && lifetimeSchedule) {
+        adsetStartTime = lifetimeSchedule.startTime;
+        adsetEndTime = lifetimeSchedule.endTime;
+      } else if (dailyAdsetFlight) {
+        adsetStartTime = dailyAdsetFlight.startTime;
+        adsetEndTime = dailyAdsetFlight.endTime;
+      }
+
       for (let si = 0; si < counts.adsets; si++) {
         const adset = await graphCreateAdSet({
           actId: unit.actId,
@@ -303,12 +328,12 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
           optimizationGoal: opt.optimization_goal,
           promotedObject: opt.promoted_object,
           billingEvent,
-          bidStrategy: bid.bid_strategy,
-          bidAmount: bid.bid_amount,
+          bidStrategy: adSetBidStrategy,
+          bidAmount: adSetBidAmount,
           dailyBudgetMinor: perAdsetDaily,
           lifetimeBudgetMinor: perAdsetLifetimeMinor,
-          startTime: isLifetime && lifetimeSchedule ? lifetimeSchedule.startTime : undefined,
-          endTime: isLifetime && lifetimeSchedule ? lifetimeSchedule.endTime : undefined,
+          startTime: adsetStartTime,
+          endTime: adsetEndTime,
           destinationType,
           ...dsaForAdset,
           status: ctx.payload.status,

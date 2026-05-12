@@ -18,6 +18,11 @@ export const campaignScheduleSchema = z.object({
   flightMode: z.enum(["automatic", "custom_dates"]),
   flightStart: z.string().optional(),
   flightEnd: z.string().optional(),
+  /**
+   * Orçamento diário: com início definido, `true` envia `end_time=0` ao Meta (voo contínuo).
+   * Com orçamento vitalício não é suportado — validação no payload de publicação.
+   */
+  openEndedFlight: z.boolean().optional().default(false),
   dayparting: z.object({
     enabled: z.boolean(),
     segments: z.array(daypartSegmentSchema).max(24),
@@ -38,6 +43,7 @@ export function defaultCampaignSchedule(): CampaignSchedule {
     flightMode: "automatic",
     flightStart: undefined,
     flightEnd: undefined,
+    openEndedFlight: false,
     dayparting: { enabled: false, segments: [] },
     frequencyCap: null,
   };
@@ -58,6 +64,42 @@ export function resolveLifetimeScheduleForPublish(
   }
   return {
     startTime: formatMetaDateTimeUtcOffset(start),
+    endTime: formatMetaDateTimeUtcOffset(end),
+  };
+}
+
+/** Times for ad set `start_time` / `end_time` when using daily budget (Marketing API). */
+export type MetaDailyAdsetFlight = {
+  startTime: string;
+  /** Meta accepts numeric `0` for ongoing daily ad sets without an end. */
+  endTime: string | number;
+};
+
+/**
+ * Orçamento diário: horários para os ad sets quando há início agendado (e fim ou `end_time=0`).
+ * `null` = não enviar `start_time`/`end_time` (entrega imediata, sem janela).
+ */
+export function resolveDailyAdsetFlightForPublish(schedule: CampaignSchedule): MetaDailyAdsetFlight | null {
+  const startRaw = schedule.flightStart?.trim() ?? "";
+  if (!startRaw) return null;
+
+  const start = new Date(startRaw);
+  if (Number.isNaN(start.getTime())) return null;
+
+  const startTime = formatMetaDateTimeUtcOffset(start);
+
+  if (schedule.openEndedFlight) {
+    return { startTime, endTime: 0 };
+  }
+
+  const endRaw = schedule.flightEnd?.trim() ?? "";
+  if (!endRaw) return null;
+
+  const end = new Date(endRaw);
+  if (Number.isNaN(end.getTime())) return null;
+
+  return {
+    startTime,
     endTime: formatMetaDateTimeUtcOffset(end),
   };
 }

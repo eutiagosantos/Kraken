@@ -91,11 +91,19 @@ export const wizardPublishPayloadSchema = z
       }
     }
     const s = d.campaignSchedule;
+    if (s.openEndedFlight && d.budgetPeriod !== "daily") {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          "«Sem data de fim» só está disponível com orçamento diário. No Meta, orçamento vitalício exige sempre uma data de fim do voo.",
+        path: ["campaignSchedule", "openEndedFlight"],
+      });
+    }
     if (s.flightMode === "custom_dates") {
       if (d.budgetPeriod !== "lifetime") {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "Datas de voo personalizadas só estão disponíveis com orçamento vitalício.",
+          message: "Datas de voo personalizadas (início e fim) com este modo só estão disponíveis com orçamento vitalício.",
           path: ["campaignSchedule", "flightMode"],
         });
       }
@@ -104,7 +112,7 @@ export const wizardPublishPayloadSchema = z
       if (!a || !b) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "Indica início e fim do voo (ISO 8601).",
+          message: "Indica início e fim do voo (ISO 8601). No Meta, o orçamento vitalício exige ambas as datas.",
           path: ["campaignSchedule", "flightStart"],
         });
       } else {
@@ -128,6 +136,56 @@ export const wizardPublishPayloadSchema = z
             message: "O voo deve durar pelo menos 24 horas.",
             path: ["campaignSchedule", "flightEnd"],
           });
+        }
+      }
+    }
+    if (d.budgetPeriod === "daily") {
+      const start = s.flightStart?.trim() ?? "";
+      const end = s.flightEnd?.trim() ?? "";
+      if (end && !start) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Indica a data de início do voo quando defines uma data de fim.",
+          path: ["campaignSchedule", "flightStart"],
+        });
+      }
+      if (start) {
+        const t0 = Date.parse(start);
+        if (Number.isNaN(t0)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Data de início inválida.",
+            path: ["campaignSchedule", "flightStart"],
+          });
+        } else if (s.openEndedFlight) {
+          /* ok: Meta uses end_time=0 */
+        } else if (!end) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Indica a data de fim do voo ou activa «Sem data de fim» (recomendado para campanhas contínuas com orçamento diário).",
+            path: ["campaignSchedule", "flightEnd"],
+          });
+        } else {
+          const t1 = Date.parse(end);
+          if (Number.isNaN(t1)) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: "Data de fim inválida.",
+              path: ["campaignSchedule", "flightEnd"],
+            });
+          } else if (t1 <= t0) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: "A data de fim deve ser depois da data de início.",
+              path: ["campaignSchedule", "flightEnd"],
+            });
+          } else if (t1 - t0 < 24 * 60 * 60 * 1000) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: "O voo deve durar pelo menos 24 horas (requisito do Meta para orçamento diário com janela).",
+              path: ["campaignSchedule", "flightEnd"],
+            });
+          }
         }
       }
     }

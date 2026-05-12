@@ -31,15 +31,24 @@ interface Step2ScheduleProps {
 export function Step2Schedule({ budgetPeriod, campaignSchedule, onSetCampaignSchedule }: Step2ScheduleProps) {
   useEffect(() => {
     if (budgetPeriod !== "daily") return;
-    if (campaignSchedule.flightMode === "custom_dates" || campaignSchedule.dayparting.enabled) {
+    if (campaignSchedule.dayparting.enabled) {
+      onSetCampaignSchedule({ dayparting: { enabled: false, segments: [] } });
+    }
+    if (campaignSchedule.flightMode === "custom_dates") {
       onSetCampaignSchedule({
         flightMode: "automatic",
         flightStart: undefined,
         flightEnd: undefined,
-        dayparting: { enabled: false, segments: [] },
       });
     }
   }, [budgetPeriod, campaignSchedule.flightMode, campaignSchedule.dayparting.enabled, onSetCampaignSchedule]);
+
+  useEffect(() => {
+    if (budgetPeriod !== "lifetime") return;
+    if (campaignSchedule.openEndedFlight) {
+      onSetCampaignSchedule({ openEndedFlight: false });
+    }
+  }, [budgetPeriod, campaignSchedule.openEndedFlight, onSetCampaignSchedule]);
 
   const s = campaignSchedule;
 
@@ -47,18 +56,29 @@ export function Step2Schedule({ budgetPeriod, campaignSchedule, onSetCampaignSch
     <section className="space-y-4 rounded-xl border border-gray-200 bg-gray-50 p-4">
       <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-500">Agendamento e frequência</h4>
       <p className="text-xs text-gray-600">
-        Aplicado na criação no Meta. Dayparting usa a timezone da conta de anúncios no Meta. Orçamento vitalício
-        necessário para datas personalizadas e dayparting.
+        Aplicado na criação no Meta. Dayparting usa a timezone da conta de anúncios no Meta. Datas de início/fim do
+        voo são convertidas a partir da hora local deste dispositivo e enviadas em UTC+0000 (ver aviso na fila após
+        publicar).
       </p>
 
       {budgetPeriod === "lifetime" ? (
         <div className="space-y-2">
           <span className="text-xs font-medium text-gray-700">Voo (orçamento vitalício)</span>
+          <p className="text-xs text-gray-600">
+            No Meta, <span className="font-medium text-gray-800">orçamento vitalício exige sempre uma data de fim</span>{" "}
+            do voo. Para uma campanha contínua sem data de fim, usa orçamento diário e a opção «Sem data de fim»
+            abaixo.
+          </p>
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
               onClick={() =>
-                onSetCampaignSchedule({ flightMode: "automatic", flightStart: undefined, flightEnd: undefined })
+                onSetCampaignSchedule({
+                  flightMode: "automatic",
+                  flightStart: undefined,
+                  flightEnd: undefined,
+                  openEndedFlight: false,
+                })
               }
               className={`rounded-md border px-3 py-1.5 text-xs ${
                 s.flightMode === "automatic"
@@ -70,7 +90,9 @@ export function Step2Schedule({ budgetPeriod, campaignSchedule, onSetCampaignSch
             </button>
             <button
               type="button"
-              onClick={() => onSetCampaignSchedule({ flightMode: "custom_dates" })}
+              onClick={() =>
+                onSetCampaignSchedule({ flightMode: "custom_dates", openEndedFlight: false })
+              }
               className={`rounded-md border px-3 py-1.5 text-xs ${
                 s.flightMode === "custom_dates"
                   ? "border-[#7132f5] bg-[rgba(113,50,245,0.12)] text-brand-purple-dark font-medium"
@@ -104,9 +126,49 @@ export function Step2Schedule({ budgetPeriod, campaignSchedule, onSetCampaignSch
           ) : null}
         </div>
       ) : (
-        <p className="text-xs text-amber-800">
-          Com orçamento diário, o voo personalizado e o dayparting estão desactivados (requisito do fluxo Meta).
-        </p>
+        <div className="space-y-3">
+          <span className="text-xs font-medium text-gray-700">Voo (orçamento diário)</span>
+          <p className="text-xs text-gray-600">
+            Opcional: agenda o primeiro início do conjunto de anúncios. Podes deixar a campanha sem data de fim (no
+            Meta o fim do voo fica contínuo) ou definir uma data de encerramento (janela mínima de 24 horas entre
+            início e fim).
+          </p>
+          <label className="block text-xs text-gray-600">
+            Início (opcional)
+            <input
+              type="datetime-local"
+              value={isoToDatetimeLocalInput(s.flightStart ?? "")}
+              onChange={(e) => onSetCampaignSchedule({ flightStart: datetimeLocalInputToIso(e.target.value) })}
+              className="mt-1 w-full max-w-md rounded-lg border border-gray-300 bg-white px-2 py-2 text-sm text-gray-900"
+            />
+          </label>
+          <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-800">
+            <input
+              type="checkbox"
+              checked={s.openEndedFlight}
+              onChange={(e) => {
+                const open = e.target.checked;
+                onSetCampaignSchedule({
+                  openEndedFlight: open,
+                  ...(open ? { flightEnd: undefined } : {}),
+                });
+              }}
+              className="rounded border-gray-300"
+            />
+            Sem data de fim (campanha contínua)
+          </label>
+          {!s.openEndedFlight ? (
+            <label className="block text-xs text-gray-600">
+              Fim do voo {s.flightStart?.trim() ? "(obrigatório se há início)" : "(opcional até definires início)"}
+              <input
+                type="datetime-local"
+                value={isoToDatetimeLocalInput(s.flightEnd ?? "")}
+                onChange={(e) => onSetCampaignSchedule({ flightEnd: datetimeLocalInputToIso(e.target.value) })}
+                className="mt-1 w-full max-w-md rounded-lg border border-gray-300 bg-white px-2 py-2 text-sm text-gray-900"
+              />
+            </label>
+          ) : null}
+        </div>
       )}
 
       <div className="border-t border-gray-200 pt-3">

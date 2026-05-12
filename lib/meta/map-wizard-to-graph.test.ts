@@ -89,6 +89,7 @@ describe("wizardPublishPayloadSchema", () => {
     const p = wizardPublishPayloadSchema.parse(basePayload);
     expect(p.campaignSchedule.flightMode).toBe("automatic");
     expect(p.campaignSchedule.dayparting.enabled).toBe(false);
+    expect(p.campaignSchedule.openEndedFlight).toBe(false);
   });
 
   it("rejects custom flight with daily budget", () => {
@@ -99,6 +100,7 @@ describe("wizardPublishPayloadSchema", () => {
         flightMode: "custom_dates",
         flightStart: new Date().toISOString(),
         flightEnd: new Date(Date.now() + 86400000 * 2).toISOString(),
+        openEndedFlight: false,
         dayparting: { enabled: false, segments: [] },
         frequencyCap: null,
       },
@@ -112,6 +114,7 @@ describe("wizardPublishPayloadSchema", () => {
       budgetPeriod: "daily",
       campaignSchedule: {
         flightMode: "automatic",
+        openEndedFlight: false,
         dayparting: { enabled: true, segments: [{ days: [1], startMinute: 100, endMinute: 200 }] },
         frequencyCap: null,
       },
@@ -127,11 +130,105 @@ describe("wizardPublishPayloadSchema", () => {
         flightMode: "custom_dates",
         flightStart: new Date().toISOString(),
         flightEnd: new Date(Date.now() + 3 * 86400000).toISOString(),
+        openEndedFlight: false,
         dayparting: { enabled: false, segments: [] },
         frequencyCap: null,
       },
     });
     expect(res.success).toBe(true);
+  });
+
+  it("accepts daily scheduled start with open-ended flight", () => {
+    const res = wizardPublishPayloadSchema.safeParse({
+      ...basePayload,
+      budgetPeriod: "daily",
+      campaignSchedule: {
+        flightMode: "automatic",
+        flightStart: new Date("2030-06-01T10:00:00.000Z").toISOString(),
+        openEndedFlight: true,
+        dayparting: { enabled: false, segments: [] },
+        frequencyCap: null,
+      },
+    });
+    expect(res.success).toBe(true);
+  });
+
+  it("accepts daily scheduled start and end with min 24h window", () => {
+    const res = wizardPublishPayloadSchema.safeParse({
+      ...basePayload,
+      budgetPeriod: "daily",
+      campaignSchedule: {
+        flightMode: "automatic",
+        flightStart: new Date("2030-06-01T10:00:00.000Z").toISOString(),
+        flightEnd: new Date("2030-06-03T10:00:00.000Z").toISOString(),
+        openEndedFlight: false,
+        dayparting: { enabled: false, segments: [] },
+        frequencyCap: null,
+      },
+    });
+    expect(res.success).toBe(true);
+  });
+
+  it("rejects daily flight end without start", () => {
+    const res = wizardPublishPayloadSchema.safeParse({
+      ...basePayload,
+      budgetPeriod: "daily",
+      campaignSchedule: {
+        flightMode: "automatic",
+        flightEnd: new Date().toISOString(),
+        openEndedFlight: false,
+        dayparting: { enabled: false, segments: [] },
+        frequencyCap: null,
+      },
+    });
+    expect(res.success).toBe(false);
+  });
+
+  it("rejects daily flight start without end when not open-ended", () => {
+    const res = wizardPublishPayloadSchema.safeParse({
+      ...basePayload,
+      budgetPeriod: "daily",
+      campaignSchedule: {
+        flightMode: "automatic",
+        flightStart: new Date().toISOString(),
+        openEndedFlight: false,
+        dayparting: { enabled: false, segments: [] },
+        frequencyCap: null,
+      },
+    });
+    expect(res.success).toBe(false);
+  });
+
+  it("rejects daily flight window under 24 hours", () => {
+    const t0 = new Date("2030-06-01T10:00:00.000Z").toISOString();
+    const t1 = new Date("2030-06-01T20:00:00.000Z").toISOString();
+    const res = wizardPublishPayloadSchema.safeParse({
+      ...basePayload,
+      budgetPeriod: "daily",
+      campaignSchedule: {
+        flightMode: "automatic",
+        flightStart: t0,
+        flightEnd: t1,
+        openEndedFlight: false,
+        dayparting: { enabled: false, segments: [] },
+        frequencyCap: null,
+      },
+    });
+    expect(res.success).toBe(false);
+  });
+
+  it("rejects open-ended flight flag with lifetime budget", () => {
+    const res = wizardPublishPayloadSchema.safeParse({
+      ...basePayload,
+      budgetPeriod: "lifetime",
+      campaignSchedule: {
+        flightMode: "automatic",
+        openEndedFlight: true,
+        dayparting: { enabled: false, segments: [] },
+        frequencyCap: null,
+      },
+    });
+    expect(res.success).toBe(false);
   });
 
   it("rejects dayparting enabled with zero segments", () => {
@@ -140,6 +237,7 @@ describe("wizardPublishPayloadSchema", () => {
       budgetPeriod: "lifetime",
       campaignSchedule: {
         flightMode: "automatic",
+        openEndedFlight: false,
         dayparting: { enabled: true, segments: [] },
         frequencyCap: null,
       },

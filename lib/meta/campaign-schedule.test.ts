@@ -4,6 +4,7 @@ import {
   buildAdsetSchedulePayload,
   buildFrequencyControlSpecs,
   defaultCampaignSchedule,
+  resolveDailyAdsetFlightForPublish,
   resolveLifetimeScheduleForPublish,
 } from "@/lib/meta/campaign-schedule";
 
@@ -31,6 +32,36 @@ describe("resolveLifetimeScheduleForPublish", () => {
     expect(w).not.toBeNull();
     expect(w!.startTime.startsWith("2030-01-01")).toBe(true);
     expect(w!.endTime.startsWith("2030-01-10")).toBe(true);
+  });
+});
+
+describe("resolveDailyAdsetFlightForPublish", () => {
+  it("returns null when no start is set", () => {
+    expect(resolveDailyAdsetFlightForPublish(defaultCampaignSchedule())).toBeNull();
+  });
+
+  it("returns start and end_time 0 when open-ended", () => {
+    const w = resolveDailyAdsetFlightForPublish({
+      ...defaultCampaignSchedule(),
+      flightStart: new Date("2030-02-01T08:00:00.000Z").toISOString(),
+      openEndedFlight: true,
+    });
+    expect(w).not.toBeNull();
+    expect(w!.endTime).toBe(0);
+    expect(w!.startTime.endsWith("+0000")).toBe(true);
+  });
+
+  it("returns start and formatted end when both set", () => {
+    const w = resolveDailyAdsetFlightForPublish({
+      ...defaultCampaignSchedule(),
+      flightStart: new Date("2030-02-01T08:00:00.000Z").toISOString(),
+      flightEnd: new Date("2030-02-05T08:00:00.000Z").toISOString(),
+      openEndedFlight: false,
+    });
+    expect(w).not.toBeNull();
+    expect(w!.startTime.startsWith("2030-02-01")).toBe(true);
+    expect(w!.endTime).toMatch(/^2030-02-05/);
+    expect(String(w!.endTime).endsWith("+0000")).toBe(true);
   });
 });
 

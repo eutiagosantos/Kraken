@@ -22,6 +22,8 @@ export async function graphCreateCampaign(options: {
   lifetimeBudgetMinor?: number;
   startTime?: string;
   endTime?: string;
+  /** CBO/DPA: Meta expects `bid_strategy` on the campaign when budget lives on the campaign. */
+  bidStrategy?: string;
   fetchImpl?: GraphFetch;
 }): Promise<{ id: string }> {
   const body: Record<string, unknown> = {
@@ -31,6 +33,9 @@ export async function graphCreateCampaign(options: {
     special_ad_categories: ["NONE"],
     buying_type: "AUCTION",
   };
+  if (options.bidStrategy?.trim()) {
+    body.bid_strategy = options.bidStrategy.trim();
+  }
   if (options.dailyBudgetMinor != null) {
     body.daily_budget = options.dailyBudgetMinor;
   }
@@ -60,14 +65,16 @@ export async function graphCreateAdSet(options: {
   optimizationGoal: string;
   promotedObject?: Record<string, string>;
   billingEvent?: string;
-  bidStrategy: string;
+  /** Omit under CBO when strategy is set on the campaign (Meta); ABO should pass this. */
+  bidStrategy?: string;
   bidAmount?: string;
   /** ABO: required when campaign has no CBO budget */
   dailyBudgetMinor?: number;
   /** ABO lifetime: per–ad set total (minor units); use with startTime + endTime */
   lifetimeBudgetMinor?: number;
   startTime?: string;
-  endTime?: string;
+  /** Lifetime: ISO offset string. Daily ongoing: numeric `0` per Marketing API. */
+  endTime?: string | number;
   destinationType?: string;
   dsaBeneficiary?: string;
   dsaPayor?: string;
@@ -83,9 +90,11 @@ export async function graphCreateAdSet(options: {
     targeting: options.targeting,
     optimization_goal: options.optimizationGoal,
     billing_event: options.billingEvent ?? "IMPRESSIONS",
-    bid_strategy: options.bidStrategy,
     status: options.status,
   };
+  if (options.bidStrategy?.trim()) {
+    body.bid_strategy = options.bidStrategy.trim();
+  }
   if (options.promotedObject && Object.keys(options.promotedObject).length > 0) {
     body.promoted_object = options.promotedObject;
   }
@@ -101,7 +110,7 @@ export async function graphCreateAdSet(options: {
   if (options.startTime) {
     body.start_time = options.startTime;
   }
-  if (options.endTime) {
+  if (options.endTime !== undefined && options.endTime !== "") {
     body.end_time = options.endTime;
   }
   if (options.destinationType) {
