@@ -194,6 +194,8 @@ describe("buildTargetingFromPublico", () => {
     expect(targeting.geo_locations).toEqual({ countries: ["BR"] });
     expect(targeting.age_min).toBe(21);
     expect(targeting.publisher_platforms).toContain("facebook");
+    expect(targeting.device_platforms).toEqual(["mobile", "desktop"]);
+    expect(targeting.user_os).toBeUndefined();
   });
 
   it("dedupes countries from locations", () => {
@@ -210,6 +212,38 @@ describe("buildTargetingFromPublico", () => {
     const { targeting, usedFallbackGeo } = buildTargetingFromPublico(p.publico);
     expect(usedFallbackGeo).toBe(false);
     expect(targeting.geo_locations).toEqual({ countries: ["BR"] });
+    expect(targeting.device_platforms).toEqual(["mobile", "desktop"]);
+    expect(targeting.user_os).toBeUndefined();
+  });
+
+  it("maps mobile-only to device_platforms mobile", () => {
+    const p = wizardPublishPayloadSchema.parse({
+      ...basePayload,
+      publico: { ...basePayload.publico, devices: ["mobile"] },
+    });
+    const { targeting } = buildTargetingFromPublico(p.publico);
+    expect(targeting.device_platforms).toEqual(["mobile"]);
+    expect(targeting.user_os).toBeUndefined();
+  });
+
+  it("maps desktop-only to device_platforms desktop", () => {
+    const p = wizardPublishPayloadSchema.parse({
+      ...basePayload,
+      publico: { ...basePayload.publico, devices: ["desktop"] },
+    });
+    const { targeting } = buildTargetingFromPublico(p.publico);
+    expect(targeting.device_platforms).toEqual(["desktop"]);
+    expect(targeting.user_os).toBeUndefined();
+  });
+
+  it("omits device_platforms when no devices selected", () => {
+    const p = wizardPublishPayloadSchema.parse({
+      ...basePayload,
+      publico: { ...basePayload.publico, devices: [] },
+    });
+    const { targeting } = buildTargetingFromPublico(p.publico);
+    expect(targeting.device_platforms).toBeUndefined();
+    expect(targeting.user_os).toBeUndefined();
   });
 });
 

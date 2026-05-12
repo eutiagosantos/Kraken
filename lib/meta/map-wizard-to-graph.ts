@@ -248,11 +248,11 @@ export function buildTargetingFromPublico(publico: WizardPublishPayload["publico
     ];
   }
 
-  const userOs: string[] = [];
-  if (publico.devices.includes("mobile")) userOs.push("Android", "iOS");
-  if (publico.devices.includes("desktop")) userOs.push("Windows", "Mac OS X");
-  if (userOs.length > 0) {
-    targeting.user_os = Array.from(new Set(userOs));
+  const devicePlatforms: string[] = [];
+  if (publico.devices.includes("mobile")) devicePlatforms.push("mobile");
+  if (publico.devices.includes("desktop")) devicePlatforms.push("desktop");
+  if (devicePlatforms.length > 0) {
+    targeting.device_platforms = devicePlatforms;
   }
 
   return { targeting, usedFallbackGeo, fallbackCountry };
