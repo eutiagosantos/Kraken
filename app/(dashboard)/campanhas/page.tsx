@@ -433,9 +433,18 @@ export default function CampanhasPage() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               name: patch.name,
-              dailyBudget: patch.dailyBudget,
+              account: patch.account,
+              accountId: patch.accountId,
+              structure: patch.structure,
               objective: patch.objective,
+              dailyBudget: patch.dailyBudget,
               antiSpy: patch.antiSpy,
+              status: patch.status,
+              adsCreated: patch.adsCreated,
+              adsTotal: patch.adsTotal,
+              trend: patch.trend,
+              creatives: patch.creatives,
+              errors: patch.errors,
             }),
           });
           const json = (await res.json().catch(() => ({}))) as { error?: string };
