@@ -82,6 +82,25 @@ export function humanizeMetaDetailedTargetingInvalidError(e: GraphApiError): str
   return `${META_DETAILED_TARGETING_INVALID_HINT_PT} (resposta Meta: ${combinedGraphText(e)})`;
 }
 
+const META_BILLING_UNAVAILABLE_HINT_PT =
+  "A conta de anúncios ainda não tem acesso a esta opção de cobrança (IMPRESSIONS). O Meta libera gradualmente para contas novas. Enquanto isso, a publicação será retentada automaticamente com cobrança por LINK_CLICKS; caso volte a falhar, aguarda algumas semanas até a conta consolidar histórico no Meta.";
+
+/** Meta rejects ad set billing_event when the account is new and IMPRESSIONS billing is restricted. */
+export function isMetaBillingUnavailableError(e: unknown): boolean {
+  if (!(e instanceof GraphApiError)) return false;
+  const blob = combinedGraphText(e).toLowerCase();
+  return (
+    (blob.includes("cobrança") && blob.includes("indisponível")) ||
+    (blob.includes("billing") && blob.includes("unavailable")) ||
+    blob.includes("empresas novas") ||
+    blob.includes("seguirem nossas políticas por várias semanas")
+  );
+}
+
+export function humanizeMetaBillingUnavailableError(e: GraphApiError): string {
+  return `${META_BILLING_UNAVAILABLE_HINT_PT} (resposta Meta: ${combinedGraphText(e)})`;
+}
+
 /**
  * Appends a short PT hint for common Meta video processing failures (codec, duration, size).
  * Callers should pass Meta's own `processing_phase.errors[].message` when available.

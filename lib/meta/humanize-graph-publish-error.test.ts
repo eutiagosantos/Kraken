@@ -4,10 +4,12 @@ import { GraphApiError } from "@/lib/meta/graph-client";
 import {
   humanizeMetaAppDevelopmentModeError,
   humanizeMetaAudienceTooNarrowError,
+  humanizeMetaBillingUnavailableError,
   humanizeMetaDetailedTargetingInvalidError,
   humanizeVideoProcessingError,
   isMetaAppDevelopmentModeError,
   isMetaAudienceTooNarrowError,
+  isMetaBillingUnavailableError,
   isMetaDetailedTargetingInvalidParameterError,
   messageIndicatesMetaAppDevelopmentMode,
 } from "@/lib/meta/humanize-graph-publish-error";
@@ -166,6 +168,44 @@ describe("isMetaDetailedTargetingInvalidParameterError", () => {
       rawBody: "{}",
     });
     expect(isMetaDetailedTargetingInvalidParameterError(e)).toBe(false);
+  });
+});
+
+describe("isMetaBillingUnavailableError", () => {
+  it("detects PT billing unavailable via errorUserTitle", () => {
+    const e = new GraphApiError("Invalid parameter", {
+      status: 400,
+      errorUserTitle: "Opção de cobrança indisponível",
+      errorUserMsg: "As contas de anúncios de empresas novas nos Produtos do Facebook podem escolher esta opção de pagamento de anúncios após seguirem nossas políticas por várias semanas.",
+      rawBody: "{}",
+    });
+    expect(isMetaBillingUnavailableError(e)).toBe(true);
+  });
+
+  it("detects via 'empresas novas' substring", () => {
+    const e = new GraphApiError("Invalid parameter", {
+      status: 400,
+      errorUserMsg: "empresas novas nos Produtos do Facebook",
+      rawBody: "{}",
+    });
+    expect(isMetaBillingUnavailableError(e)).toBe(true);
+  });
+
+  it("returns false for unrelated errors", () => {
+    const e = new GraphApiError("Some other error", { status: 400, rawBody: "{}" });
+    expect(isMetaBillingUnavailableError(e)).toBe(false);
+  });
+
+  it("humanize includes LINK_CLICKS hint and resposta Meta", () => {
+    const e = new GraphApiError("Invalid parameter", {
+      status: 400,
+      errorUserTitle: "Opção de cobrança indisponível",
+      errorUserMsg: "empresas novas",
+      rawBody: "{}",
+    });
+    const out = humanizeMetaBillingUnavailableError(e);
+    expect(out).toContain("LINK_CLICKS");
+    expect(out).toContain("resposta Meta:");
   });
 });
 

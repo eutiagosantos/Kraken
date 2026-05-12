@@ -23,9 +23,11 @@ import {
 import {
   humanizeMetaAppDevelopmentModeError,
   humanizeMetaAudienceTooNarrowError,
+  humanizeMetaBillingUnavailableError,
   humanizeMetaDetailedTargetingInvalidError,
   isMetaAppDevelopmentModeError,
   isMetaAudienceTooNarrowError,
+  isMetaBillingUnavailableError,
   isMetaDetailedTargetingInvalidParameterError,
 } from "@/lib/meta/humanize-graph-publish-error";
 import type { GraphFetch } from "@/lib/meta/graph-client";
@@ -111,6 +113,9 @@ function graphErrorMessage(e: unknown): string {
     if (repl.length === 0) {
       return humanizeMetaDetailedTargetingInvalidError(e);
     }
+  }
+  if (e instanceof GraphApiError && isMetaBillingUnavailableError(e)) {
+    return humanizeMetaBillingUnavailableError(e);
   }
   if (e instanceof GraphApiError) {
     const title = e.errorUserTitle ? `${e.errorUserTitle}: ` : "";
@@ -287,6 +292,7 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
       const maxDeprecatedInterestAttempts = 3;
       let campaign!: { id: string };
       let adSetIds: string[] = [];
+      let effectiveBillingEvent = billingEvent;
 
       for (let depAttempt = 0; depAttempt < maxDeprecatedInterestAttempts; depAttempt++) {
         try {
@@ -315,7 +321,7 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
               targeting: workingTargeting,
               optimizationGoal: opt.optimization_goal,
               promotedObject: opt.promoted_object,
-              billingEvent,
+              billingEvent: effectiveBillingEvent,
               bidStrategy: adSetBidStrategy,
               bidAmount: adSetBidAmount,
               dailyBudgetMinor: perAdsetDaily,
@@ -344,6 +350,19 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
               /* rollback best-effort */
             }
             createdCampaignId = undefined;
+          }
+
+          if (
+            e instanceof GraphApiError &&
+            isMetaBillingUnavailableError(e) &&
+            effectiveBillingEvent === "IMPRESSIONS" &&
+            depAttempt < maxDeprecatedInterestAttempts - 1
+          ) {
+            effectiveBillingEvent = "LINK_CLICKS";
+            warnings.push(
+              "Opção de cobrança IMPRESSIONS indisponível nesta conta (conta nova no Meta); a publicação foi retentada com cobrança por LINK_CLICKS."
+            );
+            continue;
           }
 
           const repl =
