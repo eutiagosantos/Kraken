@@ -91,11 +91,11 @@ export function Step3Publico(props: Step3PublicoProps) {
                   onChange={(locations) => onSetPublico({ locations })}
                 />
                 <p className="mt-2 text-xs leading-relaxed text-gray-600">
-                  {publicoCountryRegionRequirementMessagePt()} Cidades são opcionais (refinamento).
+                  {publicoCountryRegionRequirementMessagePt()}
                 </p>
                 {!publicoHasCountryAndRegion(publico) ? (
                   <p className="mt-1 text-xs font-medium text-amber-800">
-                    Publicação bloqueada até cumprires país + região/estado na lista acima.
+                    Publicação bloqueada até cumprires país + região, estado ou cidade na lista acima.
                   </p>
                 ) : null}
               </div>
