@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { GraphApiError } from "@/lib/meta/graph-client";
 import {
   humanizeMetaAppDevelopmentModeError,
+  humanizeVideoProcessingError,
   isMetaAppDevelopmentModeError,
   messageIndicatesMetaAppDevelopmentMode,
 } from "@/lib/meta/humanize-graph-publish-error";
@@ -66,6 +67,20 @@ describe("messageIndicatesMetaAppDevelopmentMode", () => {
 
   it("returns false for unrelated errors", () => {
     expect(messageIndicatesMetaAppDevelopmentMode("Invalid OAuth access token.")).toBe(false);
+  });
+});
+
+describe("humanizeVideoProcessingError", () => {
+  it("adds codec hint for codec-related Meta messages", () => {
+    const out = humanizeVideoProcessingError("Unsupported video codec");
+    expect(out).toContain("Unsupported video codec");
+    expect(out).toContain("H.264");
+  });
+
+  it("adds duration hint when Meta mentions length", () => {
+    const out = humanizeVideoProcessingError("Video duration exceeds limit");
+    expect(out).toContain("duration");
+    expect(out).toContain("duração");
   });
 });
 

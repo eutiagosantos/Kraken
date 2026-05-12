@@ -2,6 +2,10 @@ import { z } from "zod";
 
 import type { Structure } from "@/lib/stores/wizardStore";
 import {
+  publicoCountryRegionRequirementMessagePt,
+  publicoHasCountryAndRegion,
+} from "@/lib/wizard/publico-geo-validation";
+import {
   campaignScheduleSchema,
   defaultCampaignSchedule,
 } from "@/lib/meta/campaign-schedule";
@@ -143,6 +147,13 @@ export const wizardPublishPayloadSchema = z
         });
       }
     }
+    if (!publicoHasCountryAndRegion(d.publico)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: publicoCountryRegionRequirementMessagePt(),
+        path: ["publico", "locations"],
+      });
+    }
   });
 
 export type WizardPublishPayload = z.infer<typeof wizardPublishPayloadSchema>;
@@ -215,25 +226,59 @@ function mapPublisherPlatforms(platforms: WizardPublishPayload["publico"]["platf
 
 /**
  * Builds Marketing API `targeting` object (subset).
- * If no country locations, uses BR as documented fallback and sets usedFallbackGeo.
+ * Partitions `geo_locations` into countries, regions (state/region), and cities.
+ * Uses BR as fallback only when all three are empty.
  */
 export function buildTargetingFromPublico(publico: WizardPublishPayload["publico"]): TargetingBuildResult {
   const countries: string[] = [];
+  const regions: Array<{ key: string }> = [];
+  const cities: Array<{ key: string }> = [];
   for (const loc of publico.locations) {
-    if (loc.type === "country" && loc.key.length === 2) {
-      countries.push(loc.key.toUpperCase());
+    const key = loc.key?.trim() ?? "";
+    if (!key) continue;
+    if (loc.type === "country" && key.length === 2) {
+      countries.push(key.toUpperCase());
+    } else if (loc.type === "state" || loc.type === "region") {
+      regions.push({ key });
+    } else if (loc.type === "city") {
+      cities.push({ key });
     }
   }
+  const effectiveCountries = Array.from(new Set(countries));
+  const dedupeGeo = <T extends { key: string }>(items: T[]) => {
+    const seen = new Set<string>();
+    const out: T[] = [];
+    for (const item of items) {
+      if (seen.has(item.key)) continue;
+      seen.add(item.key);
+      out.push(item);
+    }
+    return out;
+  };
+  const effectiveRegions = dedupeGeo(regions);
+  const effectiveCities = dedupeGeo(cities);
+
   let usedFallbackGeo = false;
   let fallbackCountry: string | undefined;
-  const effectiveCountries = countries.length > 0 ? Array.from(new Set(countries)) : (() => {
-    usedFallbackGeo = true;
-    fallbackCountry = "BR";
-    return ["BR"];
-  })();
+  const hasGeo = effectiveCountries.length > 0 || effectiveRegions.length > 0 || effectiveCities.length > 0;
+  const finalCountries =
+    effectiveCountries.length > 0
+      ? effectiveCountries
+      : !hasGeo
+        ? (() => {
+            usedFallbackGeo = true;
+            fallbackCountry = "BR";
+            return ["BR"];
+          })()
+        : [];
+
+  const geo_locations: Record<string, unknown> = {};
+  if (finalCountries.length > 0) geo_locations.countries = finalCountries;
+  if (effectiveRegions.length > 0) geo_locations.regions = effectiveRegions;
+  if (effectiveCities.length > 0) geo_locations.cities = effectiveCities;
 
   const targeting: Record<string, unknown> = {
-    geo_locations: { countries: effectiveCountries },
+    geo_locations,
     age_min: Math.max(13, Math.min(publico.ageMin, publico.ageMax)),
     age_max: Math.max(13, Math.max(publico.ageMin, publico.ageMax)),
     genders: mapGender(publico.gender),

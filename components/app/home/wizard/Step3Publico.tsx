@@ -3,6 +3,10 @@ import { Button } from "@/components/ui/Button";
 import type { GroupBase, StylesConfig } from "react-select";
 import type { InterestOption, LocationOption } from "@/lib/meta/types";
 import type { Publico } from "@/lib/stores/wizardStore";
+import {
+  publicoCountryRegionRequirementMessagePt,
+  publicoHasCountryAndRegion,
+} from "@/lib/wizard/publico-geo-validation";
 import { InterestSelect } from "./InterestSelect";
 import { LocationSelect } from "./LocationSelect";
 import { PublicosSalvosGrid } from "./PublicosSalvosGrid";
@@ -86,6 +90,14 @@ export function Step3Publico(props: Step3PublicoProps) {
                   styles={darkSelectStyles as StylesConfig<LocationOption, true, GroupBase<LocationOption>>}
                   onChange={(locations) => onSetPublico({ locations })}
                 />
+                <p className="mt-2 text-xs leading-relaxed text-gray-600">
+                  {publicoCountryRegionRequirementMessagePt()} Cidades são opcionais (refinamento).
+                </p>
+                {!publicoHasCountryAndRegion(publico) ? (
+                  <p className="mt-1 text-xs font-medium text-amber-800">
+                    Publicação bloqueada até cumprires país + região/estado na lista acima.
+                  </p>
+                ) : null}
               </div>
 
               <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">

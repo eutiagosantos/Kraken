@@ -6,6 +6,10 @@ import { useRouter } from "next/navigation";
 import type { NomenclaturePreviewContext } from "@/lib/wizard/nomenclature-preview";
 import { buildWizardPublishPayload } from "@/lib/wizard/build-wizard-publish-payload";
 import { getWizardPublishSliceFromStore } from "@/lib/wizard/get-wizard-publish-slice";
+import {
+  publicoCountryRegionRequirementMessagePt,
+  publicoHasCountryAndRegion,
+} from "@/lib/wizard/publico-geo-validation";
 import { mockWizardDataAdapter } from "@/lib/wizard/data-adapter";
 import { useWizardStore, type Publico, type Structure } from "@/lib/stores/wizardStore";
 import { Step1Creatives } from "./wizard/Step1Creatives";
@@ -36,6 +40,8 @@ const lightSelectStyles = {
 export function UploadWizard() {
   const router = useRouter();
   const wizard = useWizardStore();
+  const selectedAccountIds = useWizardStore((s) => s.selectedAccountIds);
+  const selectedAccountIdsKey = selectedAccountIds.join(",");
   const [isNavigatingToQueue, startTransition] = useTransition();
   const [publishNavigateError, setPublishNavigateError] = useState<string | null>(null);
   const [accountQuery, setAccountQuery] = useState("");
@@ -51,9 +57,10 @@ export function UploadWizard() {
       setWizardDataLoading(true);
       setWizardDataError(null);
       try {
+        const accountIds = selectedAccountIds;
         const [nextAccounts, nextPixels, nextPublicos] = await Promise.all([
           mockWizardDataAdapter.listAccounts(),
-          mockWizardDataAdapter.listPixels(),
+          mockWizardDataAdapter.listPixels(accountIds.length > 0 ? accountIds : undefined),
           mockWizardDataAdapter.listSavedPublicos(),
         ]);
         setAccounts(nextAccounts);
@@ -71,7 +78,7 @@ export function UploadWizard() {
       }
     }
     void loadData();
-  }, []);
+  }, [selectedAccountIdsKey]);
 
   const filteredAccounts = useMemo(() => {
     const query = accountQuery.trim().toLowerCase();
@@ -133,6 +140,17 @@ export function UploadWizard() {
   const adsetsPerStructure =
     wizard.structure === "custom" ? wizard.customStructure.adsets : adsetsByStructure[wizard.structure];
   const estimatedCampaigns = wizard.selectedAccountIds.length * wizard.creatives.length * adsetsPerStructure;
+
+  const step3PublishBlockedReason = useMemo(() => {
+    const parts: string[] = [];
+    if (!wizard.pageId?.trim()) {
+      parts.push("Escolhe uma Página Facebook no passo 1 (Criativos e contas).");
+    }
+    if (!publicoHasCountryAndRegion(wizard.publico)) {
+      parts.push(publicoCountryRegionRequirementMessagePt());
+    }
+    return parts.length > 0 ? parts.join(" ") : null;
+  }, [wizard.pageId, wizard.publico]);
 
   const addCreativeFiles = (files: File[]) => {
     files.forEach((file) => {
@@ -260,11 +278,7 @@ export function UploadWizard() {
               budget={wizard.budget}
               estimatedCampaigns={estimatedCampaigns}
               publishing={isNavigatingToQueue}
-              publishBlockedReason={
-                wizard.pageId?.trim()
-                  ? null
-                  : "Escolhe uma Página Facebook no passo 1 (Criativos e contas)."
-              }
+              publishBlockedReason={step3PublishBlockedReason}
               darkSelectStyles={lightSelectStyles}
               onSetPublicoTab={setPublicoTab}
               onSetPublico={wizard.setPublico}

@@ -1,5 +1,9 @@
 import type { WizardPublishPayloadInput } from "@/lib/meta/map-wizard-to-graph";
 import type { CampaignSchedule } from "@/lib/meta/campaign-schedule";
+import {
+  publicoCountryRegionRequirementMessagePt,
+  publicoHasCountryAndRegion,
+} from "@/lib/wizard/publico-geo-validation";
 import type {
   CampaignType,
   Creative,
@@ -38,6 +42,9 @@ export function buildWizardPublishPayload(wizard: WizardPublishStateSlice): {
   const pageId = wizard.pageId?.trim();
   if (!pageId) {
     throw new Error("Escolhe uma Página Facebook no passo 1.");
+  }
+  if (!publicoHasCountryAndRegion(wizard.publico)) {
+    throw new Error(publicoCountryRegionRequirementMessagePt());
   }
 
   const snapshot: WizardPublishPayloadInput = {

@@ -34,7 +34,10 @@ const basePayload = {
     id: "p1",
     name: "Público",
     type: "custom" as const,
-    locations: [{ type: "country" as const, key: "PT", name: "Portugal" }],
+    locations: [
+      { type: "country" as const, key: "PT", name: "Portugal" },
+      { type: "state" as const, key: "999", name: "Região teste" },
+    ],
     ageMin: 21,
     ageMax: 55,
     gender: "all" as const,
@@ -143,6 +146,28 @@ describe("wizardPublishPayloadSchema", () => {
     });
     expect(res.success).toBe(false);
   });
+
+  it("rejects publico with country but no region/state", () => {
+    const res = wizardPublishPayloadSchema.safeParse({
+      ...basePayload,
+      publico: {
+        ...basePayload.publico,
+        locations: [{ type: "country", key: "PT", name: "Portugal" }],
+      },
+    });
+    expect(res.success).toBe(false);
+  });
+
+  it("rejects publico with region but no ISO country", () => {
+    const res = wizardPublishPayloadSchema.safeParse({
+      ...basePayload,
+      publico: {
+        ...basePayload.publico,
+        locations: [{ type: "state", key: "3847", name: "São Paulo" }],
+      },
+    });
+    expect(res.success).toBe(false);
+  });
 });
 
 describe("resolveStructureCounts", () => {
@@ -181,21 +206,60 @@ describe("structureLabelForDb", () => {
 });
 
 describe("buildTargetingFromPublico", () => {
-  it("uses BR fallback when no country keys", () => {
-    const p = wizardPublishPayloadSchema.parse({
-      ...basePayload,
-      publico: {
-        ...basePayload.publico,
-        locations: [{ type: "city" as const, key: "lisboa", name: "Lisboa" }],
-      },
-    });
-    const { targeting, usedFallbackGeo } = buildTargetingFromPublico(p.publico);
+  it("uses BR fallback only when locations are empty", () => {
+    const publico = {
+      ...basePayload.publico,
+      locations: [] as typeof basePayload.publico.locations,
+    };
+    const { targeting, usedFallbackGeo } = buildTargetingFromPublico(publico);
     expect(usedFallbackGeo).toBe(true);
     expect(targeting.geo_locations).toEqual({ countries: ["BR"] });
     expect(targeting.age_min).toBe(21);
     expect(targeting.publisher_platforms).toContain("facebook");
     expect(targeting.device_platforms).toEqual(["mobile", "desktop"]);
     expect(targeting.user_os).toBeUndefined();
+  });
+
+  it("maps city-only selection without BR fallback", () => {
+    const publico = {
+      ...basePayload.publico,
+      locations: [{ type: "city" as const, key: "2457168", name: "Lisboa" }],
+    };
+    const { targeting, usedFallbackGeo } = buildTargetingFromPublico(publico);
+    expect(usedFallbackGeo).toBe(false);
+    expect(targeting.geo_locations).toEqual({ cities: [{ key: "2457168" }] });
+  });
+
+  it("maps state/region keys into geo_locations.regions", () => {
+    const publico = {
+      ...basePayload.publico,
+      locations: [{ type: "state" as const, key: "3847", name: "São Paulo" }],
+    };
+    const { targeting, usedFallbackGeo } = buildTargetingFromPublico(publico);
+    expect(usedFallbackGeo).toBe(false);
+    expect(targeting.geo_locations).toEqual({ regions: [{ key: "3847" }] });
+  });
+
+  it("combines countries, regions and cities with dedupe", () => {
+    const p = wizardPublishPayloadSchema.parse({
+      ...basePayload,
+      publico: {
+        ...basePayload.publico,
+        locations: [
+          { type: "country" as const, key: "BR", name: "Brasil" },
+          { type: "state" as const, key: "3847", name: "SP" },
+          { type: "city" as const, key: "600000", name: "Campinas" },
+          { type: "state" as const, key: "3847", name: "SP dup" },
+        ],
+      },
+    });
+    const { targeting, usedFallbackGeo } = buildTargetingFromPublico(p.publico);
+    expect(usedFallbackGeo).toBe(false);
+    expect(targeting.geo_locations).toEqual({
+      countries: ["BR"],
+      regions: [{ key: "3847" }],
+      cities: [{ key: "600000" }],
+    });
   });
 
   it("dedupes countries from locations", () => {
@@ -206,12 +270,16 @@ describe("buildTargetingFromPublico", () => {
         locations: [
           { type: "country" as const, key: "br", name: "Brasil" },
           { type: "country" as const, key: "BR", name: "Brasil" },
+          { type: "state" as const, key: "3847", name: "SP" },
         ],
       },
     });
     const { targeting, usedFallbackGeo } = buildTargetingFromPublico(p.publico);
     expect(usedFallbackGeo).toBe(false);
-    expect(targeting.geo_locations).toEqual({ countries: ["BR"] });
+    expect(targeting.geo_locations).toEqual({
+      countries: ["BR"],
+      regions: [{ key: "3847" }],
+    });
     expect(targeting.device_platforms).toEqual(["mobile", "desktop"]);
     expect(targeting.user_os).toBeUndefined();
   });
@@ -300,7 +368,13 @@ describe("publicoTargetsDsaRegion", () => {
   it("is true for EU country keys", () => {
     const p = wizardPublishPayloadSchema.parse({
       ...basePayload,
-      publico: { ...basePayload.publico, locations: [{ type: "country", key: "DE", name: "Germany" }] },
+      publico: {
+        ...basePayload.publico,
+        locations: [
+          { type: "country", key: "DE", name: "Germany" },
+          { type: "state", key: "1", name: "Região" },
+        ],
+      },
     });
     expect(publicoTargetsDsaRegion(p.publico)).toBe(true);
   });
@@ -308,7 +382,13 @@ describe("publicoTargetsDsaRegion", () => {
   it("is false when no EU country in audience", () => {
     const p = wizardPublishPayloadSchema.parse({
       ...basePayload,
-      publico: { ...basePayload.publico, locations: [{ type: "country", key: "BR", name: "Brasil" }] },
+      publico: {
+        ...basePayload.publico,
+        locations: [
+          { type: "country", key: "BR", name: "Brasil" },
+          { type: "state", key: "2", name: "Região" },
+        ],
+      },
     });
     expect(publicoTargetsDsaRegion(p.publico)).toBe(false);
   });

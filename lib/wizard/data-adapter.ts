@@ -33,7 +33,7 @@ export type PublishResult = {
 
 export interface WizardDataAdapter {
   listAccounts: () => Promise<MockAccount[]>;
-  listPixels: () => Promise<WizardPixel[]>;
+  listPixels: (accountIds?: string[]) => Promise<WizardPixel[]>;
   listSavedPresets: () => Promise<WizardPreset[]>;
   listSavedPublicos: () => Promise<Publico[]>;
   listLocationOptions: () => Promise<WizardLocationOption[]>;
@@ -185,8 +185,12 @@ export function createFetchWizardDataAdapter(): WizardDataAdapter {
       const res = await fetch("/api/wizard/accounts", opts);
       return parseJson<MockAccount[]>(res);
     },
-    async listPixels() {
-      const res = await fetch("/api/wizard/pixels", opts);
+    async listPixels(accountIds) {
+      const qs =
+        accountIds && accountIds.length > 0
+          ? `?accounts=${encodeURIComponent(accountIds.join(","))}`
+          : "";
+      const res = await fetch(`/api/wizard/pixels${qs}`, opts);
       return parseJson<WizardPixel[]>(res);
     },
     async listSavedPresets() {

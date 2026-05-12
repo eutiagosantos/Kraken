@@ -34,3 +34,22 @@ export function isMetaAppDevelopmentModeError(e: unknown): boolean {
 export function humanizeMetaAppDevelopmentModeError(e: GraphApiError): string {
   return `${META_APP_DEV_MODE_HINT_PT} (resposta Meta: ${combinedGraphText(e)})`;
 }
+
+/**
+ * Appends a short PT hint for common Meta video processing failures (codec, duration, size).
+ * Callers should pass Meta's own `processing_phase.errors[].message` when available.
+ */
+export function humanizeVideoProcessingError(metaErrorMessage: string): string {
+  const m = metaErrorMessage.trim();
+  const lower = m.toLowerCase();
+  let hint = "";
+  if (/codec|format|container|unsupported|invalid.*video|corrupt|encoding|decode|incompatible/i.test(lower)) {
+    hint =
+      " Sugestão: MP4 com H.264 (vídeo) e AAC (áudio), evita codecs ou contentores pouco suportados.";
+  } else if (/duration|length|too long|too short|seconds|minute/i.test(lower)) {
+    hint = " Sugestão: confirma a duração e os limites da Meta para o formato/placement escolhido.";
+  } else if (/size|file|large|exceed|mb|gb|bitrate|resolution|dimension|pixels/i.test(lower)) {
+    hint = " Sugestão: reduz resolução, bitrate ou tamanho do ficheiro dentro dos limites da Meta.";
+  }
+  return m ? `${m}${hint}` : `Erro no processamento do vídeo.${hint}`.trim();
+}

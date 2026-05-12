@@ -1,4 +1,5 @@
-import { graphUrl, type GraphFetch, GraphApiError, graphFormPost } from "@/lib/meta/graph-client";
+import { type GraphFetch, graphFormPost, graphJsonGet } from "@/lib/meta/graph-client";
+import { humanizeVideoProcessingError } from "@/lib/meta/humanize-graph-publish-error";
 
 /**
  * Upload de vídeos para o Meta Ads via Marketing API.
@@ -132,55 +133,20 @@ type VideoStatusResponse = {
   };
 };
 
-function extractStatusError(status: VideoStatusResponse["status"]): string {
+function extractVideoPhaseErrorMessage(status: VideoStatusResponse["status"]): string | null {
   const phases = [status?.processing_phase, status?.uploading_phase];
   for (const phase of phases) {
     if (!phase) continue;
     const raw = phase.errors;
     if (Array.isArray(raw)) {
-      const first = raw.find((e) => e?.message)?.message;
+      const first = raw.find((e) => e?.message)?.message?.trim();
       if (first) return first;
-    } else if (raw && typeof raw === "object" && raw.message) {
-      return raw.message;
+    } else if (raw && typeof raw === "object" && "message" in raw) {
+      const m = (raw as { message?: string }).message?.trim();
+      if (m) return m;
     }
   }
-  return "Meta marcou o processamento do vídeo como erro.";
-}
-
-async function graphJsonGet<T>(options: {
-  path: string;
-  accessToken: string;
-  searchParams?: Record<string, string>;
-  fetchImpl?: GraphFetch;
-}): Promise<T> {
-  const fetchFn = options.fetchImpl ?? fetch;
-  const url = new URL(graphUrl(options.path));
-  if (options.searchParams) {
-    for (const [k, v] of Object.entries(options.searchParams)) {
-      url.searchParams.set(k, v);
-    }
-  }
-  url.searchParams.set("access_token", options.accessToken);
-  const res = await fetchFn(url.toString(), { method: "GET" });
-  const raw = await res.text();
-  if (!res.ok) {
-    let message = `Graph GET HTTP ${res.status}`;
-    try {
-      const parsed = JSON.parse(raw) as { error?: { message?: string; code?: number } };
-      if (parsed.error?.message) message = parsed.error.message;
-    } catch {
-      /* ignore */
-    }
-    throw new GraphApiError(message, { status: res.status, rawBody: raw });
-  }
-  try {
-    return JSON.parse(raw) as T;
-  } catch {
-    throw new GraphApiError("Resposta Graph inválida (não JSON).", {
-      status: res.status,
-      rawBody: raw.slice(0, 400),
-    });
-  }
+  return null;
 }
 
 export async function waitForAdVideoReady(options: {
@@ -206,9 +172,15 @@ export async function waitForAdVideoReady(options: {
       fetchImpl: options.fetchImpl,
     });
     const vs = json.status?.video_status;
+    const phaseErr = extractVideoPhaseErrorMessage(json.status);
+    if (phaseErr) {
+      throw new Error(humanizeVideoProcessingError(phaseErr));
+    }
     if (vs === "ready") return;
     if (vs === "error") {
-      throw new Error(extractStatusError(json.status));
+      throw new Error(
+        humanizeVideoProcessingError("Meta marcou o processamento do vídeo como erro.")
+      );
     }
     if (Date.now() >= deadline) {
       throw new Error(

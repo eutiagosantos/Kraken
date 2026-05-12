@@ -3,6 +3,8 @@ import type { NomenclatureToken, Publico } from "@/lib/stores/wizardStore";
 export type WizardPixel = {
   id: string;
   name: string;
+  /** Ad account numeric id (no `act_` prefix), for disambiguation in the UI. */
+  accountId?: string;
 };
 
 export type WizardPreset = {
@@ -58,7 +60,10 @@ export const mockSavedPublicos: Publico[] = [
     id: "pub1",
     name: "Brasil 25-45",
     type: "saved",
-    locations: [{ type: "country", key: "BR", name: "Brasil" }],
+    locations: [
+      { type: "country", key: "BR", name: "Brasil" },
+      { type: "state", key: "3847", name: "São Paulo (estado)" },
+    ],
     ageMin: 25,
     ageMax: 45,
     gender: "all",
@@ -71,6 +76,7 @@ export const mockSavedPublicos: Publico[] = [
     name: "SP + RJ Masculino",
     type: "saved",
     locations: [
+      { type: "country", key: "BR", name: "Brasil" },
       { type: "state", key: "BR-SP", name: "São Paulo" },
       { type: "state", key: "BR-RJ", name: "Rio de Janeiro" },
     ],

@@ -104,6 +104,42 @@ export async function graphJsonPost<T = unknown>(options: {
   throw lastErr ?? new GraphApiError("Graph: falha após retries.", { status: 0, rawBody: "" });
 }
 
+export async function graphJsonGet<T = unknown>(options: {
+  path: string;
+  accessToken: string;
+  searchParams?: Record<string, string>;
+  fetchImpl?: GraphFetch;
+}): Promise<T> {
+  const fetchFn = options.fetchImpl ?? fetch;
+  const url = new URL(graphUrl(options.path));
+  if (options.searchParams) {
+    for (const [k, v] of Object.entries(options.searchParams)) {
+      url.searchParams.set(k, v);
+    }
+  }
+  url.searchParams.set("access_token", options.accessToken);
+  const res = await fetchFn(url.toString(), { method: "GET" });
+  const raw = await res.text();
+  if (!res.ok) {
+    const parsed = parseGraphErrorJson(raw);
+    throw new GraphApiError(parsed.message || `Graph GET HTTP ${res.status}`, {
+      status: res.status,
+      graphCode: parsed.code,
+      errorSubcode: parsed.errorSubcode,
+      errorUserTitle: parsed.errorUserTitle,
+      rawBody: raw,
+    });
+  }
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    throw new GraphApiError("Resposta Graph inválida (não JSON).", {
+      status: res.status,
+      rawBody: raw.slice(0, 400),
+    });
+  }
+}
+
 /** DELETE `/{object-id}` (e.g. campaign) — best-effort cleanup; failures are ignored by callers. */
 export async function graphDelete(options: {
   /** Graph path without leading slash, e.g. numeric campaign id */
