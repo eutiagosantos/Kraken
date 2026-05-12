@@ -2,7 +2,7 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { ModalPortal } from "@/components/app/ui/ModalPortal";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import type { ContaMeta } from "@/lib/mock-contas";
@@ -18,12 +18,18 @@ export function DesconectarConfirmModal({
   conta: ContaMeta | null;
   open: boolean;
   onClose: () => void;
-  onConfirm: (id: string) => void;
+  onConfirm: (id: string) => void | Promise<void>;
 }) {
   const [confirmText, setConfirmText] = useState("");
+  const [disconnecting, setDisconnecting] = useState(false);
+  const [confirmError, setConfirmError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (open) setConfirmText("");
+    if (open) {
+      setConfirmText("");
+      setConfirmError(null);
+      setDisconnecting(false);
+    }
   }, [open, conta]);
 
   useEffect(() => {
@@ -80,21 +86,49 @@ export function DesconectarConfirmModal({
                   aria-label="Confirmação por texto"
                   autoComplete="off"
                 />
+                {confirmError ? (
+                  <p className="mt-4 text-left text-sm font-medium text-semantic-red" role="alert">
+                    {confirmError}
+                  </p>
+                ) : null}
                 <div className="mt-6 flex justify-end gap-2">
-                  <Button type="button" variant="ghost" className="px-4 py-2.5 text-sm" onClick={onClose}>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="px-4 py-2.5 text-sm"
+                    disabled={disconnecting}
+                    onClick={onClose}
+                  >
                     Cancelar
                   </Button>
                   <Button
                     type="button"
                     variant="danger"
                     className="px-4 py-2.5 text-sm"
-                    disabled={!confirmed}
+                    disabled={!confirmed || disconnecting}
                     onClick={() => {
-                      onConfirm(conta.id);
-                      onClose();
+                      void (async () => {
+                        setConfirmError(null);
+                        setDisconnecting(true);
+                        try {
+                          await Promise.resolve(onConfirm(conta.id));
+                          onClose();
+                        } catch (e) {
+                          setConfirmError(e instanceof Error ? e.message : "Não foi possível desconectar.");
+                        } finally {
+                          setDisconnecting(false);
+                        }
+                      })();
                     }}
                   >
-                    Desconectar definitivamente
+                    {disconnecting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden />
+                        A desconectar…
+                      </>
+                    ) : (
+                      "Desconectar definitivamente"
+                    )}
                   </Button>
                 </div>
               </motion.div>

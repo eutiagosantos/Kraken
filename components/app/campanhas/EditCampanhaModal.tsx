@@ -1,6 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
+import { Loader2 } from "lucide-react";
 import { ModalPortal } from "@/components/app/ui/ModalPortal";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
@@ -18,12 +19,14 @@ export function EditCampanhaModal({
   campanha: Campanha | null;
   open: boolean;
   onClose: () => void;
-  onSave: (id: string, patch: Partial<Pick<Campanha, "name" | "dailyBudget" | "objective" | "antiSpy">>) => void;
+  onSave: (id: string, patch: Partial<Pick<Campanha, "name" | "dailyBudget" | "objective" | "antiSpy">>) => void | Promise<void>;
 }) {
   const [name, setName] = useState("");
   const [budget, setBudget] = useState("");
   const [objective, setObjective] = useState("");
   const [antiSpy, setAntiSpy] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
     if (campanha && open) {
@@ -31,6 +34,8 @@ export function EditCampanhaModal({
       setBudget(String(campanha.dailyBudget));
       setObjective(campanha.objective);
       setAntiSpy(campanha.antiSpy);
+      setSaveError(null);
+      setSubmitting(false);
     }
   }, [campanha, open]);
 
@@ -114,26 +119,57 @@ export function EditCampanhaModal({
                 Anti-Spy
               </label>
             </div>
+            {saveError ? (
+              <p className="mt-4 text-sm font-medium text-semantic-red" role="alert">
+                {saveError}
+              </p>
+            ) : null}
             <div className="mt-6 flex justify-end gap-2">
-              <Button type="button" variant="ghost" className="px-4 py-2.5 text-sm" onClick={onClose}>
+              <Button
+                type="button"
+                variant="ghost"
+                className="px-4 py-2.5 text-sm"
+                disabled={submitting}
+                onClick={onClose}
+              >
                 Cancelar
               </Button>
               <Button
                 type="button"
                 variant="primary"
                 className="px-4 py-2.5 text-sm"
+                disabled={submitting}
                 onClick={() => {
-                  const n = parseFloat(budget.replace(",", "."));
-                  onSave(campanha.id, {
-                    name: name.trim() || campanha.name,
-                    dailyBudget: Number.isFinite(n) ? n : campanha.dailyBudget,
-                    objective,
-                    antiSpy,
-                  });
-                  onClose();
+                  void (async () => {
+                    const n = parseFloat(budget.replace(",", "."));
+                    setSaveError(null);
+                    setSubmitting(true);
+                    try {
+                      await Promise.resolve(
+                        onSave(campanha.id, {
+                          name: name.trim() || campanha.name,
+                          dailyBudget: Number.isFinite(n) ? n : campanha.dailyBudget,
+                          objective,
+                          antiSpy,
+                        })
+                      );
+                      onClose();
+                    } catch (e) {
+                      setSaveError(e instanceof Error ? e.message : "Não foi possível salvar.");
+                    } finally {
+                      setSubmitting(false);
+                    }
+                  })();
                 }}
               >
-                Salvar alterações
+                {submitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden />
+                    A guardar…
+                  </>
+                ) : (
+                  "Salvar alterações"
+                )}
               </Button>
             </div>
           </motion.div>

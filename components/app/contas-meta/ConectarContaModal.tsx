@@ -78,7 +78,7 @@ export function ConectarContaModal({
 }: {
   open: boolean;
   onClose: () => void;
-  onConnected: () => void;
+  onConnected: () => void | Promise<void>;
 }) {
   const [step, setStep] = useState(1);
   const [method, setMethod] = useState<"token" | "oauth">("token");
@@ -138,7 +138,7 @@ export function ConectarContaModal({
       if (!res.ok) {
         throw new Error(json.error ?? "Falha ao sincronizar");
       }
-      onConnected();
+      await Promise.resolve(onConnected());
       onClose();
     } catch {
       /* erro mostrado via toast no parent se necessário */

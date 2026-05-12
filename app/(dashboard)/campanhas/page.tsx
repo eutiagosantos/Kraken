@@ -241,9 +241,14 @@ export default function CampanhasPage() {
   };
 
   const deleteByIds = async (ids: string[]) => {
-    await Promise.all(
+    const responses = await Promise.all(
       ids.map((id) => fetch(`/api/campanhas/${id}`, { method: "DELETE", credentials: "include" }))
     );
+    const failed = responses.find((r) => !r.ok);
+    if (failed) {
+      const json = (await failed.json().catch(() => ({}))) as { error?: string };
+      throw new Error(json.error ?? "Não foi possível excluir.");
+    }
     setSelectedIds((prev) => prev.filter((id) => !ids.includes(id)));
     setPanelOpen(false);
     setSelectedCampanha(null);
@@ -422,7 +427,7 @@ export default function CampanhasPage() {
           setEditCampanha(null);
         }}
         onSave={async (id, patch) => {
-          await fetch(`/api/campanhas/${id}`, {
+          const res = await fetch(`/api/campanhas/${id}`, {
             method: "PATCH",
             credentials: "include",
             headers: { "Content-Type": "application/json" },
@@ -433,6 +438,10 @@ export default function CampanhasPage() {
               antiSpy: patch.antiSpy,
             }),
           });
+          const json = (await res.json().catch(() => ({}))) as { error?: string };
+          if (!res.ok) {
+            throw new Error(json.error ?? "Não foi possível atualizar a campanha.");
+          }
           await refetch();
           showSuccess("Campanha atualizada com sucesso.");
         }}
@@ -442,12 +451,10 @@ export default function CampanhasPage() {
         open={deleteOpen}
         count={deleteCount}
         onClose={() => setDeleteOpen(false)}
-        onConfirm={() => {
-          void (async () => {
-            const n = deleteIds.length;
-            await deleteByIds(deleteIds);
-            showSuccess(n > 1 ? "Campanhas excluídas com sucesso." : "Campanha excluída com sucesso.");
-          })();
+        onConfirm={async () => {
+          const n = deleteIds.length;
+          await deleteByIds(deleteIds);
+          showSuccess(n > 1 ? "Campanhas excluídas com sucesso." : "Campanha excluída com sucesso.");
         }}
       />
 

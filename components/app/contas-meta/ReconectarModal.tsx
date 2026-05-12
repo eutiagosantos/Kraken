@@ -18,7 +18,7 @@ export function ReconectarModal({
   conta: ContaMeta | null;
   open: boolean;
   onClose: () => void;
-  onReconnected: () => void;
+  onReconnected: () => void | Promise<void>;
 }) {
   const [newToken, setNewToken] = useState("");
   const [reconnecting, setReconnecting] = useState(false);
@@ -116,7 +116,7 @@ export function ReconectarModal({
                         body: JSON.stringify({ action: "sync_with_token", token: newToken.trim() }),
                       });
                       if (res.ok) {
-                        onReconnected();
+                        await Promise.resolve(onReconnected());
                         onClose();
                       }
                     } finally {

@@ -2,7 +2,7 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { ModalPortal } from "@/components/app/ui/ModalPortal";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 
@@ -15,12 +15,18 @@ export function DeleteConfirmModal({
   open: boolean;
   count: number;
   onClose: () => void;
-  onConfirm: () => void;
+  onConfirm: () => void | Promise<void>;
 }) {
   const [confirmText, setConfirmText] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [confirmError, setConfirmError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (open) setConfirmText("");
+    if (open) {
+      setConfirmText("");
+      setConfirmError(null);
+      setDeleting(false);
+    }
   }, [open]);
 
   useEffect(() => {
@@ -70,21 +76,49 @@ export function DeleteConfirmModal({
               className="mt-4 w-full rounded-lg border border-neutral-border bg-neutral-white px-3 py-2.5 text-sm outline-none focus:border-brand-purple focus:ring-2 focus:ring-brand-purple/25"
               aria-label="Confirmação por texto"
             />
+            {confirmError ? (
+              <p className="mt-4 text-sm font-medium text-semantic-red" role="alert">
+                {confirmError}
+              </p>
+            ) : null}
             <div className="mt-6 flex justify-end gap-2">
-              <Button type="button" variant="ghost" className="px-4 py-2.5 text-sm" onClick={onClose}>
+              <Button
+                type="button"
+                variant="ghost"
+                className="px-4 py-2.5 text-sm"
+                disabled={deleting}
+                onClick={onClose}
+              >
                 Cancelar
               </Button>
               <Button
                 type="button"
                 variant="danger"
                 className="px-4 py-2.5 text-sm"
-                disabled={confirmText !== "excluir"}
+                disabled={confirmText !== "excluir" || deleting}
                 onClick={() => {
-                  onConfirm();
-                  onClose();
+                  void (async () => {
+                    setConfirmError(null);
+                    setDeleting(true);
+                    try {
+                      await Promise.resolve(onConfirm());
+                      onClose();
+                    } catch (e) {
+                      setConfirmError(e instanceof Error ? e.message : "Não foi possível excluir.");
+                    } finally {
+                      setDeleting(false);
+                    }
+                  })();
                 }}
               >
-                Excluir definitivamente
+                {deleting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden />
+                    A excluir…
+                  </>
+                ) : (
+                  "Excluir definitivamente"
+                )}
               </Button>
             </div>
             </motion.div>

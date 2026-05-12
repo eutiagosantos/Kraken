@@ -122,8 +122,8 @@ export default function ContasMetaPage() {
       <ConectarContaModal
         open={openModal === "conectar"}
         onClose={() => setOpenModal(null)}
-        onConnected={() => {
-          void refetch();
+        onConnected={async () => {
+          await refetch();
           showSuccess("Conta sincronizada com sucesso.");
         }}
       />
@@ -144,10 +144,12 @@ export default function ContasMetaPage() {
               defaultAntiSpy: patch.defaultAntiSpy,
             }),
           });
-          if (res.ok) {
-            await refetch();
-            showSuccess("Alterações salvas com sucesso.");
+          const json = (await res.json().catch(() => ({}))) as { error?: string };
+          if (!res.ok) {
+            throw new Error(json.error ?? "Não foi possível salvar as alterações.");
           }
+          await refetch();
+          showSuccess("Alterações salvas com sucesso.");
         }}
       />
 
@@ -155,8 +157,8 @@ export default function ContasMetaPage() {
         conta={openModal === "reconectar" ? modalConta : null}
         open={openModal === "reconectar"}
         onClose={() => setOpenModal(null)}
-        onReconnected={() => {
-          void refetch();
+        onReconnected={async () => {
+          await refetch();
           showSuccess("Conta reconectada com sucesso.");
         }}
       />
@@ -167,10 +169,12 @@ export default function ContasMetaPage() {
         onClose={() => setOpenModal(null)}
         onConfirm={async (id) => {
           const res = await fetch(`/api/contas-meta/${id}`, { method: "DELETE", credentials: "include" });
-          if (res.ok) {
-            await refetch();
-            showSuccess("Conta desconectada com sucesso.");
+          const json = (await res.json().catch(() => ({}))) as { error?: string };
+          if (!res.ok) {
+            throw new Error(json.error ?? "Não foi possível desconectar a conta.");
           }
+          await refetch();
+          showSuccess("Conta desconectada com sucesso.");
         }}
       />
     </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
+import { Loader2 } from "lucide-react";
 import { ModalPortal } from "@/components/app/ui/ModalPortal";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
@@ -24,7 +25,7 @@ export function EditarContaModal({
   conta: ContaMeta | null;
   open: boolean;
   onClose: () => void;
-  onSave: (id: string, patch: Partial<Pick<ContaMeta, "nickname" | "defaultBudget" | "defaultStructure" | "defaultAntiSpy">>) => void;
+  onSave: (id: string, patch: Partial<Pick<ContaMeta, "nickname" | "defaultBudget" | "defaultStructure" | "defaultAntiSpy">>) => void | Promise<void>;
 }) {
   const [nickname, setNickname] = useState("");
   const [defaultBudget, setDefaultBudget] = useState("");
@@ -35,6 +36,8 @@ export function EditarContaModal({
     [notifOptions[1]]: true,
     [notifOptions[2]]: false,
   });
+  const [submitting, setSubmitting] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
     if (conta && open) {
@@ -42,6 +45,8 @@ export function EditarContaModal({
       setDefaultBudget(String(conta.defaultBudget));
       setDefaultStructure(conta.defaultStructure);
       setDefaultAntiSpy(conta.defaultAntiSpy);
+      setSaveError(null);
+      setSubmitting(false);
     }
   }, [conta, open]);
 
@@ -172,25 +177,51 @@ export function EditarContaModal({
             </div>
             </div>
 
+            {saveError ? (
+              <p className="shrink-0 border-t border-dashboard-border bg-dashboard-surface px-6 pb-0 pt-3 text-sm font-medium text-semantic-red" role="alert">
+                {saveError}
+              </p>
+            ) : null}
+
             <div className="flex shrink-0 flex-wrap justify-end gap-3 border-t border-dashboard-border bg-dashboard-surface px-6 py-4">
-              <Button type="button" variant="ghost" onClick={onClose}>
+              <Button type="button" variant="ghost" disabled={submitting} onClick={onClose}>
                 Cancelar
               </Button>
               <Button
                 type="button"
                 variant="primary"
+                disabled={submitting}
                 onClick={() => {
-                  const budget = Number(defaultBudget.replace(/\./g, "").replace(",", ".")) || 0;
-                  onSave(conta.id, {
-                    nickname: nickname.trim() || undefined,
-                    defaultBudget: budget,
-                    defaultStructure,
-                    defaultAntiSpy,
-                  });
-                  onClose();
+                  void (async () => {
+                    const budget = Number(defaultBudget.replace(/\./g, "").replace(",", ".")) || 0;
+                    setSaveError(null);
+                    setSubmitting(true);
+                    try {
+                      await Promise.resolve(
+                        onSave(conta.id, {
+                          nickname: nickname.trim() || undefined,
+                          defaultBudget: budget,
+                          defaultStructure,
+                          defaultAntiSpy,
+                        })
+                      );
+                      onClose();
+                    } catch (e) {
+                      setSaveError(e instanceof Error ? e.message : "Não foi possível salvar.");
+                    } finally {
+                      setSubmitting(false);
+                    }
+                  })();
                 }}
               >
-                Salvar Alterações
+                {submitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden />
+                    A guardar…
+                  </>
+                ) : (
+                  "Salvar Alterações"
+                )}
               </Button>
             </div>
             </motion.div>
