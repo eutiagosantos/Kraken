@@ -1,4 +1,5 @@
-import { UploadCloud } from "lucide-react";
+import { Loader2, UploadCloud } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import type { MockAccount } from "@/lib/mock-data";
@@ -12,6 +13,9 @@ import { StepFooter } from "./StepFooter";
 interface Step1CreativesProps {
   creatives: Creative[];
   accounts: MockAccount[];
+  accountsLoading: boolean;
+  accountsLoadError: string | null;
+  hasNoAccountsAfterLoad: boolean;
   selectedAccountIds: string[];
   accountQuery: string;
   onAccountQueryChange: (query: string) => void;
@@ -25,6 +29,9 @@ interface Step1CreativesProps {
 export function Step1Creatives({
   creatives,
   accounts,
+  accountsLoading,
+  accountsLoadError,
+  hasNoAccountsAfterLoad,
   selectedAccountIds,
   accountQuery,
   onAccountQueryChange,
@@ -144,21 +151,45 @@ export function Step1Creatives({
             value={accountQuery}
             onChange={(event) => onAccountQueryChange(event.target.value)}
             placeholder="Buscar conta..."
-            className="mb-3 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-[#7132f5]"
+            disabled={accountsLoading}
+            className="mb-3 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-[#7132f5] disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500"
           />
-          <div className="max-h-[360px] space-y-2 overflow-y-auto pr-1">
-            {accounts.map((account) => (
-              <AccountSelectItem
-                key={account.id}
-                account={account}
-                selected={selectedAccountIds.includes(account.id)}
-                onToggle={() => onToggleAccount(account.id)}
-              />
-            ))}
+          <div className="max-h-[360px] min-h-[120px] space-y-2 overflow-y-auto pr-1">
+            {accountsLoading ? (
+              <div className="flex flex-col items-center justify-center gap-3 py-10 text-sm text-gray-500">
+                <Loader2 className="h-8 w-8 animate-spin text-[#7132f5]" aria-hidden />
+                <p>A carregar contas Meta…</p>
+              </div>
+            ) : accountsLoadError ? (
+              <p className="py-4 text-sm text-red-600">{accountsLoadError}</p>
+            ) : hasNoAccountsAfterLoad ? (
+              <p className="py-4 text-sm text-gray-600">
+                Nenhuma conta Meta ligada.{" "}
+                <Link href="/contas-meta" className="font-medium text-[#7132f5] underline-offset-2 hover:underline">
+                  Gerir contas Meta
+                </Link>
+              </p>
+            ) : accounts.length === 0 ? (
+              <p className="py-4 text-sm text-gray-500">Nenhuma conta corresponde à pesquisa.</p>
+            ) : (
+              accounts.map((account) => (
+                <AccountSelectItem
+                  key={account.id}
+                  account={account}
+                  selected={selectedAccountIds.includes(account.id)}
+                  onToggle={() => onToggleAccount(account.id)}
+                />
+              ))
+            )}
           </div>
           <div className="mt-3 flex items-center justify-between text-sm text-gray-500">
             <span>{selectedAccountIds.length} conta(s) selecionada(s)</span>
-            <button type="button" className="text-[#7132f5]" onClick={onSelectAllAccounts}>
+            <button
+              type="button"
+              className="text-[#7132f5] disabled:cursor-not-allowed disabled:text-gray-400"
+              disabled={accountsLoading || hasNoAccountsAfterLoad || Boolean(accountsLoadError)}
+              onClick={onSelectAllAccounts}
+            >
               Selecionar todas
             </button>
           </div>

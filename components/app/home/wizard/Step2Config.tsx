@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect } from "react";
-import { LayoutGrid, ShoppingBag, Sliders } from "lucide-react";
+import { LayoutGrid, Loader2, ShoppingBag, Sliders } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import type {
@@ -36,6 +36,7 @@ interface Step2ConfigProps {
   nomenclaturePreview: string;
   nomenclaturePreviewContext: NomenclaturePreviewContext;
   pixelOptions: { id: string; name: string }[];
+  pixelsLoading?: boolean;
   onSetCampaignType: (value: CampaignType) => void;
   onSetBudget: (value: number) => void;
   onSetBudgetPeriod: (value: BudgetPeriod) => void;
@@ -79,6 +80,7 @@ export function Step2Config(props: Step2ConfigProps) {
     nomenclaturePreview,
     nomenclaturePreviewContext,
     pixelOptions,
+    pixelsLoading = false,
     onSetCampaignType,
     onSetBudget,
     onSetBudgetPeriod,
@@ -249,18 +251,25 @@ export function Step2Config(props: Step2ConfigProps) {
           </div>
           <div>
             <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-500">Pixel</h4>
-            <select
-              value={pixelId}
-              onChange={(event) => onSetPixelId(event.target.value)}
-              className="mt-2 w-full rounded-lg border border-gray-300 bg-white px-2 py-2 text-sm text-gray-900"
-            >
-              <option value="">Selecionar pixel...</option>
-              {pixelOptions.map((pixel) => (
-                <option key={pixel.id} value={pixel.id}>
-                  {pixel.name} ({pixel.id})
-                </option>
-              ))}
-            </select>
+            {pixelsLoading ? (
+              <div className="mt-2 flex items-center gap-2 text-sm text-gray-500">
+                <Loader2 className="h-4 w-4 shrink-0 animate-spin text-[#7132f5]" aria-hidden />
+                <span>A carregar pixels…</span>
+              </div>
+            ) : (
+              <select
+                value={pixelId}
+                onChange={(event) => onSetPixelId(event.target.value)}
+                className="mt-2 w-full rounded-lg border border-gray-300 bg-white px-2 py-2 text-sm text-gray-900"
+              >
+                <option value="">Selecionar pixel...</option>
+                {pixelOptions.map((pixel) => (
+                  <option key={pixel.id} value={pixel.id}>
+                    {pixel.name} ({pixel.id})
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
           <div>
             <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-500">Estrutura</h4>

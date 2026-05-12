@@ -43,17 +43,32 @@ export function UploadWizard() {
   const [accounts, setAccounts] = useState<Awaited<ReturnType<typeof mockWizardDataAdapter.listAccounts>>>([]);
   const [pixelOptions, setPixelOptions] = useState<Awaited<ReturnType<typeof mockWizardDataAdapter.listPixels>>>([]);
   const [savedPublicos, setSavedPublicos] = useState<Publico[]>([]);
+  const [wizardDataLoading, setWizardDataLoading] = useState(true);
+  const [wizardDataError, setWizardDataError] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadData() {
-      const [nextAccounts, nextPixels, nextPublicos] = await Promise.all([
-        mockWizardDataAdapter.listAccounts(),
-        mockWizardDataAdapter.listPixels(),
-        mockWizardDataAdapter.listSavedPublicos(),
-      ]);
-      setAccounts(nextAccounts);
-      setPixelOptions(nextPixels);
-      setSavedPublicos(nextPublicos);
+      setWizardDataLoading(true);
+      setWizardDataError(null);
+      try {
+        const [nextAccounts, nextPixels, nextPublicos] = await Promise.all([
+          mockWizardDataAdapter.listAccounts(),
+          mockWizardDataAdapter.listPixels(),
+          mockWizardDataAdapter.listSavedPublicos(),
+        ]);
+        setAccounts(nextAccounts);
+        setPixelOptions(nextPixels);
+        setSavedPublicos(nextPublicos);
+      } catch (e) {
+        setWizardDataError(
+          e instanceof Error ? e.message : "Não foi possível carregar os dados do assistente."
+        );
+        setAccounts([]);
+        setPixelOptions([]);
+        setSavedPublicos([]);
+      } finally {
+        setWizardDataLoading(false);
+      }
     }
     void loadData();
   }, []);
@@ -162,6 +177,9 @@ export function UploadWizard() {
             <Step1Creatives
               creatives={wizard.creatives}
               accounts={filteredAccounts}
+              accountsLoading={wizardDataLoading}
+              accountsLoadError={wizardDataError}
+              hasNoAccountsAfterLoad={!wizardDataLoading && !wizardDataError && accounts.length === 0}
               selectedAccountIds={wizard.selectedAccountIds}
               accountQuery={accountQuery}
               onAccountQueryChange={setAccountQuery}
@@ -198,6 +216,7 @@ export function UploadWizard() {
               nomenclaturePreview={wizard.nomenclaturePreview}
               nomenclaturePreviewContext={nomenclaturePreviewContext}
               pixelOptions={pixelOptions}
+              pixelsLoading={wizardDataLoading}
               onSetCampaignType={wizard.setCampaignType}
               onSetBudget={wizard.setBudget}
               onSetBudgetPeriod={wizard.setBudgetPeriod}
