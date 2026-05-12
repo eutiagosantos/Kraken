@@ -69,6 +69,40 @@ describe("parseDeprecatedInterestReplacements", () => {
   it("returns empty for invalid JSON", () => {
     expect(parseDeprecatedInterestReplacements("not json")).toEqual([]);
   });
+
+  it("parses replacements embedded in error_user_msg after prose (no error_data)", () => {
+    const userMsg =
+      'Invalid parameter — Atualize a especificação de direcionamento para remover ou substituir por opções alternativas. Opções alternativas relevantes: [{"deprecated_interest_id":"6014791869470","deprecated_interest_name":"Emagrecer Certo","alternative_interest_id":"6003385609165","alternative_interest_name":"Recipes"}]';
+    const rawBody = JSON.stringify({
+      error: {
+        message: "Invalid parameter",
+        error_user_title: "Algumas opções de direcionamento detalhado foram combinadas",
+        error_user_msg: userMsg,
+      },
+    });
+    const rows = parseDeprecatedInterestReplacements(rawBody);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      deprecatedId: "6014791869470",
+      alternativeId: "6003385609165",
+      deprecatedName: "Emagrecer Certo",
+      alternativeName: "Recipes",
+    });
+  });
+
+  it("parses replacements from message field when error_user_msg absent", () => {
+    const message =
+      'Algumas opções. Opções alternativas relevantes: [{"deprecated_interest_id":"111","alternative_interest_id":"222"}] trailing';
+    const rawBody = JSON.stringify({
+      error: {
+        message,
+        code: 100,
+      },
+    });
+    expect(parseDeprecatedInterestReplacements(rawBody)).toEqual([
+      expect.objectContaining({ deprecatedId: "111", alternativeId: "222" }),
+    ]);
+  });
 });
 
 describe("applyInterestReplacementsToTargeting", () => {

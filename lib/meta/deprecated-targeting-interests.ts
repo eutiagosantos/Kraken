@@ -1,4 +1,48 @@
-/** Meta Marketing API: deprecated detailed targeting interests with suggested replacements in `error.error_data`. */
+/** Meta Marketing API: deprecated detailed targeting interests with suggested replacements in `error.error_data` or embedded JSON inside error message strings. */
+
+const MAX_EMBEDDED_JSON_SLICE_CHARS = 50_000;
+
+/**
+ * Meta sometimes puts `deprecated_interest_id` / `alternative_interest_id` only inside
+ * `error_user_msg` / `message` after prose (e.g. "Opções alternativas relevantes: [...]"),
+ * where the slice does not start with `[` so the normal JSON.parse branch never runs.
+ */
+function walkEmbeddedJsonArraysWithDeprecatedInterests(s: string, out: DeprecatedInterestReplacement[]): void {
+  if (!s.includes("deprecated_interest_id")) return;
+
+  let scan = 0;
+  while (scan < s.length) {
+    const open = s.indexOf("[", scan);
+    if (open < 0) break;
+
+    let depth = 0;
+    let j = open;
+    const limit = Math.min(s.length, open + MAX_EMBEDDED_JSON_SLICE_CHARS + 1);
+    for (; j < limit; j++) {
+      const c = s[j];
+      if (c === "[") depth += 1;
+      else if (c === "]") {
+        depth -= 1;
+        if (depth === 0) {
+          const slice = s.slice(open, j + 1);
+          try {
+            walkErrorData(JSON.parse(slice) as unknown, out);
+          } catch {
+            /* not a JSON array; try next `[` */
+          }
+          scan = j + 1;
+          break;
+        }
+      }
+    }
+
+    if (j >= limit) {
+      scan = open + 1;
+    } else if (depth !== 0) {
+      scan = open + 1;
+    }
+  }
+}
 
 export type DeprecatedInterestReplacement = {
   deprecatedId: string;
@@ -34,6 +78,9 @@ function walkErrorData(node: unknown, out: DeprecatedInterestReplacement[]): voi
         /* ignore */
       }
     }
+    if (node.includes("deprecated_interest_id")) {
+      walkEmbeddedJsonArraysWithDeprecatedInterests(node, out);
+    }
     return;
   }
 
@@ -64,8 +111,10 @@ function walkErrorData(node: unknown, out: DeprecatedInterestReplacement[]): voi
 export function parseDeprecatedInterestReplacements(rawBody: string): DeprecatedInterestReplacement[] {
   const out: DeprecatedInterestReplacement[] = [];
   try {
-    const j = JSON.parse(rawBody) as { error?: { error_data?: unknown } };
-    walkErrorData(j?.error?.error_data, out);
+    const j = JSON.parse(rawBody) as { error?: unknown };
+    if (j?.error != null && typeof j.error === "object") {
+      walkErrorData(j.error, out);
+    }
   } catch {
     return [];
   }
