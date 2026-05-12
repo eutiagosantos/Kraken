@@ -22,6 +22,14 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 Para testar o fluxo de publicação com a app Facebook ainda em modo **Development** (sandbox da Meta: papéis na app, test ad account, página), segue o guia em [docs/meta-publicacao-app-development.md](docs/meta-publicacao-app-development.md).
 
+## Supabase: email de confirmação de cadastro
+
+O HTML e o assunto do email de confirmação estão em [`supabase/templates/confirm-signup.html`](supabase/templates/confirm-signup.html) e em [`supabase/config.toml`](supabase/config.toml) na secção `[auth.email.template.confirmation]` (assunto: **Confirme o seu e-mail — Kraken**).
+
+**Local (CLI):** com `enable_confirmations = true` em `[auth.email]`, após `supabase stop && supabase start` os emails aparecem no Inbucket em [http://127.0.0.1:54324](http://127.0.0.1:54324) (requer Docker a correr).
+
+**Produção (projeto hospedado):** o `config.toml` não sincroniza automaticamente com o cloud. No [Dashboard do Supabase](https://supabase.com/dashboard) → **Authentication** → **Email Templates** → **Confirm signup**, cola o **mesmo** assunto e o conteúdo HTML do ficheiro `supabase/templates/confirm-signup.html`, e confirma que **Site URL** e redirects batem certo com o domínio da app (para o logo `{{ .SiteURL }}/kraken-logo.png` e para o fluxo pós-confirmação).
+
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
 ## Learn More
