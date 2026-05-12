@@ -157,7 +157,7 @@ export function EditCampanhaModal({
             adsTotal: Number.isFinite(at) && at >= 0 ? at : campanha.adsTotal,
             trend,
             creatives: creativesPayload,
-            errors: errorsPayload.length ? errorsPayload : null,
+            errors: errorsPayload,
           })
         );
         onClose();
