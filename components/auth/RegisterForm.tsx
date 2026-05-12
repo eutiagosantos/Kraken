@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { Input } from "@/components/ui/Input";
+import { messageForSignUpAuthError } from "@/lib/auth/supabase-auth-error-message";
 import { buildOAuthReturnRedirectTo } from "@/lib/auth/supabase-oauth-redirects";
 import { useSupabase } from "@/lib/hooks/useSupabase";
 import { cn } from "@/lib/utils";
@@ -25,7 +26,7 @@ export function RegisterForm() {
   const router = useRouter();
   const supabase = useSupabase();
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [notice, setNotice] = useState<string | null>(null);
+  const [notice, setNotice] = useState<{ text: string; tone: "success" | "error" } | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -69,7 +70,7 @@ export function RegisterForm() {
     setSubmitting(false);
 
     if (error) {
-      setNotice(error.message);
+      setNotice({ text: messageForSignUpAuthError(error), tone: "error" });
       return;
     }
 
@@ -79,7 +80,10 @@ export function RegisterForm() {
       return;
     }
 
-    setNotice("Verifique o seu e-mail para confirmar a conta antes de entrar.");
+    setNotice({
+      text: "Verifique o seu e-mail para confirmar a conta antes de entrar.",
+      tone: "success",
+    });
   }
 
   async function handleMetaSignup() {
@@ -94,7 +98,7 @@ export function RegisterForm() {
       },
     });
     if (error) {
-      setNotice(error.message);
+      setNotice({ text: error.message, tone: "error" });
     }
   }
 
@@ -108,10 +112,15 @@ export function RegisterForm() {
     <form className="space-y-4" onSubmit={handleSubmit} noValidate>
       {notice ? (
         <p
-          className="rounded-lg border border-[rgba(20,158,97,0.24)] bg-[rgba(20,158,97,0.10)] px-3 py-2 text-xs text-[#026b3f]"
-          role="status"
+          className={cn(
+            "rounded-lg border px-3 py-2 text-xs",
+            notice.tone === "success" &&
+              "border-[rgba(20,158,97,0.24)] bg-[rgba(20,158,97,0.10)] text-[#026b3f]",
+            notice.tone === "error" && "border-red-200 bg-red-50 text-red-900"
+          )}
+          role={notice.tone === "error" ? "alert" : "status"}
         >
-          {notice}
+          {notice.text}
         </p>
       ) : null}
 
