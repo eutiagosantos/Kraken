@@ -56,6 +56,32 @@ export function humanizeMetaAudienceTooNarrowError(e: GraphApiError): string {
   return `${META_AUDIENCE_TOO_NARROW_HINT_PT} (resposta Meta: ${combinedGraphText(e)})`;
 }
 
+const META_DETAILED_TARGETING_INVALID_HINT_PT =
+  "No passo Público, remove os interesses antigos e volta a escolhê-los com «Buscar interesses» (a pesquisa usa dados actuais da Meta). Se usas públicos guardados, edita-os para actualizar interesses e localização.";
+
+/** Meta rejects ad set `targeting` when detailed targeting options are invalid or deprecated without a machine-readable alternative in the response. */
+export function isMetaDetailedTargetingInvalidParameterError(e: unknown): boolean {
+  if (!(e instanceof GraphApiError)) return false;
+  const blob = combinedGraphText(e).toLowerCase();
+  const raw = (e.rawBody ?? "").toLowerCase();
+  const mentionsDetailed =
+    blob.includes("direcionamento detalhado") ||
+    blob.includes("detailed targeting") ||
+    blob.includes("especificação de direcionamento") ||
+    blob.includes("targeting specification") ||
+    blob.includes("atualize a especificação de direcionamento") ||
+    blob.includes("update the targeting specification");
+  const invalidParam =
+    blob.includes("invalid parameter") ||
+    e.message.toLowerCase().includes("invalid parameter") ||
+    raw.includes("invalid parameter");
+  return mentionsDetailed && invalidParam;
+}
+
+export function humanizeMetaDetailedTargetingInvalidError(e: GraphApiError): string {
+  return `${META_DETAILED_TARGETING_INVALID_HINT_PT} (resposta Meta: ${combinedGraphText(e)})`;
+}
+
 /**
  * Appends a short PT hint for common Meta video processing failures (codec, duration, size).
  * Callers should pass Meta's own `processing_phase.errors[].message` when available.

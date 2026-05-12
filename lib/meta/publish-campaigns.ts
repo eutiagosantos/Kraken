@@ -16,10 +16,17 @@ import {
   type AdCreativeMedia,
 } from "@/lib/meta/graph-campaign-publish";
 import {
+  applyInterestReplacementsToTargeting,
+  parseDeprecatedInterestReplacements,
+  replacementsToMap,
+} from "@/lib/meta/deprecated-targeting-interests";
+import {
   humanizeMetaAppDevelopmentModeError,
   humanizeMetaAudienceTooNarrowError,
+  humanizeMetaDetailedTargetingInvalidError,
   isMetaAppDevelopmentModeError,
   isMetaAudienceTooNarrowError,
+  isMetaDetailedTargetingInvalidParameterError,
 } from "@/lib/meta/humanize-graph-publish-error";
 import type { GraphFetch } from "@/lib/meta/graph-client";
 import { GraphApiError } from "@/lib/meta/graph-client";
@@ -99,6 +106,12 @@ function graphErrorMessage(e: unknown): string {
   if (e instanceof GraphApiError && isMetaAudienceTooNarrowError(e)) {
     return humanizeMetaAudienceTooNarrowError(e);
   }
+  if (e instanceof GraphApiError && isMetaDetailedTargetingInvalidParameterError(e)) {
+    const repl = parseDeprecatedInterestReplacements(e.rawBody);
+    if (repl.length === 0) {
+      return humanizeMetaDetailedTargetingInvalidError(e);
+    }
+  }
   if (e instanceof GraphApiError) {
     const title = e.errorUserTitle ? `${e.errorUserTitle}: ` : "";
     let out = `${title}${e.message}`;
@@ -123,7 +136,10 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
 }> {
   const fetchImpl = ctx.fetchImpl ?? fetch;
   const warnings: string[] = [];
-  const { targeting, usedFallbackGeo, fallbackCountry } = buildTargetingFromPublico(ctx.payload.publico);
+  const { targeting: initialTargeting, usedFallbackGeo, fallbackCountry } = buildTargetingFromPublico(
+    ctx.payload.publico
+  );
+  const workingTargeting = JSON.parse(JSON.stringify(initialTargeting)) as Record<string, unknown>;
   if (usedFallbackGeo) {
     warnings.push(
       `Localização: nenhum país definido no público; usado fallback ${fallbackCountry ?? "BR"} (só países com chave ISO de 2 letras em «country» são enviados ao Meta).`
@@ -249,22 +265,6 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
     try {
       const campaignDaily = isCbo && !isLifetime ? totalMinor : undefined;
       const campaignLifetime = isCbo && isLifetime ? totalMinor : undefined;
-      const campaign = await graphCreateCampaign({
-        actId: unit.actId,
-        accessToken: ctx.accessToken,
-        name: `${ctx.payload.nomenclaturePreview || "Kraken"} · ${unit.accountName}`.slice(0, 240),
-        objective: ctx.payload.objective,
-        status: ctx.payload.status,
-        dailyBudgetMinor: campaignDaily,
-        lifetimeBudgetMinor: campaignLifetime ?? undefined,
-        startTime: isCbo && isLifetime && lifetimeSchedule ? lifetimeSchedule.startTime : undefined,
-        endTime: isCbo && isLifetime && lifetimeSchedule ? lifetimeSchedule.endTime : undefined,
-        bidStrategy: campaignBidStrategy,
-        fetchImpl,
-      });
-      createdCampaignId = campaign.id;
-
-      const adSetIds: string[] = [];
       const perAdsetDaily =
         !isCbo && !isLifetime && counts.adsets > 0
           ? Math.max(100, Math.floor(totalMinor / counts.adsets))
@@ -284,30 +284,89 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
         adsetEndTime = dailyAdsetFlight.endTime;
       }
 
-      for (let si = 0; si < counts.adsets; si++) {
-        const adset = await graphCreateAdSet({
-          actId: unit.actId,
-          accessToken: ctx.accessToken,
-          name: `Conjunto ${si + 1}`.slice(0, 240),
-          campaignId: campaign.id,
-          targeting,
-          optimizationGoal: opt.optimization_goal,
-          promotedObject: opt.promoted_object,
-          billingEvent,
-          bidStrategy: adSetBidStrategy,
-          bidAmount: adSetBidAmount,
-          dailyBudgetMinor: perAdsetDaily,
-          lifetimeBudgetMinor: perAdsetLifetimeMinor,
-          startTime: adsetStartTime,
-          endTime: adsetEndTime,
-          destinationType,
-          ...dsaForAdset,
-          status: ctx.payload.status,
-          adsetSchedule: adsetScheduleRows,
-          frequencyControlSpecs,
-          fetchImpl,
-        });
-        adSetIds.push(adset.id);
+      const maxDeprecatedInterestAttempts = 3;
+      let campaign!: { id: string };
+      let adSetIds: string[] = [];
+
+      for (let depAttempt = 0; depAttempt < maxDeprecatedInterestAttempts; depAttempt++) {
+        try {
+          campaign = await graphCreateCampaign({
+            actId: unit.actId,
+            accessToken: ctx.accessToken,
+            name: `${ctx.payload.nomenclaturePreview || "Kraken"} · ${unit.accountName}`.slice(0, 240),
+            objective: ctx.payload.objective,
+            status: ctx.payload.status,
+            dailyBudgetMinor: campaignDaily,
+            lifetimeBudgetMinor: campaignLifetime ?? undefined,
+            startTime: isCbo && isLifetime && lifetimeSchedule ? lifetimeSchedule.startTime : undefined,
+            endTime: isCbo && isLifetime && lifetimeSchedule ? lifetimeSchedule.endTime : undefined,
+            bidStrategy: campaignBidStrategy,
+            fetchImpl,
+          });
+          createdCampaignId = campaign.id;
+
+          adSetIds = [];
+          for (let si = 0; si < counts.adsets; si++) {
+            const adset = await graphCreateAdSet({
+              actId: unit.actId,
+              accessToken: ctx.accessToken,
+              name: `Conjunto ${si + 1}`.slice(0, 240),
+              campaignId: campaign.id,
+              targeting: workingTargeting,
+              optimizationGoal: opt.optimization_goal,
+              promotedObject: opt.promoted_object,
+              billingEvent,
+              bidStrategy: adSetBidStrategy,
+              bidAmount: adSetBidAmount,
+              dailyBudgetMinor: perAdsetDaily,
+              lifetimeBudgetMinor: perAdsetLifetimeMinor,
+              startTime: adsetStartTime,
+              endTime: adsetEndTime,
+              destinationType,
+              ...dsaForAdset,
+              status: ctx.payload.status,
+              adsetSchedule: adsetScheduleRows,
+              frequencyControlSpecs,
+              fetchImpl,
+            });
+            adSetIds.push(adset.id);
+          }
+          break;
+        } catch (e) {
+          if (createdCampaignId) {
+            try {
+              await graphDeleteCampaign({
+                campaignId: createdCampaignId,
+                accessToken: ctx.accessToken,
+                fetchImpl,
+              });
+            } catch {
+              /* rollback best-effort */
+            }
+            createdCampaignId = undefined;
+          }
+
+          const repl =
+            e instanceof GraphApiError ? parseDeprecatedInterestReplacements(e.rawBody) : [];
+          const { changed } =
+            repl.length > 0
+              ? applyInterestReplacementsToTargeting(workingTargeting, replacementsToMap(repl))
+              : { changed: false };
+
+          if (repl.length > 0 && changed && depAttempt < maxDeprecatedInterestAttempts - 1) {
+            for (const r of repl) {
+              const label =
+                r.deprecatedName && r.alternativeName
+                  ? `«${r.deprecatedName}» (id ${r.deprecatedId}) → «${r.alternativeName}» (id ${r.alternativeId})`
+                  : `id ${r.deprecatedId} → id ${r.alternativeId}`;
+              warnings.push(
+                `Interesses Meta: termo descontinuado substituído automaticamente pela alternativa sugerida pela Meta (${label}). Confirma se o público continua adequado.`
+              );
+            }
+            continue;
+          }
+          throw e;
+        }
       }
 
       let media: AdCreativeMedia;

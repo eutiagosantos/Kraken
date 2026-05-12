@@ -4,9 +4,11 @@ import { GraphApiError } from "@/lib/meta/graph-client";
 import {
   humanizeMetaAppDevelopmentModeError,
   humanizeMetaAudienceTooNarrowError,
+  humanizeMetaDetailedTargetingInvalidError,
   humanizeVideoProcessingError,
   isMetaAppDevelopmentModeError,
   isMetaAudienceTooNarrowError,
+  isMetaDetailedTargetingInvalidParameterError,
   messageIndicatesMetaAppDevelopmentMode,
 } from "@/lib/meta/humanize-graph-publish-error";
 
@@ -143,5 +145,40 @@ describe("humanizeMetaAudienceTooNarrowError", () => {
     expect(out).toContain("país inteiro");
     expect(out).toContain("resposta Meta:");
     expect(out).toContain("Amplie seu público");
+  });
+});
+
+describe("isMetaDetailedTargetingInvalidParameterError", () => {
+  it("detects Portuguese detailed targeting + Invalid parameter", () => {
+    const e = new GraphApiError("Invalid parameter", {
+      status: 400,
+      errorUserTitle: "Algumas opções de direcionamento detalhado foram combinadas",
+      errorUserMsg: "Atualize a especificação de direcionamento.",
+      rawBody: "{}",
+    });
+    expect(isMetaDetailedTargetingInvalidParameterError(e)).toBe(true);
+  });
+
+  it("returns false when only Invalid parameter", () => {
+    const e = new GraphApiError("Invalid parameter", {
+      status: 400,
+      errorUserTitle: "Budget",
+      rawBody: "{}",
+    });
+    expect(isMetaDetailedTargetingInvalidParameterError(e)).toBe(false);
+  });
+});
+
+describe("humanizeMetaDetailedTargetingInvalidError", () => {
+  it("includes re-search interests hint", () => {
+    const e = new GraphApiError("Invalid parameter", {
+      status: 400,
+      errorUserTitle: "Detailed targeting",
+      errorUserMsg: "Update the targeting specification.",
+      rawBody: "{}",
+    });
+    const out = humanizeMetaDetailedTargetingInvalidError(e);
+    expect(out).toContain("Buscar interesses");
+    expect(out).toContain("resposta Meta:");
   });
 });
