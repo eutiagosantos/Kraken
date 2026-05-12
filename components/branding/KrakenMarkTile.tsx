@@ -1,42 +1,38 @@
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 
+/** Intrinsic dimensions of `public/kraken-logo.png` (square wordmark). */
+const LOGO_SRC = "/kraken-logo.png" as const;
+const LOGO_WIDTH = 500;
+const LOGO_HEIGHT = 500;
+
 const sizeStyles = {
   xs: {
-    outer:
-      "h-11 w-11 rounded-xl shadow-md shadow-purple-500/25",
-    inset: "inset-[2px] rounded-[10px]",
-    imgSize: 24,
-    imgClass: "drop-shadow-md brightness-0 invert",
+    outer: "h-16 w-16 rounded-2xl",
+    pad: "p-2",
   },
   sm: {
-    outer:
-      "h-8 w-8 rounded-[10px] shadow-md shadow-purple-500/20",
-    inset: "inset-[2px] rounded-[7px]",
-    imgSize: 18,
-    imgClass: "drop-shadow brightness-0 invert",
+    outer: "h-16 w-16 rounded-2xl",
+    pad: "p-1.5",
   },
-  /** Sidebar workspace trigger (matches former h-9 w-9 slot). */
+  /** Marketing home nav — larger than compact headers (login, etc.). */
+  landing: {
+    outer: "h-20 w-20 rounded-2xl sm:h-[5.5rem] sm:w-[5.5rem]",
+    pad: "p-1.5",
+  },
+  /** Sidebar workspace trigger — row stays readable with gap-2 + py-2. */
   sidebar: {
-    outer:
-      "h-9 w-9 rounded-lg shadow-md shadow-purple-500/20",
-    inset: "inset-[2px] rounded-[7px]",
-    imgSize: 20,
-    imgClass: "drop-shadow brightness-0 invert",
+    outer: "h-14 w-14 rounded-2xl",
+    pad: "p-1.5",
   },
   md: {
-    outer:
-      "h-16 w-16 rounded-2xl shadow-lg shadow-purple-500/25",
-    inset: "inset-[3px] rounded-[13px]",
-    imgSize: 36,
-    imgClass: "relative drop-shadow-md brightness-0 invert",
+    outer: "h-36 w-36 rounded-2xl xl:h-40 xl:w-40",
+    pad: "p-1",
   },
+  /** Login / cadastro hero mark — scales up on wide viewports, caps on narrow. */
   lg: {
-    outer:
-      "h-[72px] w-[72px] rounded-2xl shadow-lg shadow-purple-500/25",
-    inset: "inset-[3px] rounded-[13px]",
-    imgSize: 40,
-    imgClass: "relative drop-shadow-md brightness-0 invert",
+    outer: "aspect-square w-[clamp(9.5rem,48vw,12rem)] max-w-full rounded-3xl",
+    pad: "p-1",
   },
 } as const;
 
@@ -59,24 +55,18 @@ export function KrakenMarkTile({
   return (
     <div
       className={cn(
-        "relative flex shrink-0 items-center justify-center bg-gradient-to-br from-[#a855f7] via-[#8b5cf6] to-[#ec4899]",
+        "relative flex shrink-0 items-center justify-center overflow-hidden bg-transparent",
         s.outer,
         className
       )}
     >
-      <div
-        className={cn(
-          "pointer-events-none absolute bg-gradient-to-br from-white/25 to-transparent",
-          s.inset
-        )}
-      />
       <Image
-        src="/kraken-mark.svg"
+        src={LOGO_SRC}
         alt=""
-        width={s.imgSize}
-        height={s.imgSize}
+        width={LOGO_WIDTH}
+        height={LOGO_HEIGHT}
         priority={priority}
-        className={cn("relative", s.imgClass)}
+        className={cn("h-full w-full object-contain", s.pad)}
       />
     </div>
   );

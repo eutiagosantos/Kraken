@@ -26,12 +26,11 @@ export function KrakenLoginHeader({
     >
       <Link
         href="/"
-        className="flex items-center gap-2.5 text-[#5741CF] transition-opacity hover:opacity-90"
+        aria-label="Kraken"
+        className="flex items-center text-[#5741CF] transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5741CF]/30 focus-visible:ring-offset-2"
       >
         <KrakenMarkTile size="sm" priority />
-        <span className="font-display text-xl font-semibold tracking-tight">
-          Kraken
-        </span>
+        <span className="sr-only">Kraken</span>
       </Link>
 
       <div className="flex flex-wrap items-center justify-end gap-3 sm:gap-4">

@@ -105,7 +105,7 @@ export function RegisterForm() {
     "rounded-md p-1.5 text-neutral-gray transition-colors hover:bg-black/[0.06] hover:text-neutral-black";
 
   return (
-    <form className="space-y-3" onSubmit={handleSubmit} noValidate>
+    <form className="space-y-4" onSubmit={handleSubmit} noValidate>
       {notice ? (
         <p
           className="rounded-lg border border-[rgba(20,158,97,0.24)] bg-[rgba(20,158,97,0.10)] px-3 py-2 text-xs text-[#026b3f]"

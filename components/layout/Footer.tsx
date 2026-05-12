@@ -40,10 +40,11 @@ export function Footer() {
           <div className="max-w-sm">
             <Link
               href="#inicio"
-              className="flex items-center gap-2 font-display text-lg font-bold text-neutral-white"
+              aria-label="Kraken"
+              className="flex items-center text-neutral-white transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-black"
             >
               <KrakenMarkTile size="sm" />
-              Kraken
+              <span className="sr-only">Kraken</span>
             </Link>
             <p className="mt-4 text-sm leading-relaxed text-neutral-silver">
               Escale campanhas no Meta Ads com precisão, velocidade e proteção

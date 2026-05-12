@@ -10,8 +10,8 @@ export const metadata: Metadata = {
 export default function LoginPage() {
   return (
     <div className="flex flex-1 flex-col items-center justify-center px-4 py-8 sm:py-12">
-      <div className="w-full max-w-[420px] rounded-xl border border-neutral-border/80 bg-white px-6 py-8 shadow-[0_8px_40px_rgba(0,0,0,0.06)] sm:px-10 sm:py-10">
-        <div className="mb-8 flex justify-center">
+      <div className="w-full max-w-[420px] rounded-xl border border-neutral-border/80 bg-white px-6 pt-4 pb-8 shadow-[0_8px_40px_rgba(0,0,0,0.06)] sm:px-10 sm:pt-1 sm:pb-10">
+        <div className="mb-3 flex justify-center">
           <KrakenMarkTile size="lg" />
         </div>
 

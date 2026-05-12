@@ -30,6 +30,10 @@ const ibmPlexSans = localFont({
 });
 
 export const metadata: Metadata = {
+  icons: {
+    icon: "/kraken-logo.png",
+    apple: "/kraken-logo.png",
+  },
   title: "Kraken | Upload em Massa para Meta Ads",
   description:
     "Plataforma de upload em massa para Meta Ads. Automatize suas campanhas em múltiplas contas.",

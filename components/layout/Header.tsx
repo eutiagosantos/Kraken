@@ -44,10 +44,11 @@ export function Header() {
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
           <Link
             href="#inicio"
-            className="flex items-center gap-2 font-display text-lg font-bold text-brand-purple transition-colors hover:text-brand-purple-deep"
+            aria-label="Kraken"
+            className="flex items-center text-brand-purple transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-purple/30 focus-visible:ring-offset-2"
           >
-            <KrakenMarkTile size="sm" priority />
-            Kraken
+            <KrakenMarkTile size="landing" priority />
+            <span className="sr-only">Kraken</span>
           </Link>
 
           <nav className="hidden items-center gap-8 md:flex">

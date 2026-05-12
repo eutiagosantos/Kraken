@@ -17,10 +17,10 @@ const trustPoints = [
 
 export default function CadastroPage() {
   return (
-    <div className="mx-auto flex w-full max-w-6xl min-h-0 flex-1 items-center px-4 py-2 sm:px-6 sm:py-4 lg:px-8">
-      <div className="grid w-full gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,460px)] lg:gap-12">
+    <div className="mx-auto flex w-full max-w-6xl min-h-0 flex-1 items-center px-4 pt-0 pb-2 sm:px-6 sm:pt-1 sm:pb-4 lg:px-8">
+      <div className="grid w-full gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,460px)] lg:gap-12">
         <aside className="hidden flex-col justify-center lg:flex">
-          <div className="mb-6">
+          <div className="mb-1">
             <KrakenMarkTile size="md" />
           </div>
           <h1 className="font-display text-[40px] font-bold leading-[1.1] tracking-tight text-neutral-black">
@@ -55,9 +55,9 @@ export default function CadastroPage() {
         </aside>
 
         <div className="flex w-full flex-col items-center lg:items-stretch">
-          <div className="w-full max-w-[440px] rounded-xl border border-neutral-border/80 bg-white px-5 py-6 shadow-[0_8px_40px_rgba(0,0,0,0.06)] sm:px-8 sm:py-7">
-            <div className="mb-4 flex items-center gap-3 lg:hidden">
-              <KrakenMarkTile size="xs" />
+          <div className="w-full max-w-[440px] rounded-xl border border-neutral-border/80 bg-white px-6 pt-5 pb-8 shadow-[0_8px_40px_rgba(0,0,0,0.06)] sm:px-10 sm:pt-6 sm:pb-10">
+            <div className="mb-2 flex items-start gap-2 lg:hidden">
+              <KrakenMarkTile size="landing" className="shrink-0" />
               <div>
                 <h1 className="font-display text-xl font-bold tracking-tight text-neutral-black">
                   Crie sua conta Kraken
