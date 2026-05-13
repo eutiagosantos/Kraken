@@ -37,6 +37,7 @@ export function FilaProcessamentoClient() {
   const [jobs, setJobs] = useState<UploadJobListRow[]>([]);
   const [jobsLoading, setJobsLoading] = useState(true);
   const [jobsError, setJobsError] = useState<string | null>(null);
+  const [smoothProgress, setSmoothProgress] = useState(0);
   const loadJobsInFlight = useRef(false);
 
   const loadJobs = useCallback(async () => {
@@ -120,6 +121,21 @@ export function FilaProcessamentoClient() {
     })();
   }, [loadJobs]);
 
+  const isProcessing =
+    (queuePublish.active && !queuePublish.success && !queuePublish.error) ||
+    (jobs.some((j) => j.status === "processing" || j.status === "awaiting_creatives") && !queuePublish.error);
+
+  useEffect(() => {
+    if (!isProcessing) {
+      setSmoothProgress(0);
+      return;
+    }
+    const t = setInterval(() => {
+      setSmoothProgress((prev) => (prev >= 90 ? 90 : prev + 0.4));
+    }, 1000);
+    return () => clearInterval(t);
+  }, [isProcessing]);
+
   const { activeJobs, historyJobs } = useMemo(() => partitionUploadJobsByActive(jobs), [jobs]);
 
   const queueIdle =
@@ -138,7 +154,7 @@ export function FilaProcessamentoClient() {
         ? activeJobs[0]
         : undefined;
 
-  const publishCardProgress = queuePublish.error
+  const rawPublishProgress = queuePublish.error
     ? 0
     : queuePublish.success
       ? 100
@@ -147,6 +163,9 @@ export function FilaProcessamentoClient() {
         : serverOnlyActive
           ? progressFromJob(activeJobs[0])
           : queuePublish.progress;
+  const publishCardProgress = queuePublish.error || queuePublish.success
+    ? rawPublishProgress
+    : Math.max(rawPublishProgress, Math.round(smoothProgress));
 
   const recentTitle = queuePublish.error
     ? "Erro na publicação"

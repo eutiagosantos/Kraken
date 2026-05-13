@@ -159,7 +159,7 @@ export async function waitForAdVideoReady(options: {
   sleep?: (ms: number) => Promise<void>;
 }): Promise<void> {
   const timeoutMs = options.timeoutMs ?? 300_000;
-  const intervalMs = options.intervalMs ?? 3_000;
+  const intervalMs = options.intervalMs ?? 6_000;
   const sleep =
     options.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
   const deadline = Date.now() + timeoutMs;
