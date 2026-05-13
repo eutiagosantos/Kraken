@@ -9,12 +9,12 @@ export const metadata: Metadata = {
 export default function FilaDeProcessamentoPage() {
   return (
     <div className="mx-auto max-w-[1680px]">
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-8 rounded-2xl bg-gradient-to-b from-dashboard-base/35 via-dashboard-base/10 to-transparent px-3 py-6 sm:px-5 sm:py-8">
         <header className="max-w-7xl">
           <h1 className="font-display text-[1.75rem] font-bold leading-tight tracking-tight text-neutral-black">
             Fila de processamento
           </h1>
-          <p className="mt-2 text-sm leading-relaxed text-dashboard-muted">
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-dashboard-muted">
             Quando publicares a partir do Novo upload, o progresso do Meta Ads é mostrado aqui.
           </p>
         </header>

@@ -8,6 +8,7 @@ import { useState } from "react";
 import { InfoRow } from "@/components/app/ui/InfoRow";
 import { ProgressBar } from "@/components/app/ui/ProgressBar";
 import { Badge } from "@/components/ui/Badge";
+import { formatBrl } from "@/lib/format-currency";
 import { cn } from "@/lib/utils";
 import type {
   UploadJobErrorDetailsV1,
@@ -150,7 +151,7 @@ function valueColumnText(
   job: Pick<UploadJobListRow, "status" | "total" | "done">
 ) {
   if (s?.budget != null) {
-    return `${s.budget} €`;
+    return formatBrl(s.budget);
   }
   if (job.total > 0 && (job.status === "processing" || job.status === "awaiting_creatives")) {
     const pct = Math.round((job.done / job.total) * 100);
@@ -206,10 +207,10 @@ function UploadJobErrorBlock({
 }
 
 const DESKTOP_GRID =
-  "hidden md:grid md:grid-cols-[minmax(0,7.5rem)_minmax(0,1.35fr)_minmax(0,1.1fr)_minmax(0,9.5rem)_minmax(0,5.5rem)_minmax(0,6.5rem)_minmax(0,1fr)_2.5rem] md:items-center md:gap-x-4 md:px-4 md:py-3.5";
+  "hidden md:grid md:grid-cols-[minmax(0,7.5rem)_minmax(0,1.35fr)_minmax(0,1.1fr)_minmax(0,9.5rem)_minmax(0,5.5rem)_minmax(0,6.5rem)_minmax(0,1fr)_2.5rem] md:items-center md:gap-x-4 md:gap-y-1 md:px-5 md:py-4";
 
 const HEADER_GRID =
-  "hidden md:grid md:grid-cols-[minmax(0,7.5rem)_minmax(0,1.35fr)_minmax(0,1.1fr)_minmax(0,9.5rem)_minmax(0,5.5rem)_minmax(0,6.5rem)_minmax(0,1fr)_2.5rem] md:gap-x-4 md:px-4 md:pb-2";
+  "hidden md:grid md:grid-cols-[minmax(0,7.5rem)_minmax(0,1.35fr)_minmax(0,1.1fr)_minmax(0,9.5rem)_minmax(0,5.5rem)_minmax(0,6.5rem)_minmax(0,1fr)_2.5rem] md:gap-x-4 md:px-5 md:pb-2.5 md:pt-1 text-[11px] font-semibold uppercase tracking-wide text-neutral-600";
 
 export function UploadJobsList({
   jobs,
@@ -229,14 +230,14 @@ export function UploadJobsList({
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-xl border border-dashboard-border bg-dashboard-surface",
-        variant === "recent" && "rounded-xl border-dashboard-border bg-dashboard-base/40",
+        "overflow-hidden rounded-xl border border-dashboard-border bg-dashboard-surface shadow-sm",
+        variant === "recent" && "rounded-lg border-0 bg-dashboard-surface shadow-none",
         className
       )}
     >
       <div
         className={cn(
-          "border-b border-dashboard-border text-[11px] font-semibold uppercase tracking-wide text-dashboard-muted",
+          "border-b border-dashboard-border bg-dashboard-base/30",
           variant === "recent" ? "hidden" : HEADER_GRID
         )}
       >
@@ -266,9 +267,15 @@ export function UploadJobsList({
           const toggle = () => setExpandedId((id) => (id === job.id ? null : job.id));
 
           return (
-            <li key={job.id} className="bg-dashboard-surface">
+            <li
+              key={job.id}
+              className={cn(
+                "bg-dashboard-surface transition-colors duration-150",
+                variant !== "recent" && "hover:bg-dashboard-base/35"
+              )}
+            >
               {/* Mobile row */}
-              <div className="flex flex-col gap-3 p-4 md:hidden">
+              <div className="flex flex-col gap-4 p-4 md:hidden">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex min-w-0 items-center gap-2.5">
                     <span
@@ -301,7 +308,7 @@ export function UploadJobsList({
                   </div>
                 </div>
 
-                <div className="space-y-2 text-sm">
+                <div className="space-y-3 text-sm">
                   <div>
                     <p className="text-[11px] font-semibold uppercase tracking-wide text-dashboard-muted">Criativos</p>
                     <p className="mt-0.5 font-ui text-sm text-neutral-black">{creatives}</p>
@@ -379,14 +386,16 @@ export function UploadJobsList({
                   </div>
                 </div>
 
-                <p className="truncate font-ui text-sm text-neutral-black" title={creatives}>
+                <p className="truncate font-ui text-sm leading-snug text-neutral-black" title={creatives}>
                   {creatives}
                 </p>
 
-                <p className="font-ui text-sm text-dashboard-muted">{dateRange}</p>
+                <p className="font-ui text-sm leading-snug text-dashboard-muted">{dateRange}</p>
 
                 <div>
-                  <p className="font-ui text-sm font-semibold tabular-nums text-neutral-black">{valueMain}</p>
+                  <p className="font-ui text-sm font-semibold tabular-nums leading-snug text-neutral-black">
+                    {valueMain}
+                  </p>
                   {s?.budget != null ? (
                     <p className="mt-0.5 truncate font-ui text-[11px] text-dashboard-muted">
                       {budgetPeriodLabel(s.budgetPeriod)}
@@ -400,7 +409,7 @@ export function UploadJobsList({
 
                 <div className="flex justify-start">{statusBadge(job.status)}</div>
 
-                <p className="truncate font-ui text-sm text-neutral-black" title={detailLine}>
+                <p className="truncate font-ui text-sm leading-snug text-neutral-black" title={detailLine}>
                   {detailLine}
                 </p>
 
@@ -423,8 +432,8 @@ export function UploadJobsList({
               {(job.status === "processing" || job.status === "awaiting_creatives") &&
               job.total > 0 &&
               variant !== "recent" ? (
-                <div className="border-t border-dashboard-border px-4 pb-3 pt-2 md:px-4 md:pb-3 md:pt-2">
-                  <div className="md:ml-[calc(7.5rem+1rem)] md:mr-10">
+                <div className="border-t border-dashboard-border px-4 pb-3 pt-2 md:px-5 md:pb-3 md:pt-2">
+                  <div className="md:ml-[calc(7.5rem+1.25rem)] md:mr-10">
                     <ProgressBar value={pct} className="h-1.5" />
                     <div className="mt-1.5 flex justify-between gap-2 font-ui text-[11px] text-neutral-gray">
                       <span>
@@ -450,13 +459,13 @@ export function UploadJobsList({
                     </div>
                   ) : null}
                   {s ? (
-                    <div className="rounded-xl border border-dashboard-border bg-dashboard-surface px-4">
+                    <div className="rounded-xl border border-dashboard-border bg-dashboard-surface px-4 py-1">
                       <InfoRow label="Objectivo" value={s.objective ?? "—"} />
                       <InfoRow
                         label="Orçamento"
                         value={
                           s.budget != null
-                            ? `${s.budget} € (${budgetPeriodLabel(s.budgetPeriod)})`
+                            ? `${formatBrl(s.budget)} (${budgetPeriodLabel(s.budgetPeriod)})`
                             : "—"
                         }
                       />

@@ -193,62 +193,69 @@ export function FilaProcessamentoClient() {
   const showHistoryBlock = !jobsLoading && !jobsError && (!showEmptyAll || showRecentSection);
 
   return (
-    <div className="mx-auto w-full max-w-7xl space-y-8">
+    <div className="mx-auto w-full max-w-7xl space-y-10">
       {showRecentSection ? (
-        <section className="space-y-3">
+        <section className="space-y-4">
           <div>
             <h2 className="font-display text-xl font-bold tracking-tight text-neutral-black">Envio recente</h2>
-            <p className="mt-1 text-sm text-dashboard-muted">Estado do envio actual ou em curso na plataforma.</p>
+            <p className="mt-1.5 text-sm leading-relaxed text-dashboard-muted">
+              Estado do envio actual ou em curso na plataforma.
+            </p>
           </div>
 
-          <div className="rounded-2xl border border-dashboard-border bg-dashboard-surface p-6 shadow-sm">
-            <h3 className="text-lg font-semibold text-neutral-black">{recentTitle}</h3>
+          <div className="overflow-hidden rounded-2xl border border-dashboard-border bg-dashboard-surface shadow-sm ring-1 ring-black/[0.04]">
             {queuePublish.error ? (
-              <div className="mt-2">
-                <p className="text-sm whitespace-pre-wrap text-red-600">{queuePublish.error}</p>
-                <MetaAppDevModePublishHelp errorMessage={queuePublish.error} />
+              <div className="p-6">
+                <h3 className="text-lg font-semibold text-neutral-black">{recentTitle}</h3>
+                <div className="mt-2">
+                  <p className="text-sm whitespace-pre-wrap text-red-600">{queuePublish.error}</p>
+                  <MetaAppDevModePublishHelp errorMessage={queuePublish.error} />
+                </div>
+                <button
+                  type="button"
+                  className="mt-5 w-full rounded-xl border border-dashboard-border bg-dashboard-base py-2.5 text-sm font-semibold text-neutral-black transition-colors hover:bg-neutral-white"
+                  onClick={() => {
+                    patchQueuePublish({ error: null, progress: 0, success: false, active: false });
+                    void loadJobs();
+                  }}
+                >
+                  Fechar
+                </button>
               </div>
             ) : (
-              recentDescription
+              <>
+                <div className="border-b border-dashboard-border/70 px-6 pb-4 pt-6">
+                  <h3 className="text-lg font-semibold tracking-tight text-neutral-black">{recentTitle}</h3>
+                  {recentDescription}
+                </div>
+                <div className="px-6 py-5">
+                  <ProgressBar value={publishCardProgress} />
+                  <p className="mt-2 text-right text-xs font-semibold tabular-nums text-brand-purple">
+                    {Math.round(publishCardProgress)}%
+                  </p>
+                </div>
+                {embeddedRecentJob ? (
+                  <div className="border-t border-dashboard-border/60 bg-dashboard-base/25 px-2 pb-2 pt-2 sm:px-3 sm:pb-3 sm:pt-3">
+                    <UploadJobsList variant="recent" jobs={[embeddedRecentJob]} />
+                  </div>
+                ) : queuePublish.active && !queuePublish.success && !queuePublish.error ? (
+                  <div className="border-t border-dashboard-border/60 px-6 py-4">
+                    <p className="text-sm text-dashboard-muted">A preparar o registo do envio…</p>
+                  </div>
+                ) : null}
+              </>
             )}
-            <div className="mt-4">
-              <ProgressBar value={publishCardProgress} />
-              {!queuePublish.error ? (
-                <p className="mt-2 text-right text-xs font-semibold text-brand-purple">
-                  {Math.round(publishCardProgress)}%
-                </p>
-              ) : null}
-            </div>
-            {embeddedRecentJob ? (
-              <UploadJobsList
-                variant="recent"
-                className="mt-5 border-dashboard-border"
-                jobs={[embeddedRecentJob]}
-              />
-            ) : queuePublish.active && !queuePublish.success && !queuePublish.error ? (
-              <p className="mt-4 text-sm text-dashboard-muted">A preparar o registo do envio…</p>
-            ) : null}
-            {queuePublish.error ? (
-              <button
-                type="button"
-                className="mt-4 w-full rounded-lg border border-dashboard-border bg-dashboard-base py-2 text-sm font-semibold text-neutral-black hover:bg-neutral-white"
-                onClick={() => {
-                  patchQueuePublish({ error: null, progress: 0, success: false, active: false });
-                  void loadJobs();
-                }}
-              >
-                Fechar
-              </button>
-            ) : null}
           </div>
         </section>
       ) : null}
 
-      <section className="space-y-4">
-        <div className="flex flex-wrap items-end justify-between gap-2">
+      <section className="space-y-5">
+        <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h2 className="font-display text-xl font-bold tracking-tight text-neutral-black">Histórico</h2>
-            <p className="mt-1 text-sm text-dashboard-muted">Envios já terminados (concluídos ou com erro), sem o envio em curso.</p>
+            <p className="mt-1.5 max-w-xl text-sm leading-relaxed text-dashboard-muted">
+              Envios já terminados (concluídos ou com erro), sem o envio em curso.
+            </p>
           </div>
           <Link
             href="/campanhas"
