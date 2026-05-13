@@ -64,7 +64,7 @@ export type MockCreativeLibraryItem = {
 
 export const mockCreativeLibraryItems: MockCreativeLibraryItem[] = [];
 
-export type QuickActionKey = "upload" | "connect" | "duplicate" | "report";
+export type QuickActionKey = "upload" | "connect" | "duplicate";
 
 export type MockQuickActionMeta = {
   key: QuickActionKey;
@@ -97,14 +97,6 @@ export const mockQuickActionsMeta: MockQuickActionMeta[] = [
     description: "Reutilizar configuração anterior",
     color: "#5741d8",
     bg: "rgba(87, 65, 216, 0.14)",
-  },
-  {
-    key: "report",
-    label: "Ver Relatório",
-    description: "Analisar desempenho",
-    color: "#d97706",
-    bg: "rgba(217, 119, 6, 0.14)",
-    href: "/relatorios",
   },
 ];
 

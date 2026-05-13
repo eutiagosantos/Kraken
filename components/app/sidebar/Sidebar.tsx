@@ -2,7 +2,6 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  BarChart2,
   ChevronLeft,
   ChevronRight,
   HelpCircle,
@@ -36,7 +35,6 @@ const mainNav = [
   { href: "/fila-de-processamento", label: "Fila de processamento", icon: ListOrdered, shortcut: "⌘6" },
   { href: "/campanhas", label: "Campanhas", icon: CampaignsNavIcon, shortcut: "⌘3" },
   { href: "/contas-meta", label: "Contas Meta", icon: MetaNavIcon, shortcut: "⌘4" },
-  { href: "/relatorios", label: "Relatórios", icon: BarChart2, shortcut: "⌘5" },
 ] as const;
 
 export function Sidebar() {

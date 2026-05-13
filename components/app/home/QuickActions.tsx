@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { BarChart2, Copy, Upload, Users } from "lucide-react";
+import { Copy, Upload, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
@@ -11,7 +11,6 @@ const icons = {
   upload: Upload,
   connect: Users,
   duplicate: Copy,
-  report: BarChart2,
 } as const;
 
 export function QuickActions() {
