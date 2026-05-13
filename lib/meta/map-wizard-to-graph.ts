@@ -427,16 +427,19 @@ export function publicoTargetsDsaRegion(publico: WizardPublishPayload["publico"]
 
 /**
  * Pairs `billing_event` with `optimization_goal` per Marketing API rules.
- * REACH uses LINK_CLICKS billing so new ad accounts that block IMPRESSIONS billing still publish.
+ * POST_ENGAGEMENT uses POST_ENGAGEMENT billing (the only valid pairing per Meta).
+ * REACH/LINK_CLICKS/LANDING_PAGE_VIEWS use LINK_CLICKS billing.
+ * Everything else defaults to IMPRESSIONS — publish-campaigns.ts retry loop handles
+ * new-account fallback (IMPRESSIONS → LINK_CLICKS → POST_ENGAGEMENT) for those goals.
  */
 export function billingEventForOptimization(optimizationGoal: string): string {
   switch (optimizationGoal) {
+    case "POST_ENGAGEMENT":
+      return "POST_ENGAGEMENT";
     case "LINK_CLICKS":
     case "LANDING_PAGE_VIEWS":
-      return "LINK_CLICKS";
     case "REACH":
       return "LINK_CLICKS";
-    case "POST_ENGAGEMENT":
     case "OFFSITE_CONVERSIONS":
     case "APP_INSTALLS":
     case "LEAD_GENERATION":

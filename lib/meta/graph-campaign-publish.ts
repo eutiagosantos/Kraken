@@ -1,5 +1,6 @@
 import type { GraphFetch } from "@/lib/meta/graph-client";
 import { graphDelete, graphJsonPost } from "@/lib/meta/graph-client";
+import { META_NEW_ACCOUNT_BILLING_EVENT } from "@/lib/meta/meta-new-account-config";
 
 /** Create/update campaigns via Marketing API — token needs `ads_management` (and related scopes per Meta app config). */
 
@@ -89,7 +90,7 @@ export async function graphCreateAdSet(options: {
     campaign_id: options.campaignId,
     targeting: options.targeting,
     optimization_goal: options.optimizationGoal,
-    billing_event: options.billingEvent ?? "IMPRESSIONS",
+    billing_event: options.billingEvent ?? META_NEW_ACCOUNT_BILLING_EVENT,
     status: options.status,
   };
   if (options.bidStrategy?.trim()) {

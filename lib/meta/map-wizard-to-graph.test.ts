@@ -497,6 +497,10 @@ describe("billingEventForOptimization", () => {
     expect(billingEventForOptimization("REACH")).toBe("LINK_CLICKS");
     expect(billingEventForOptimization("OFFSITE_CONVERSIONS")).toBe("IMPRESSIONS");
   });
+
+  it("uses POST_ENGAGEMENT billing for POST_ENGAGEMENT goal (required pairing, safe on new accounts)", () => {
+    expect(billingEventForOptimization("POST_ENGAGEMENT")).toBe("POST_ENGAGEMENT");
+  });
 });
 
 describe("defaultLifetimeSchedule", () => {
