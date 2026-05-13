@@ -71,7 +71,7 @@ export function FilaProcessamentoClient() {
     const t = setInterval(() => {
       if (document.visibilityState !== "visible") return;
       void loadJobs();
-    }, 2500);
+    }, 5000);
     return () => clearInterval(t);
   }, [needsPolling, loadJobs]);
 

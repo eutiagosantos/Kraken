@@ -23,6 +23,7 @@ import {
 import {
   humanizeMetaAppDevelopmentModeError,
   humanizeMetaAudienceTooNarrowError,
+  humanizeMetaBillingBothFailedError,
   humanizeMetaBillingUnavailableError,
   humanizeMetaDetailedTargetingInvalidError,
   isMetaAppDevelopmentModeError,
@@ -383,6 +384,10 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
               );
             }
             continue;
+          }
+
+          if (e instanceof GraphApiError && isMetaBillingUnavailableError(e) && effectiveBillingEvent === "LINK_CLICKS") {
+            throw new Error(humanizeMetaBillingBothFailedError(e));
           }
           throw e;
         }
