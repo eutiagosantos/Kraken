@@ -50,6 +50,7 @@ import {
 import {
   META_NEW_ACCOUNT_BILLING_EVENT,
   META_NEW_ACCOUNT_OPTIMIZATION_GOAL,
+  safeNewAccountAdSetParams,
 } from "@/lib/meta/meta-new-account-config";
 import {
   buildAdsetSchedulePayload,
@@ -89,6 +90,13 @@ export type PublishUnitResult = {
   metaCampaignId?: string;
   krakenCampanhaId?: string;
 };
+
+/** Server-only: visible when `META_DEBUG_PUBLISH=1` or outside production. */
+function metaPublishDebugLog(label: string, payload: unknown): void {
+  if (process.env.META_DEBUG_PUBLISH === "1" || process.env.NODE_ENV !== "production") {
+    console.log(label, typeof payload === "string" ? payload : JSON.stringify(payload, null, 2));
+  }
+}
 
 function buildUploadJobErrorDetails(results: PublishUnitResult[], warnings: string[]): Json | null {
   const failed = results.filter((r) => !r.ok && r.error);
@@ -311,14 +319,15 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
         adsetEndTime = dailyAdsetFlight.endTime;
       }
 
-      const maxDeprecatedInterestAttempts = 3;
+      /** Billing fallbacks + deprecated-interest replacements share this loop. */
+      const maxPublishRecoveryAttempts = 5;
       let campaign!: { id: string };
       let adSetIds: string[] = [];
       let effectiveBillingEvent = billingEvent;
       let effectiveOptimizationGoal = opt.optimization_goal;
       let effectivePromotedObject: Record<string, string> | undefined = opt.promoted_object;
 
-      for (let depAttempt = 0; depAttempt < maxDeprecatedInterestAttempts; depAttempt++) {
+      for (let depAttempt = 0; depAttempt < maxPublishRecoveryAttempts; depAttempt++) {
         try {
           campaign = await graphCreateCampaign({
             actId: unit.actId,
@@ -337,18 +346,11 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
 
           adSetIds = [];
           for (let si = 0; si < counts.adsets; si++) {
-            console.log(
-              "META ADSET PAYLOAD:",
-              JSON.stringify(
-                {
-                  optimization_goal: effectiveOptimizationGoal,
-                  billing_event: effectiveBillingEvent,
-                  objective: ctx.payload.objective,
-                },
-                null,
-                2
-              )
-            );
+            metaPublishDebugLog("META ADSET PAYLOAD:", {
+              optimization_goal: effectiveOptimizationGoal,
+              billing_event: effectiveBillingEvent,
+              objective: ctx.payload.objective,
+            });
             const adset = await graphCreateAdSet({
               actId: unit.actId,
               accessToken: ctx.accessToken,
@@ -375,25 +377,21 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
           }
           break;
         } catch (e) {
-          console.log(
+          metaPublishDebugLog(
             "META API ERROR:",
-            JSON.stringify(
-              e instanceof GraphApiError
-                ? {
-                    name: e.name,
-                    message: e.message,
-                    status: e.status,
-                    graphCode: e.graphCode,
-                    errorSubcode: e.errorSubcode,
-                    errorUserTitle: e.errorUserTitle,
-                    errorUserMsg: e.errorUserMsg,
-                    errorDataSummary: e.errorDataSummary,
-                    rawBody: e.rawBody,
-                  }
-                : { thrown: String(e) },
-              null,
-              2
-            )
+            e instanceof GraphApiError
+              ? {
+                  name: e.name,
+                  message: e.message,
+                  status: e.status,
+                  graphCode: e.graphCode,
+                  errorSubcode: e.errorSubcode,
+                  errorUserTitle: e.errorUserTitle,
+                  errorUserMsg: e.errorUserMsg,
+                  errorDataSummary: e.errorDataSummary,
+                  rawBody: e.rawBody,
+                }
+              : { thrown: String(e) }
           );
           if (createdCampaignId) {
             try {
@@ -408,21 +406,33 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
             createdCampaignId = undefined;
           }
 
-          const onPostEngagementFallback =
-            effectiveBillingEvent === META_NEW_ACCOUNT_BILLING_EVENT &&
-            effectiveOptimizationGoal === META_NEW_ACCOUNT_OPTIMIZATION_GOAL;
+          const billingUnavailable = e instanceof GraphApiError && isMetaBillingUnavailableError(e);
+          const alreadyOnNewAccountFallback =
+            effectiveOptimizationGoal === META_NEW_ACCOUNT_OPTIMIZATION_GOAL &&
+            effectiveBillingEvent === META_NEW_ACCOUNT_BILLING_EVENT;
 
-          if (
-            e instanceof GraphApiError &&
-            isMetaBillingUnavailableError(e) &&
-            !onPostEngagementFallback &&
-            depAttempt < maxDeprecatedInterestAttempts - 1
-          ) {
-            effectiveBillingEvent = META_NEW_ACCOUNT_BILLING_EVENT;
-            effectiveOptimizationGoal = META_NEW_ACCOUNT_OPTIMIZATION_GOAL;
+          if (billingUnavailable && alreadyOnNewAccountFallback) {
+            throw new Error(humanizeMetaBillingBothFailedError(e));
+          }
+
+          if (billingUnavailable && depAttempt < maxPublishRecoveryAttempts - 1) {
+            if (
+              effectiveOptimizationGoal === "LINK_CLICKS" &&
+              effectiveBillingEvent === "LINK_CLICKS" &&
+              validBillingEventsForOptimizationGoal("LINK_CLICKS").includes("IMPRESSIONS")
+            ) {
+              effectiveBillingEvent = "IMPRESSIONS";
+              warnings.push(
+                "Opção de cobrança por cliques indisponível nesta conta Meta; retentámos o mesmo objetivo (LINK_CLICKS) com cobrança por impressões (IMPRESSIONS)."
+              );
+              continue;
+            }
+            const safe = safeNewAccountAdSetParams();
+            effectiveOptimizationGoal = safe.optimization_goal;
+            effectiveBillingEvent = safe.billing_event;
             effectivePromotedObject = undefined;
             warnings.push(
-              "Cobrança conforme o mapa oficial indisponível nesta conta nova no Meta; a publicação foi retentada com cobrança POST_ENGAGEMENT e objetivo POST_ENGAGEMENT."
+              "Cobrança conforme o mapa oficial indisponível nesta conta nova no Meta; a publicação foi retentada com cobrança por impressões (IMPRESSIONS) e objetivo POST_ENGAGEMENT no conjunto."
             );
             continue;
           }
@@ -434,7 +444,7 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
               ? applyInterestReplacementsToTargeting(workingTargeting, replacementsToMap(repl))
               : { changed: false };
 
-          if (repl.length > 0 && changed && depAttempt < maxDeprecatedInterestAttempts - 1) {
+          if (repl.length > 0 && changed && depAttempt < maxPublishRecoveryAttempts - 1) {
             for (const r of repl) {
               const label =
                 r.deprecatedName && r.alternativeName
@@ -447,9 +457,6 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
             continue;
           }
 
-          if (e instanceof GraphApiError && isMetaBillingUnavailableError(e) && onPostEngagementFallback) {
-            throw new Error(humanizeMetaBillingBothFailedError(e));
-          }
           throw e;
         }
       }

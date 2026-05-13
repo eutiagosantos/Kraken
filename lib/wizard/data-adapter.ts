@@ -286,17 +286,26 @@ export function createFetchWizardDataAdapter(): WizardDataAdapter {
           .join("\n");
 
       if (!res.ok) {
+        if (process.env.NODE_ENV === "development") {
+          console.error("[wizard/publish]", res.status, json ?? raw.slice(0, 2000));
+        }
         const rows = json?.results;
         if (rows?.length) {
           const failed = rows.filter((r) => !r.ok);
           if (failed.length > 0) {
             const detail = failedUnitLines(rows);
+            const w = json?.warnings;
+            const warnSuffix = w && w.length > 0 ? `\n\nAvisos:\n${w.join("\n")}` : "";
             throw new Error(
-              failed.length === rows.length ? detail : `Algumas unidades falharam:\n${detail}`
+              (failed.length === rows.length ? detail : `Algumas unidades falharam:\n${detail}`) + warnSuffix
             );
           }
         }
-        if (json?.error) throw new Error(json.error);
+        if (json?.error) {
+          const w = json?.warnings;
+          const warnSuffix = w && w.length > 0 ? `\n\nAvisos:\n${w.join("\n")}` : "";
+          throw new Error(json.error + warnSuffix);
+        }
         const hint = raw.trim().slice(0, 280);
         throw new Error(hint || `Publicação falhou (${res.status}).`);
       }
@@ -309,8 +318,10 @@ export function createFetchWizardDataAdapter(): WizardDataAdapter {
       if (okRows?.some((r) => !r.ok)) {
         const failed = okRows.filter((r) => !r.ok);
         const detail = failedUnitLines(okRows);
+        const w = json.warnings;
+        const warnSuffix = w && w.length > 0 ? `\n\nAvisos:\n${w.join("\n")}` : "";
         throw new Error(
-          failed.length === okRows.length ? detail : `Algumas unidades falharam:\n${detail}`
+          (failed.length === okRows.length ? detail : `Algumas unidades falharam:\n${detail}`) + warnSuffix
         );
       }
 

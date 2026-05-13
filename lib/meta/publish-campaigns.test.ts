@@ -708,4 +708,94 @@ describe("runWizardPublish", () => {
     const failCreatives = erroRow?.creatives as Array<{ thumb?: string }> | undefined;
     expect(failCreatives?.[0]?.thumb).toBe("");
   });
+
+  it("on PT billing unavailable for LINK_CLICKS billing, retries ad set with IMPRESSIONS then succeeds", async () => {
+    let adsetPosts = 0;
+    const adsetBodies: Record<string, unknown>[] = [];
+    const fetchImpl: typeof fetch = vi.fn(async (input, init) => {
+      const url = requestUrl(input);
+      if (url.includes("/adimages")) {
+        return new Response(
+          JSON.stringify({
+            images: { f: { hash: "img_hash", url: "https://cdn.example/preview.png" } },
+          }),
+          { status: 200 }
+        );
+      }
+      if (url.includes("/campaigns") && init?.method === "POST") {
+        return new Response(JSON.stringify({ id: "meta-camp-bill" }), { status: 200 });
+      }
+      if (url.includes("/adcreatives")) {
+        return new Response(JSON.stringify({ id: "meta-cr-1" }), { status: 200 });
+      }
+      if (url.includes("/adsets") && init?.method === "POST") {
+        adsetPosts++;
+        adsetBodies.push(JSON.parse(String(init?.body ?? "{}")) as Record<string, unknown>);
+        if (adsetPosts === 1) {
+          return new Response(
+            JSON.stringify({
+              error: {
+                message: "Invalid parameter",
+                type: "OAuthException",
+                code: 100,
+                error_user_title: "Opção de cobrança indisponível",
+                error_user_msg:
+                  "As contas de anúncios de empresas novas nos Produtos do Facebook podem escolher esta opção após seguirem nossas políticas por várias semanas.",
+              },
+            }),
+            { status: 400 }
+          );
+        }
+        return new Response(JSON.stringify({ id: "meta-as-1" }), { status: 200 });
+      }
+      if (url.includes("/ads") && !url.includes("adset")) {
+        return new Response(JSON.stringify({ id: "meta-ad-1" }), { status: 200 });
+      }
+      if (init?.method === "DELETE") {
+        return new Response(JSON.stringify({ success: true }), { status: 200 });
+      }
+      return new Response("unexpected", { status: 500 });
+    });
+
+    const payload = wizardPublishPayloadSchema.parse({
+      selectedAccountIds: ["111"],
+      creatives: [{ id: "c1", name: "a.png", type: "image" }],
+      publishOperationId: PUBLISH_JOB_ID,
+      creativeStoragePaths: [
+        `00000000-0000-4000-8000-000000000001/${PUBLISH_JOB_ID}/creative_0.png`,
+      ],
+      campaignType: "CBO",
+      budget: 15,
+      budgetPeriod: "daily",
+      bidStrategy: "LOWEST_COST",
+      objective: "OUTCOME_TRAFFIC",
+      pixelId: "",
+      status: "PAUSED",
+      structure: "1-1-1",
+      customStructure: { campaigns: 1, adsets: 1, ads: 1 },
+      nomenclaturePreview: "N",
+      publico: publicoFixture,
+    });
+
+    const { supabase } = createSupabaseMock();
+    const out = await runWizardPublish({
+      supabase,
+      userId: "00000000-0000-4000-8000-000000000001",
+      accessToken: "token",
+      payload,
+      creativeFilesByIndex: new Map([[0, { buffer: Buffer.from([1, 2, 3]), mimeType: "image/png" }]]),
+      pageId: "1234567890",
+      adLinkUrl: "https://example.com",
+      accounts: [{ meta_account_id: "act_111", name: "Conta A" }],
+      existingPublishJobId: PUBLISH_JOB_ID,
+      fetchImpl,
+    });
+
+    expect(out.results[0].ok).toBe(true);
+    expect(adsetBodies).toHaveLength(2);
+    expect(adsetBodies[0].billing_event).toBe("LINK_CLICKS");
+    expect(adsetBodies[1].billing_event).toBe("IMPRESSIONS");
+    expect(adsetBodies[1].optimization_goal).toBe("LINK_CLICKS");
+    expect(out.warnings.some((w) => w.includes("LINK_CLICKS") && w.includes("IMPRESSIONS"))).toBe(true);
+  });
 });

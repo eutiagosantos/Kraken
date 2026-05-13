@@ -83,10 +83,10 @@ export function humanizeMetaDetailedTargetingInvalidError(e: GraphApiError): str
 }
 
 const META_BILLING_UNAVAILABLE_HINT_PT =
-  "A conta de anúncios ainda não tem acesso a esta opção de cobrança (conforme o mapa oficial da Meta). O Meta libera gradualmente para contas novas. Enquanto isso, a publicação será retentada automaticamente com cobrança POST_ENGAGEMENT e objetivo POST_ENGAGEMENT; se voltar a falhar, aguarda algumas semanas até a conta consolidar histórico no Meta.";
+  "A conta de anúncios ainda não tem acesso a esta opção de cobrança (conforme o mapa oficial da Meta). O Meta libera gradualmente para contas novas. Enquanto isso, a publicação será retentada automaticamente com cobrança por impressões (IMPRESSIONS) e objetivo de otimização POST_ENGAGEMENT no conjunto; se voltar a falhar, aguarda algumas semanas até a conta consolidar histórico no Meta.";
 
 const META_BILLING_BOTH_FAILED_HINT_PT =
-  "A conta de anúncios não tem acesso à cobrança prevista nem ao fallback POST_ENGAGEMENT para contas novas. O Meta libera estas opções gradualmente — aguarda algumas semanas até a conta consolidar histórico no Meta.";
+  "A conta de anúncios não tem acesso à cobrança prevista nem ao fallback de conta nova (IMPRESSIONS + POST_ENGAGEMENT no conjunto). O Meta libera estas opções gradualmente — aguarda algumas semanas até a conta consolidar histórico no Meta.";
 
 /** Meta rejects ad set `billing_event` when the account is new and the chosen billing option is restricted. */
 export function isMetaBillingUnavailableError(e: unknown): boolean {

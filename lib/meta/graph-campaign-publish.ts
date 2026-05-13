@@ -1,5 +1,6 @@
 import type { GraphFetch } from "@/lib/meta/graph-client";
 import { graphDelete, graphJsonPost } from "@/lib/meta/graph-client";
+import { deleteCampaignWithBusinessSdk } from "@/lib/meta/facebook-ads-api-session";
 
 /** Create/update campaigns via Marketing API — token needs `ads_management` (and related scopes per Meta app config). */
 
@@ -226,15 +227,26 @@ export async function graphCreateAd(options: {
   });
 }
 
-/** Remove a campaign (and child ad sets/ads). */
+/**
+ * Remove a campaign (and child ad sets/ads).
+ * When `fetchImpl` is set (tests), uses the same `fetch` path as other Graph helpers; otherwise uses
+ * `facebook-nodejs-business-sdk` so production aligns with the official Business SDK.
+ */
 export async function graphDeleteCampaign(options: {
   campaignId: string;
   accessToken: string;
   fetchImpl?: GraphFetch;
 }): Promise<void> {
-  await graphDelete({
-    path: options.campaignId,
+  if (options.fetchImpl) {
+    await graphDelete({
+      path: options.campaignId,
+      accessToken: options.accessToken,
+      fetchImpl: options.fetchImpl,
+    });
+    return;
+  }
+  await deleteCampaignWithBusinessSdk({
+    campaignId: options.campaignId,
     accessToken: options.accessToken,
-    fetchImpl: options.fetchImpl,
   });
 }

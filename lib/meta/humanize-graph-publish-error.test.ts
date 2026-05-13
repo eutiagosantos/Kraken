@@ -206,6 +206,7 @@ describe("isMetaBillingUnavailableError", () => {
       rawBody: "{}",
     });
     const out = humanizeMetaBillingUnavailableError(e);
+    expect(out).toContain("IMPRESSIONS");
     expect(out).toContain("POST_ENGAGEMENT");
     expect(out).toContain("resposta Meta:");
   });
