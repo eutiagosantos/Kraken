@@ -6,6 +6,7 @@ import { AlertTriangle, Check, Eye, EyeOff, Key, Link2, Loader2 } from "lucide-r
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { StepIndicator } from "@/components/app/ui/StepIndicator";
+import { mapAccountStatus } from "@/lib/meta/graph-ad-accounts";
 import { cn } from "@/lib/utils";
 import { AccountAvatar } from "./AccountAvatar";
 import { CONECTAR_META_STEPS } from "./conectar-meta-steps";
@@ -88,9 +89,10 @@ export function ConectarContaModal({
   const [tokenValid, setTokenValid] = useState<boolean | null>(null);
   const [nickname, setNickname] = useState("");
   const [connecting, setConnecting] = useState(false);
-
-  const detectedName = "Loja Exemplo BR";
-  const detectedId = "ACT_DEMO";
+  const [previewAccounts, setPreviewAccounts] = useState<
+    { id: string; name: string; account_status?: number }[] | null
+  >(null);
+  const [inspectError, setInspectError] = useState<string | null>(null);
 
   const reset = useCallback(() => {
     setStep(1);
@@ -101,6 +103,8 @@ export function ConectarContaModal({
     setTokenValid(null);
     setNickname("");
     setConnecting(false);
+    setPreviewAccounts(null);
+    setInspectError(null);
   }, []);
 
   useEffect(() => {
@@ -116,13 +120,41 @@ export function ConectarContaModal({
     return () => document.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
-  const validateToken = () => {
+  const validateToken = async () => {
     setValidating(true);
     setTokenValid(null);
-    setTimeout(() => {
+    setInspectError(null);
+    setPreviewAccounts(null);
+    try {
+      const res = await fetch("/api/contas-meta", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "inspect_token", token: token.trim() }),
+      });
+      const json = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        accounts?: { id: string; name: string; account_status?: number }[];
+      };
+      if (!res.ok) {
+        setTokenValid(false);
+        setInspectError(json.error ?? "Não foi possível validar o token.");
+        return;
+      }
+      const accounts = json.accounts ?? [];
+      if (accounts.length === 0) {
+        setTokenValid(false);
+        setInspectError("Nenhuma conta de anúncios encontrada para este token.");
+        return;
+      }
+      setPreviewAccounts(accounts);
+      setTokenValid(true);
+    } catch {
+      setTokenValid(false);
+      setInspectError("Falha de rede ao validar o token.");
+    } finally {
       setValidating(false);
-      setTokenValid(token.trim().length >= 8);
-    }, 1500);
+    }
   };
 
   const handleConnect = async () => {
@@ -246,6 +278,8 @@ export function ConectarContaModal({
                         onChange={(e) => {
                           setToken(e.target.value);
                           setTokenValid(null);
+                          setPreviewAccounts(null);
+                          setInspectError(null);
                         }}
                         className="w-full rounded-lg border border-neutral-border bg-neutral-white py-2.5 pl-3 pr-11 text-base outline-none focus:border-brand-purple focus:ring-2 focus:ring-brand-purple/25"
                       />
@@ -265,16 +299,23 @@ export function ConectarContaModal({
                       Validando token...
                     </p>
                   ) : null}
-                  {tokenValid === true ? (
+                  {tokenValid === true && previewAccounts?.length ? (
                     <p className="mt-3 flex items-center gap-2 text-sm font-medium text-semantic-green">
                       <Check className="h-4 w-4" aria-hidden />
-                      Token válido! Conta identificada: {detectedName}
+                      {previewAccounts.length === 1
+                        ? `Token válido! Conta identificada: ${previewAccounts[0].name || previewAccounts[0].id}`
+                        : `Token válido! ${previewAccounts.length} contas identificadas.`}
                     </p>
                   ) : null}
                   {tokenValid === false ? (
-                    <p className="mt-3 flex items-center gap-2 text-sm font-medium text-semantic-red">
-                      <AlertTriangle className="h-4 w-4" aria-hidden />
-                      Token inválido ou sem permissões necessárias.
+                    <p className="mt-3 flex flex-col gap-1 text-sm font-medium text-semantic-red">
+                      <span className="flex items-center gap-2">
+                        <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden />
+                        Token inválido ou sem acesso às contas de anúncios.
+                      </span>
+                      {inspectError ? (
+                        <span className="pl-6 text-xs font-normal text-neutral-gray">{inspectError}</span>
+                      ) : null}
                     </p>
                   ) : null}
                   <div className="mt-8 flex flex-wrap justify-between gap-3 border-t border-dashboard-border pt-5">
@@ -290,7 +331,7 @@ export function ConectarContaModal({
                         type="button"
                         variant="primary"
                         onClick={validateToken}
-                        disabled={!token.trim() || validating || tokenValid === false}
+                        disabled={!token.trim() || validating}
                       >
                         {validating ? "Validando..." : "Validar Token"}
                       </Button>
@@ -302,16 +343,31 @@ export function ConectarContaModal({
               {step === 3 ? (
                 <motion.div key="c3" {...slide}>
                   <h2 className="font-display text-xl font-bold text-neutral-black">Confirme a conta</h2>
-                  <div className="mt-4 flex items-center gap-4 rounded-xl border border-dashboard-border bg-neutral-white p-4">
-                    <AccountAvatar name={detectedName} size="lg" />
-                    <div>
-                      <p className="font-semibold text-neutral-black">{detectedName}</p>
-                      <p className="text-sm text-neutral-gray">ID: {detectedId}</p>
-                      <div className="mt-2">
-                        <ContaStatusBadge status="ativa" />
+                  {previewAccounts?.[0] ? (
+                    <div className="mt-4 flex items-center gap-4 rounded-xl border border-dashboard-border bg-neutral-white p-4">
+                      <AccountAvatar
+                        name={previewAccounts[0].name || previewAccounts[0].id}
+                        size="lg"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold text-neutral-black">
+                          {previewAccounts[0].name || previewAccounts[0].id}
+                        </p>
+                        <p className="text-sm text-neutral-gray">ID: {previewAccounts[0].id}</p>
+                        {previewAccounts.length > 1 ? (
+                          <p className="mt-1 text-xs text-neutral-gray">
+                            e mais {previewAccounts.length - 1}{" "}
+                            {previewAccounts.length === 2 ? "conta será sincronizada" : "contas serão sincronizadas"}
+                          </p>
+                        ) : null}
+                        <div className="mt-2">
+                          <ContaStatusBadge status={mapAccountStatus(previewAccounts[0].account_status)} />
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  ) : (
+                    <p className="mt-4 text-sm text-neutral-gray">Volte e valide o token para ver os dados da conta.</p>
+                  )}
                   <div className="mt-4">
                     <label htmlFor="meta-nick" className="mb-1.5 block text-sm font-semibold text-neutral-black">
                       Apelido da conta (opcional)
@@ -340,7 +396,12 @@ export function ConectarContaModal({
                     <Button type="button" variant="ghost" onClick={() => setStep(2)}>
                       ← Voltar
                     </Button>
-                    <Button type="button" variant="primary" onClick={handleConnect} disabled={connecting}>
+                    <Button
+                      type="button"
+                      variant="primary"
+                      onClick={handleConnect}
+                      disabled={connecting || !previewAccounts?.[0]}
+                    >
                       <Check className="h-4 w-4" aria-hidden />
                       {connecting ? "Conectando..." : "Conectar Conta"}
                     </Button>

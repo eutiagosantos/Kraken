@@ -9,10 +9,12 @@ import {
   setCachedContasMetaRows,
 } from "@/lib/api/user-data-short-cache";
 import { rowToContaMeta } from "@/lib/contas-meta-map";
+import { fetchGraphAdAccounts } from "@/lib/meta/graph-ad-accounts";
 import { syncMetaAdAccountsForUser } from "@/lib/meta/sync-ad-accounts";
 
 const postBodySchema = z.union([
   z.object({ action: z.literal("sync") }),
+  z.object({ action: z.literal("inspect_token"), token: z.string().min(10) }),
   z.object({ action: z.literal("sync_with_token"), token: z.string().min(10) }),
 ]);
 
@@ -53,6 +55,22 @@ export async function POST(request: Request) {
   const parsed = postBodySchema.safeParse(raw);
   if (!parsed.success) {
     return NextResponse.json({ error: "Invalid payload." }, { status: 400 });
+  }
+
+  if (parsed.data.action === "inspect_token") {
+    try {
+      const accounts = await fetchGraphAdAccounts(parsed.data.token);
+      if (accounts.length === 0) {
+        return NextResponse.json(
+          { error: "Este token não tem acesso a nenhuma conta de anúncios." },
+          { status: 400 }
+        );
+      }
+      return NextResponse.json({ ok: true, accounts });
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "inspect_failed";
+      return NextResponse.json({ error: message }, { status: 502 });
+    }
   }
 
   if (parsed.data.action === "sync") {
