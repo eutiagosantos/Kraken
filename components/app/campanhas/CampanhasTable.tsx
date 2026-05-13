@@ -4,8 +4,6 @@ import { motion } from "framer-motion";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { ChevronDown, ChevronUp, Layers } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { cn } from "@/lib/utils";
 import type { Campanha, CampanhaTabId } from "@/lib/mock-campanhas";
@@ -88,8 +86,6 @@ export function CampanhasTable({
   onPageChange: (p: number) => void;
   onPerPageChange: (n: number) => void;
 }) {
-  const router = useRouter();
-
   const th = (column: SortKey, label: string, className?: string) => {
     const active = sortConfig.column === column;
     return (
@@ -118,11 +114,6 @@ export function CampanhasTable({
             ? "Ótimo! Nenhum erro encontrado."
             : "Faça seu primeiro upload para começar."}
         </p>
-        {activeTab !== "erro" ? (
-          <Button type="button" variant="primary" className="mt-6" onClick={() => router.push("/home")}>
-            Novo Upload
-          </Button>
-        ) : null}
       </div>
     );
   }

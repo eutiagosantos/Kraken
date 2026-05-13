@@ -1,8 +1,5 @@
 "use client";
 
-import { Upload } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 
 function StatPill({
@@ -44,7 +41,6 @@ export function CampanhasHeader({
   concluidas: number;
   comErro: number;
 }) {
-  const router = useRouter();
   return (
     <header className="mb-2">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -54,15 +50,6 @@ export function CampanhasHeader({
           </h1>
           <p className="mt-1 text-sm text-neutral-gray">Gerencie e acompanhe todos os seus uploads</p>
         </div>
-        <Button
-          type="button"
-          variant="primary"
-          className="shrink-0 self-start"
-          onClick={() => router.push("/home")}
-        >
-          <Upload className="h-4 w-4" aria-hidden />
-          Novo Upload
-        </Button>
       </div>
       <div className="mt-4 flex flex-wrap gap-3">
         <StatPill label="Total" value={total} variant="neutral" />
