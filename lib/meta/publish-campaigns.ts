@@ -337,6 +337,18 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
 
           adSetIds = [];
           for (let si = 0; si < counts.adsets; si++) {
+            console.log(
+              "META ADSET PAYLOAD:",
+              JSON.stringify(
+                {
+                  optimization_goal: effectiveOptimizationGoal,
+                  billing_event: effectiveBillingEvent,
+                  objective: ctx.payload.objective,
+                },
+                null,
+                2
+              )
+            );
             const adset = await graphCreateAdSet({
               actId: unit.actId,
               accessToken: ctx.accessToken,
@@ -363,6 +375,26 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
           }
           break;
         } catch (e) {
+          console.log(
+            "META API ERROR:",
+            JSON.stringify(
+              e instanceof GraphApiError
+                ? {
+                    name: e.name,
+                    message: e.message,
+                    status: e.status,
+                    graphCode: e.graphCode,
+                    errorSubcode: e.errorSubcode,
+                    errorUserTitle: e.errorUserTitle,
+                    errorUserMsg: e.errorUserMsg,
+                    errorDataSummary: e.errorDataSummary,
+                    rawBody: e.rawBody,
+                  }
+                : { thrown: String(e) },
+              null,
+              2
+            )
+          );
           if (createdCampaignId) {
             try {
               await graphDeleteCampaign({
