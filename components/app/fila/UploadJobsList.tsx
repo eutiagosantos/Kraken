@@ -8,6 +8,12 @@ import { useState } from "react";
 import { InfoRow } from "@/components/app/ui/InfoRow";
 import { ProgressBar } from "@/components/app/ui/ProgressBar";
 import { Badge } from "@/components/ui/Badge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/Tooltip";
 import { formatBrl } from "@/lib/format-currency";
 import { cn } from "@/lib/utils";
 import type {
@@ -123,6 +129,13 @@ function formatAccounts(s: UploadJobSummaryV1 | null, accountName: string) {
   return `${rows[0].name}, ${rows[1].name} +${rows.length - 2}`;
 }
 
+function formatAccountsFull(s: UploadJobSummaryV1 | null, accountName: string) {
+  const rows = s?.accounts;
+  if (rows?.length) return rows.map((a) => a.name).join(", ");
+  const trimmed = accountName.trim();
+  return trimmed.length > 0 ? trimmed : "—";
+}
+
 function creativeLine(s: UploadJobSummaryV1 | null) {
   if (!s?.creativeCount && !s?.creativeNames?.length) return "—";
   const names = s.creativeNames ?? [];
@@ -210,7 +223,7 @@ const DESKTOP_GRID =
   "hidden md:grid md:grid-cols-[minmax(0,7.5rem)_minmax(0,1.35fr)_minmax(0,1.1fr)_minmax(0,9.5rem)_minmax(0,5.5rem)_minmax(0,6.5rem)_minmax(0,1fr)_2.5rem] md:items-center md:gap-x-4 md:gap-y-1 md:px-5 md:py-4";
 
 const HEADER_GRID =
-  "hidden md:grid md:grid-cols-[minmax(0,7.5rem)_minmax(0,1.35fr)_minmax(0,1.1fr)_minmax(0,9.5rem)_minmax(0,5.5rem)_minmax(0,6.5rem)_minmax(0,1fr)_2.5rem] md:gap-x-4 md:px-5 md:pb-2.5 md:pt-1 text-[11px] font-semibold uppercase tracking-wide text-neutral-600";
+  "hidden md:grid md:grid-cols-[minmax(0,7.5rem)_minmax(0,1.35fr)_minmax(0,1.1fr)_minmax(0,9.5rem)_minmax(0,5.5rem)_minmax(0,6.5rem)_minmax(0,1fr)_2.5rem] md:items-center md:gap-x-4 md:gap-y-0 md:rounded-t-xl md:border-b md:border-dashboard-border md:bg-dashboard-base md:px-5 md:py-3 md:font-ui md:text-xs md:font-semibold md:uppercase md:tracking-wider md:text-dashboard-muted";
 
 export function UploadJobsList({
   jobs,
@@ -228,30 +241,26 @@ export function UploadJobsList({
   }
 
   return (
-    <div
-      className={cn(
-        "overflow-hidden rounded-xl border border-dashboard-border bg-dashboard-surface shadow-sm",
-        variant === "recent" && "rounded-lg border-0 bg-dashboard-surface shadow-none",
-        className
-      )}
-    >
+    <TooltipProvider delayDuration={250}>
       <div
         className={cn(
-          "border-b border-dashboard-border bg-dashboard-base/30",
-          variant === "recent" ? "hidden" : HEADER_GRID
+          "overflow-hidden rounded-xl border border-dashboard-border bg-dashboard-surface shadow-sm",
+          variant === "recent" && "rounded-lg border-0 bg-dashboard-surface shadow-none",
+          className
         )}
       >
-        <span>Envio</span>
-        <span>Conta</span>
-        <span>Criativos</span>
-        <span>Datas</span>
-        <span>Orç. / prog.</span>
-        <span>Estado</span>
-        <span>Campanha</span>
-        <span className="sr-only">Acções</span>
-      </div>
+        <div className={cn(variant === "recent" ? "hidden" : HEADER_GRID)}>
+          <span>Envio</span>
+          <span>Conta</span>
+          <span>Criativos</span>
+          <span>Datas</span>
+          <span>Orç. / prog.</span>
+          <span>Estado</span>
+          <span>Campanha</span>
+          <span className="sr-only">Acções</span>
+        </div>
 
-      <ul className="divide-y divide-dashboard-border">
+        <ul className="divide-y divide-dashboard-border">
         {jobs.map((job) => {
           const pct = job.total > 0 ? Math.round((job.done / job.total) * 100) : 0;
           const s = job.summary;
@@ -263,6 +272,13 @@ export function UploadJobsList({
           const valueMain = valueColumnText(s, job);
           const detailLine = s?.objective?.trim() || s?.campaignType?.trim() || "—";
           const initials = entityInitials(job.account_name, s);
+          const accountTooltip = `${title}\n\n${formatAccountsFull(s, job.account_name)}`;
+          const budgetTooltip =
+            s?.budget != null
+              ? `${valueMain} (${budgetPeriodLabel(s.budgetPeriod)})`
+              : job.total > 0
+                ? `${job.done} de ${job.total}`
+                : valueMain;
 
           const toggle = () => setExpandedId((id) => (id === job.id ? null : job.id));
 
@@ -277,21 +293,31 @@ export function UploadJobsList({
               {/* Mobile row */}
               <div className="flex flex-col gap-4 p-4 md:hidden">
                 <div className="flex items-start justify-between gap-3">
-                  <div className="flex min-w-0 items-center gap-2.5">
-                    <span
-                      className={cn(
-                        "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[10px] font-bold text-white shadow-sm",
-                        statusIconTint(job.status)
-                      )}
-                      aria-hidden
-                    >
-                      #
-                    </span>
-                    <div className="min-w-0">
-                      <p className="font-mono text-xs font-medium text-neutral-black">{shortJobId(job.id)}</p>
-                      <p className="mt-0.5 truncate font-mono text-[10px] text-neutral-gray">{job.id}</p>
-                    </div>
-                  </div>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div
+                        tabIndex={0}
+                        className="flex min-w-0 cursor-default items-center gap-2.5 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-brand-purple/25"
+                      >
+                        <span
+                          className={cn(
+                            "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[10px] font-bold text-white shadow-sm",
+                            statusIconTint(job.status)
+                          )}
+                          aria-hidden
+                        >
+                          #
+                        </span>
+                        <div className="min-w-0">
+                          <p className="font-mono text-xs font-medium text-neutral-black">{shortJobId(job.id)}</p>
+                          <p className="mt-0.5 truncate font-mono text-[10px] text-neutral-gray">{job.id}</p>
+                        </div>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">
+                      <span className="font-mono text-[11px]">{job.id}</span>
+                    </TooltipContent>
+                  </Tooltip>
                   {statusBadge(job.status)}
                 </div>
 
@@ -302,41 +328,77 @@ export function UploadJobsList({
                   >
                     {initials}
                   </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="font-ui text-sm font-semibold text-neutral-black">{title}</p>
-                    <p className="mt-0.5 font-ui text-xs text-dashboard-muted">{accounts}</p>
-                  </div>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div
+                        tabIndex={0}
+                        className="min-w-0 flex-1 cursor-default rounded-md outline-none focus-visible:ring-2 focus-visible:ring-brand-purple/25"
+                      >
+                        <p className="font-ui text-sm font-semibold text-neutral-black">{title}</p>
+                        <p className="mt-0.5 font-ui text-xs text-dashboard-muted">{accounts}</p>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">{accountTooltip}</TooltipContent>
+                  </Tooltip>
                 </div>
 
                 <div className="space-y-3 text-sm">
                   <div>
                     <p className="text-[11px] font-semibold uppercase tracking-wide text-dashboard-muted">Criativos</p>
-                    <p className="mt-0.5 font-ui text-sm text-neutral-black">{creatives}</p>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <p
+                          tabIndex={0}
+                          className="mt-0.5 cursor-default font-ui text-sm text-neutral-black outline-none focus-visible:ring-2 focus-visible:ring-brand-purple/25"
+                        >
+                          {creatives}
+                        </p>
+                      </TooltipTrigger>
+                      <TooltipContent side="top">{creatives}</TooltipContent>
+                    </Tooltip>
                   </div>
                   <div className="flex flex-wrap gap-x-4 gap-y-1">
                     <div>
                       <p className="text-[11px] font-semibold uppercase tracking-wide text-dashboard-muted">Datas</p>
                       <p className="mt-0.5 font-ui text-sm text-dashboard-muted">{dateRange}</p>
                     </div>
-                    <div>
-                      <p className="text-[11px] font-semibold uppercase tracking-wide text-dashboard-muted">
-                        Orç. / prog.
-                      </p>
-                      <p className="mt-0.5 font-ui text-sm font-semibold tabular-nums text-neutral-black">
-                        {valueMain}
-                      </p>
-                      {s?.budget != null ? (
-                        <p className="font-ui text-[11px] text-dashboard-muted">{budgetPeriodLabel(s.budgetPeriod)}</p>
-                      ) : job.total > 0 ? (
-                        <p className="font-ui text-[11px] text-dashboard-muted">
-                          {job.done} de {job.total}
-                        </p>
-                      ) : null}
-                    </div>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div
+                          tabIndex={0}
+                          className="cursor-default rounded-md outline-none focus-visible:ring-2 focus-visible:ring-brand-purple/25"
+                        >
+                          <p className="text-[11px] font-semibold uppercase tracking-wide text-dashboard-muted">
+                            Orç. / prog.
+                          </p>
+                          <p className="mt-0.5 font-ui text-sm font-semibold tabular-nums text-neutral-black">
+                            {valueMain}
+                          </p>
+                          {s?.budget != null ? (
+                            <p className="font-ui text-[11px] text-dashboard-muted">{budgetPeriodLabel(s.budgetPeriod)}</p>
+                          ) : job.total > 0 ? (
+                            <p className="font-ui text-[11px] text-dashboard-muted">
+                              {job.done} de {job.total}
+                            </p>
+                          ) : null}
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent side="top">{budgetTooltip}</TooltipContent>
+                    </Tooltip>
                   </div>
                   <div>
                     <p className="text-[11px] font-semibold uppercase tracking-wide text-dashboard-muted">Campanha</p>
-                    <p className="mt-0.5 font-ui text-sm text-neutral-black">{detailLine}</p>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <p
+                          tabIndex={0}
+                          className="mt-0.5 cursor-default font-ui text-sm text-neutral-black outline-none focus-visible:ring-2 focus-visible:ring-brand-purple/25"
+                        >
+                          {detailLine}
+                        </p>
+                      </TooltipTrigger>
+                      <TooltipContent side="top">{detailLine}</TooltipContent>
+                    </Tooltip>
                   </div>
                 </div>
 
@@ -358,20 +420,30 @@ export function UploadJobsList({
 
               {/* Desktop row */}
               <div className={DESKTOP_GRID}>
-                <div className="flex min-w-0 items-center gap-2">
-                  <span
-                    className={cn(
-                      "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[10px] font-bold text-white shadow-sm",
-                      statusIconTint(job.status)
-                    )}
-                    aria-hidden
-                  >
-                    #
-                  </span>
-                  <div className="min-w-0">
-                    <p className="font-mono text-xs font-medium text-neutral-black">{shortJobId(job.id)}</p>
-                  </div>
-                </div>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div
+                      tabIndex={0}
+                      className="flex min-w-0 cursor-default items-center gap-2 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-brand-purple/25"
+                    >
+                      <span
+                        className={cn(
+                          "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[10px] font-bold text-white shadow-sm",
+                          statusIconTint(job.status)
+                        )}
+                        aria-hidden
+                      >
+                        #
+                      </span>
+                      <div className="min-w-0">
+                        <p className="font-mono text-xs font-medium text-neutral-black">{shortJobId(job.id)}</p>
+                      </div>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">
+                    <span className="font-mono text-[11px]">{job.id}</span>
+                  </TooltipContent>
+                </Tooltip>
 
                 <div className="flex min-w-0 items-center gap-2.5">
                   <span
@@ -380,38 +452,70 @@ export function UploadJobsList({
                   >
                     {initials}
                   </span>
-                  <div className="min-w-0">
-                    <p className="truncate font-ui text-sm font-semibold text-neutral-black">{title}</p>
-                    <p className="mt-0.5 truncate font-ui text-xs text-dashboard-muted">{accounts}</p>
-                  </div>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div
+                        tabIndex={0}
+                        className="min-w-0 cursor-default rounded-md outline-none focus-visible:ring-2 focus-visible:ring-brand-purple/25"
+                      >
+                        <p className="truncate font-ui text-sm font-semibold text-neutral-black">{title}</p>
+                        <p className="mt-0.5 truncate font-ui text-xs text-dashboard-muted">{accounts}</p>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">{accountTooltip}</TooltipContent>
+                  </Tooltip>
                 </div>
 
-                <p className="truncate font-ui text-sm leading-snug text-neutral-black" title={creatives}>
-                  {creatives}
-                </p>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <p
+                      tabIndex={0}
+                      className="min-w-0 cursor-default truncate font-ui text-sm leading-snug text-neutral-black outline-none focus-visible:ring-2 focus-visible:ring-brand-purple/25"
+                    >
+                      {creatives}
+                    </p>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">{creatives}</TooltipContent>
+                </Tooltip>
 
                 <p className="font-ui text-sm leading-snug text-dashboard-muted">{dateRange}</p>
 
-                <div>
-                  <p className="font-ui text-sm font-semibold tabular-nums leading-snug text-neutral-black">
-                    {valueMain}
-                  </p>
-                  {s?.budget != null ? (
-                    <p className="mt-0.5 truncate font-ui text-[11px] text-dashboard-muted">
-                      {budgetPeriodLabel(s.budgetPeriod)}
-                    </p>
-                  ) : job.total > 0 ? (
-                    <p className="mt-0.5 font-ui text-[11px] text-dashboard-muted">
-                      {job.done} de {job.total}
-                    </p>
-                  ) : null}
-                </div>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div
+                      tabIndex={0}
+                      className="cursor-default rounded-md outline-none focus-visible:ring-2 focus-visible:ring-brand-purple/25"
+                    >
+                      <p className="font-ui text-sm font-semibold tabular-nums leading-snug text-neutral-black">
+                        {valueMain}
+                      </p>
+                      {s?.budget != null ? (
+                        <p className="mt-0.5 truncate font-ui text-[11px] text-dashboard-muted">
+                          {budgetPeriodLabel(s.budgetPeriod)}
+                        </p>
+                      ) : job.total > 0 ? (
+                        <p className="mt-0.5 font-ui text-[11px] text-dashboard-muted">
+                          {job.done} de {job.total}
+                        </p>
+                      ) : null}
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">{budgetTooltip}</TooltipContent>
+                </Tooltip>
 
                 <div className="flex justify-start">{statusBadge(job.status)}</div>
 
-                <p className="truncate font-ui text-sm leading-snug text-neutral-black" title={detailLine}>
-                  {detailLine}
-                </p>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <p
+                      tabIndex={0}
+                      className="min-w-0 cursor-default truncate font-ui text-sm leading-snug text-neutral-black outline-none focus-visible:ring-2 focus-visible:ring-brand-purple/25"
+                    >
+                      {detailLine}
+                    </p>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">{detailLine}</TooltipContent>
+                </Tooltip>
 
                 <div className="flex justify-center">
                   <button
@@ -488,6 +592,7 @@ export function UploadJobsList({
           );
         })}
       </ul>
-    </div>
+      </div>
+    </TooltipProvider>
   );
 }
