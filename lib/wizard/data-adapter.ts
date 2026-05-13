@@ -174,24 +174,6 @@ async function uploadCreativesToWizardBucket(
     throw new Error(errors);
   }
 
-  const { data: listed, error: listErr } = await supabase.storage
-    .from(WIZARD_CREATIVES_BUCKET)
-    .list(base, { limit: 100 });
-  if (listErr) {
-    throw new Error(
-      `Não foi possível confirmar os ficheiros no armazenamento após o envio (${listErr.message}). Confirma que o bucket «${WIZARD_CREATIVES_BUCKET}» existe e que as migrações Supabase foram aplicadas.`
-    );
-  }
-  const names = new Set((listed ?? []).map((o) => o.name));
-  for (const fullPath of paths) {
-    const seg = fullPath.split("/").pop();
-    if (!seg || !names.has(seg)) {
-      throw new Error(
-        `O ficheiro «${seg ?? fullPath}» não aparece no armazenamento após o envio. Tenta publicar novamente; se persistir, verifica a sessão e o projeto Supabase (URL/anon key iguais no browser e no servidor).`
-      );
-    }
-  }
-
   return paths;
 }
 

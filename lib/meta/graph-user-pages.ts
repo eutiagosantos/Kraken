@@ -34,11 +34,17 @@ export function pageIdInUserPages(pageId: string, pages: UserFacebookPage[]): bo
 
 const MAX_ME_ACCOUNTS_PAGES = 10;
 
+const PAGE_CACHE_TTL_MS = 10 * 60 * 1000; // 10 min — pages rarely change
+const pageCache = new Map<string, { pages: UserFacebookPage[]; expiresAt: number }>();
+
 /**
  * Lists Facebook Pages the user can manage (`GET /me/accounts`).
  * Requires `pages_show_list` / `pages_manage_ads` on the user access token.
+ * Results are cached in-process for 10 minutes to avoid a Meta API round-trip on every publish.
  */
 export async function fetchUserFacebookPages(accessToken: string): Promise<UserFacebookPage[]> {
+  const cached = pageCache.get(accessToken);
+  if (cached && cached.expiresAt > Date.now()) return cached.pages;
   const collected: UserFacebookPage[] = [];
   const first = new URL(`${META_GRAPH_ORIGIN}/me/accounts`);
   first.searchParams.set("fields", "id,name,picture{url}");
@@ -60,5 +66,6 @@ export async function fetchUserFacebookPages(accessToken: string): Promise<UserF
     nextUrl = json.paging?.next ?? null;
   }
 
+  pageCache.set(accessToken, { pages: collected, expiresAt: Date.now() + PAGE_CACHE_TTL_MS });
   return collected;
 }
