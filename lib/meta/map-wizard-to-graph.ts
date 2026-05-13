@@ -426,7 +426,8 @@ export function publicoTargetsDsaRegion(publico: WizardPublishPayload["publico"]
 }
 
 /**
- * Meta examples pair billing_event with optimization_goal (e.g. LINK_CLICKS + LINK_CLICKS).
+ * Pairs `billing_event` with `optimization_goal` per Marketing API rules.
+ * REACH uses LINK_CLICKS billing so new ad accounts that block IMPRESSIONS billing still publish.
  */
 export function billingEventForOptimization(optimizationGoal: string): string {
   switch (optimizationGoal) {
@@ -434,6 +435,7 @@ export function billingEventForOptimization(optimizationGoal: string): string {
     case "LANDING_PAGE_VIEWS":
       return "LINK_CLICKS";
     case "REACH":
+      return "LINK_CLICKS";
     case "POST_ENGAGEMENT":
     case "OFFSITE_CONVERSIONS":
     case "APP_INSTALLS":

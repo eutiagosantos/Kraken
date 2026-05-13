@@ -493,8 +493,8 @@ describe("billingEventForOptimization", () => {
     expect(billingEventForOptimization("LANDING_PAGE_VIEWS")).toBe("LINK_CLICKS");
   });
 
-  it("uses IMPRESSIONS for reach and conversions-style goals", () => {
-    expect(billingEventForOptimization("REACH")).toBe("IMPRESSIONS");
+  it("uses LINK_CLICKS billing for REACH and IMPRESSIONS for conversions-style goals", () => {
+    expect(billingEventForOptimization("REACH")).toBe("LINK_CLICKS");
     expect(billingEventForOptimization("OFFSITE_CONVERSIONS")).toBe("IMPRESSIONS");
   });
 });
