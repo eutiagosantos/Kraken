@@ -34,7 +34,10 @@ import {
 import type { GraphFetch } from "@/lib/meta/graph-client";
 import { GraphApiError } from "@/lib/meta/graph-client";
 import {
-  billingEventForOptimization,
+  defaultBillingEventForOptimizationGoal,
+  validBillingEventsForOptimizationGoal,
+} from "@/lib/meta/billing-event";
+import {
   budgetMinorUnits,
   buildTargetingFromPublico,
   mapBidStrategyToMeta,
@@ -44,6 +47,10 @@ import {
   structureLabelForDb,
   type WizardPublishPayload,
 } from "@/lib/meta/map-wizard-to-graph";
+import {
+  META_NEW_ACCOUNT_BILLING_EVENT,
+  META_NEW_ACCOUNT_OPTIMIZATION_GOAL,
+} from "@/lib/meta/meta-new-account-config";
 import {
   buildAdsetSchedulePayload,
   buildFrequencyControlSpecs,
@@ -135,6 +142,20 @@ function graphErrorMessage(e: unknown): string {
   return "Erro desconhecido.";
 }
 
+function resolveAdSetBillingFromPayload(
+  payload: WizardPublishPayload,
+  optimizationGoal: string
+): string {
+  const choice = payload.adSetBillingEvent;
+  if (
+    choice != null &&
+    validBillingEventsForOptimizationGoal(optimizationGoal).includes(choice)
+  ) {
+    return choice;
+  }
+  return defaultBillingEventForOptimizationGoal(optimizationGoal);
+}
+
 export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
   publishId: string;
   results: PublishUnitResult[];
@@ -181,7 +202,7 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
   const dailyAdsetFlight = !isLifetime ? resolveDailyAdsetFlightForPublish(ctx.payload.campaignSchedule) : null;
   const adsetScheduleRows = buildAdsetSchedulePayload(ctx.payload.campaignSchedule);
   const frequencyControlSpecs = buildFrequencyControlSpecs(ctx.payload.campaignSchedule);
-  const billingEvent = billingEventForOptimization(opt.optimization_goal);
+  const billingEvent = resolveAdSetBillingFromPayload(ctx.payload, opt.optimization_goal);
   const needsDsa = publicoTargetsDsaRegion(ctx.payload.publico);
   const dsaBeneficiary = process.env.META_DSA_BENEFICIARY?.trim();
   const dsaPayor = process.env.META_DSA_PAYOR?.trim();
@@ -295,6 +316,7 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
       let adSetIds: string[] = [];
       let effectiveBillingEvent = billingEvent;
       let effectiveOptimizationGoal = opt.optimization_goal;
+      let effectivePromotedObject: Record<string, string> | undefined = opt.promoted_object;
 
       for (let depAttempt = 0; depAttempt < maxDeprecatedInterestAttempts; depAttempt++) {
         try {
@@ -322,7 +344,7 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
               campaignId: campaign.id,
               targeting: workingTargeting,
               optimizationGoal: effectiveOptimizationGoal,
-              promotedObject: opt.promoted_object,
+              promotedObject: effectivePromotedObject,
               billingEvent: effectiveBillingEvent,
               bidStrategy: adSetBidStrategy,
               bidAmount: adSetBidAmount,
@@ -354,29 +376,21 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
             createdCampaignId = undefined;
           }
 
-          if (
-            e instanceof GraphApiError &&
-            isMetaBillingUnavailableError(e) &&
-            effectiveBillingEvent === "IMPRESSIONS" &&
-            depAttempt < maxDeprecatedInterestAttempts - 1
-          ) {
-            effectiveBillingEvent = "LINK_CLICKS";
-            warnings.push(
-              "Opção de cobrança IMPRESSIONS indisponível nesta conta (conta nova no Meta); a publicação foi retentada com cobrança por LINK_CLICKS."
-            );
-            continue;
-          }
+          const onPostEngagementFallback =
+            effectiveBillingEvent === META_NEW_ACCOUNT_BILLING_EVENT &&
+            effectiveOptimizationGoal === META_NEW_ACCOUNT_OPTIMIZATION_GOAL;
 
           if (
             e instanceof GraphApiError &&
             isMetaBillingUnavailableError(e) &&
-            effectiveBillingEvent === "LINK_CLICKS" &&
+            !onPostEngagementFallback &&
             depAttempt < maxDeprecatedInterestAttempts - 1
           ) {
-            effectiveBillingEvent = "POST_ENGAGEMENT";
-            effectiveOptimizationGoal = "POST_ENGAGEMENT";
+            effectiveBillingEvent = META_NEW_ACCOUNT_BILLING_EVENT;
+            effectiveOptimizationGoal = META_NEW_ACCOUNT_OPTIMIZATION_GOAL;
+            effectivePromotedObject = undefined;
             warnings.push(
-              "Opção de cobrança LINK_CLICKS também indisponível (conta nova no Meta); a publicação foi retentada com cobrança por POST_ENGAGEMENT e objetivo POST_ENGAGEMENT."
+              "Cobrança conforme o mapa oficial indisponível nesta conta nova no Meta; a publicação foi retentada com cobrança POST_ENGAGEMENT e objetivo POST_ENGAGEMENT."
             );
             continue;
           }
@@ -401,7 +415,7 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
             continue;
           }
 
-          if (e instanceof GraphApiError && isMetaBillingUnavailableError(e) && effectiveBillingEvent === "POST_ENGAGEMENT") {
+          if (e instanceof GraphApiError && isMetaBillingUnavailableError(e) && onPostEngagementFallback) {
             throw new Error(humanizeMetaBillingBothFailedError(e));
           }
           throw e;

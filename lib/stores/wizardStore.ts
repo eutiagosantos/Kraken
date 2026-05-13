@@ -2,7 +2,20 @@
 
 import { create } from "zustand";
 
+import {
+  defaultBillingEventForOptimizationGoal,
+  validBillingEventsForOptimizationGoal,
+  type WizardAdSetBillingEvent,
+} from "@/lib/meta/billing-event";
+import { selectOptimizationForObjective } from "@/lib/meta/map-wizard-to-graph";
 import { defaultCampaignSchedule, type CampaignSchedule } from "@/lib/meta/campaign-schedule";
+
+function initialAdSetBillingChoice(objective: string, pixelId: string): WizardAdSetBillingEvent | null {
+  const g = selectOptimizationForObjective(objective, pixelId).optimization_goal;
+  const v = validBillingEventsForOptimizationGoal(g);
+  if (v.length <= 1) return null;
+  return defaultBillingEventForOptimizationGoal(g) as WizardAdSetBillingEvent;
+}
 
 export interface Creative {
   id: string;
@@ -75,6 +88,8 @@ const initialState = {
   roasTarget: undefined as number | undefined,
   objective: "OUTCOME_SALES",
   pixelId: "",
+  /** When null, publish uses default billing for the derived optimization_goal. */
+  adSetBillingEvent: initialAdSetBillingChoice("OUTCOME_SALES", ""),
   status: "ACTIVE" as WizardStatus,
   structure: "1-1-1" as Structure,
   customStructure: { campaigns: 1, adsets: 1, ads: 1 },
@@ -111,6 +126,7 @@ type WizardState = typeof initialState & {
   setRoasTarget: (value: number | undefined) => void;
   setObjective: (value: string) => void;
   setPixelId: (value: string) => void;
+  setAdSetBillingEvent: (value: WizardAdSetBillingEvent | null) => void;
   setStatus: (value: WizardStatus) => void;
   setStructure: (value: Structure) => void;
   setCustomStructure: (value: Partial<{ campaigns: number; adsets: number; ads: number }>) => void;
@@ -155,8 +171,17 @@ export const useWizardStore = create<WizardState>()((set, get) => ({
   setBidStrategy: (bidStrategy) => set({ bidStrategy }),
   setBidLimit: (bidLimit) => set({ bidLimit }),
   setRoasTarget: (roasTarget) => set({ roasTarget }),
-  setObjective: (objective) => set({ objective }),
-  setPixelId: (pixelId) => set({ pixelId }),
+  setObjective: (objective) =>
+    set((s) => ({
+      objective,
+      adSetBillingEvent: initialAdSetBillingChoice(objective, s.pixelId),
+    })),
+  setPixelId: (pixelId) =>
+    set((s) => ({
+      pixelId,
+      adSetBillingEvent: initialAdSetBillingChoice(s.objective, pixelId),
+    })),
+  setAdSetBillingEvent: (adSetBillingEvent) => set({ adSetBillingEvent }),
   setStatus: (status) => set({ status }),
   setStructure: (structure) => set({ structure }),
   setCustomStructure: (value) =>
@@ -186,7 +211,11 @@ export const useWizardStore = create<WizardState>()((set, get) => ({
   reset: () =>
     set((s) => {
       s.creatives.forEach((creative) => URL.revokeObjectURL(creative.preview));
-      return { ...initialState, queuePublish: { ...initialQueuePublish } };
+      return {
+        ...initialState,
+        adSetBillingEvent: initialAdSetBillingChoice("OUTCOME_SALES", ""),
+        queuePublish: { ...initialQueuePublish },
+      };
     }),
   requestPublishJob: () => set({ publishJobTrigger: "wizard" }),
   consumePublishJobTrigger: () => {

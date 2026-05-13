@@ -261,6 +261,8 @@ export function UploadWizard() {
               pixelOptions={pixelOptions}
               pixelsLoading={wizardDataLoading}
               campaignSchedule={wizard.campaignSchedule}
+              adSetBillingEvent={wizard.adSetBillingEvent}
+              onSetAdSetBillingEvent={wizard.setAdSetBillingEvent}
               onSetCampaignSchedule={wizard.setCampaignSchedule}
               onSetCampaignType={wizard.setCampaignType}
               onSetBudget={wizard.setBudget}

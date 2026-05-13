@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { LayoutGrid, Loader2, ShoppingBag, Sliders } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -12,6 +12,12 @@ import type {
   WizardStatus,
 } from "@/lib/stores/wizardStore";
 import type { CampaignSchedule } from "@/lib/meta/campaign-schedule";
+import type { WizardAdSetBillingEvent } from "@/lib/meta/billing-event";
+import {
+  defaultBillingEventForOptimizationGoal,
+  validBillingEventsForOptimizationGoal,
+} from "@/lib/meta/billing-event";
+import { selectOptimizationForObjective } from "@/lib/meta/map-wizard-to-graph";
 import {
   buildNomenclaturePreview,
   type NomenclaturePreviewContext,
@@ -40,6 +46,8 @@ interface Step2ConfigProps {
   pixelOptions: { id: string; name: string }[];
   pixelsLoading?: boolean;
   campaignSchedule: CampaignSchedule;
+  adSetBillingEvent: WizardAdSetBillingEvent | null;
+  onSetAdSetBillingEvent: (value: WizardAdSetBillingEvent | null) => void;
   onSetCampaignSchedule: (patch: Partial<CampaignSchedule>) => void;
   onSetCampaignType: (value: CampaignType) => void;
   onSetBudget: (value: number) => void;
@@ -67,6 +75,16 @@ const objectives = [
   "OUTCOME_APP_PROMOTION",
 ];
 
+function billingEventLabelPt(optimizationGoal: string, event: WizardAdSetBillingEvent): string {
+  if (event === "IMPRESSIONS") return "Impressões";
+  if (optimizationGoal === "LINK_CLICKS" && event === "LINK_CLICKS") return "Cliques no link";
+  if (optimizationGoal === "THRUPLAY" && event === "THRUPLAY") return "ThruPlay";
+  if (optimizationGoal === "TWO_SECOND_CONTINUOUS_VIDEO_VIEWS" && event === "TWO_SECOND_CONTINUOUS_VIDEO_VIEWS") {
+    return "Visualizações 2s";
+  }
+  return event;
+}
+
 export function Step2Config(props: Step2ConfigProps) {
   const {
     campaignType,
@@ -86,6 +104,8 @@ export function Step2Config(props: Step2ConfigProps) {
     pixelOptions,
     pixelsLoading = false,
     campaignSchedule,
+    adSetBillingEvent,
+    onSetAdSetBillingEvent,
     onSetCampaignSchedule,
     onSetCampaignType,
     onSetBudget,
@@ -107,6 +127,18 @@ export function Step2Config(props: Step2ConfigProps) {
   useEffect(() => {
     onSetNomenclaturePreview(buildNomenclaturePreview(nomenclatureTokens, nomenclaturePreviewContext));
   }, [nomenclatureTokens, nomenclaturePreviewContext, onSetNomenclaturePreview]);
+
+  const optimizationGoal = useMemo(
+    () => selectOptimizationForObjective(objective, pixelId).optimization_goal,
+    [objective, pixelId]
+  );
+  const billingOptions = useMemo(
+    () => validBillingEventsForOptimizationGoal(optimizationGoal) as WizardAdSetBillingEvent[],
+    [optimizationGoal]
+  );
+  const showAdSetBillingChoice = billingOptions.length > 1;
+  const effectiveBillingSelection =
+    adSetBillingEvent ?? defaultBillingEventForOptimizationGoal(optimizationGoal);
 
   return (
     <>
@@ -283,6 +315,30 @@ export function Step2Config(props: Step2ConfigProps) {
               </select>
             )}
           </div>
+          {showAdSetBillingChoice ? (
+            <div className="lg:col-span-2 rounded-lg border border-gray-200 bg-white p-3">
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-500">Cobrança do conjunto</h4>
+              <p className="mt-1 text-xs text-gray-500">
+                O Meta permite mais de uma opção para este objetivo de optimização; escolhe como queres ser cobrado.
+              </p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {billingOptions.map((ev) => (
+                  <button
+                    key={ev}
+                    type="button"
+                    onClick={() => onSetAdSetBillingEvent(ev)}
+                    className={`rounded-md border px-3 py-2 text-sm ${
+                      effectiveBillingSelection === ev
+                        ? "border-[#7132f5] bg-[#7132f5] text-white"
+                        : "border-gray-300 bg-white text-gray-700"
+                    }`}
+                  >
+                    {billingEventLabelPt(optimizationGoal, ev)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
           <div>
             <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-500">Estrutura</h4>
             <div className="mt-2 grid grid-cols-4 gap-2">

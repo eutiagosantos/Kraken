@@ -1,4 +1,5 @@
 import type { WizardPublishPayloadInput } from "@/lib/meta/map-wizard-to-graph";
+import type { WizardAdSetBillingEvent } from "@/lib/meta/billing-event";
 import type { CampaignSchedule } from "@/lib/meta/campaign-schedule";
 import { getPublicoGeoValidationErrorPt } from "@/lib/wizard/publico-geo-validation";
 import type {
@@ -30,6 +31,7 @@ export type WizardPublishStateSlice = {
   nomenclaturePreview: string;
   publico: Publico;
   campaignSchedule: CampaignSchedule;
+  adSetBillingEvent: WizardAdSetBillingEvent | null;
 };
 
 export function buildWizardPublishPayload(wizard: WizardPublishStateSlice): {
@@ -64,6 +66,7 @@ export function buildWizardPublishPayload(wizard: WizardPublishStateSlice): {
     campaignSchedule: { ...wizard.campaignSchedule },
     antiSpy: true,
     pageId,
+    ...(wizard.adSetBillingEvent != null ? { adSetBillingEvent: wizard.adSetBillingEvent } : {}),
   };
 
   return {

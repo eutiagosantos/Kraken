@@ -23,5 +23,6 @@ export function getWizardPublishSliceFromStore(): WizardPublishStateSlice {
     nomenclaturePreview: w.nomenclaturePreview,
     publico: w.publico,
     campaignSchedule: w.campaignSchedule,
+    adSetBillingEvent: w.adSetBillingEvent,
   };
 }

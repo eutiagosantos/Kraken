@@ -6,8 +6,21 @@ import {
   campaignScheduleSchema,
   defaultCampaignSchedule,
 } from "@/lib/meta/campaign-schedule";
+import {
+  validBillingEventsForOptimizationGoal,
+  WIZARD_AD_SET_BILLING_EVENTS,
+} from "@/lib/meta/billing-event";
 
 export { defaultLifetimeSchedule, type MetaLifetimeWindow } from "@/lib/meta/meta-datetime";
+
+export {
+  billingEventForOptimization,
+  defaultBillingEventForOptimizationGoal,
+  validBillingEventsForOptimizationGoal,
+  type BillingEvent,
+  type WizardAdSetBillingEvent,
+  WIZARD_AD_SET_BILLING_EVENTS,
+} from "@/lib/meta/billing-event";
 
 const localidadeSchema = z.object({
   type: z.enum(["country", "state", "region", "city"]),
@@ -38,6 +51,8 @@ const storagePathString = z
   .string()
   .min(1)
   .refine((s) => !s.includes("..") && !s.startsWith("/"), "caminho inválido");
+
+const wizardAdSetBillingEventSchema = z.enum(WIZARD_AD_SET_BILLING_EVENTS);
 
 /** JSON body for `POST /api/wizard/publish` (creatives live in Supabase Storage; paths listed here). */
 export const wizardPublishPayloadSchema = z
@@ -71,6 +86,8 @@ export const wizardPublishPayloadSchema = z
     creativeStoragePaths: z.array(storagePathString).min(1),
     /** Flight dates, dayparting, frequency caps — applied at creation time only (see `app/api/wizard/publish/route.ts`). */
     campaignSchedule: campaignScheduleSchema.default(() => defaultCampaignSchedule()),
+    /** When the derived `optimization_goal` allows multiple billing modes (ex. LINK_CLICKS vs IMPRESSIONS). */
+    adSetBillingEvent: wizardAdSetBillingEventSchema.optional(),
   })
   .refine((d) => d.creativeStoragePaths.length === d.creatives.length, {
     message: "creativeStoragePaths deve ter uma entrada por criativo.",
@@ -209,6 +226,17 @@ export const wizardPublishPayloadSchema = z
         message: geoErr,
         path: ["publico", "locations"],
       });
+    }
+    if (d.adSetBillingEvent != null) {
+      const optGoal = selectOptimizationForObjective(d.objective, d.pixelId).optimization_goal;
+      const allowed = validBillingEventsForOptimizationGoal(optGoal);
+      if (!allowed.includes(d.adSetBillingEvent)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "adSetBillingEvent não é válido para o optimization_goal deste objetivo.",
+          path: ["adSetBillingEvent"],
+        });
+      }
     }
   });
 
@@ -423,29 +451,6 @@ export function publicoTargetsDsaRegion(publico: WizardPublishPayload["publico"]
     }
   }
   return false;
-}
-
-/**
- * Pairs `billing_event` with `optimization_goal` per Marketing API rules.
- * POST_ENGAGEMENT uses POST_ENGAGEMENT billing (the only valid pairing per Meta).
- * REACH/LINK_CLICKS/LANDING_PAGE_VIEWS use LINK_CLICKS billing.
- * Everything else defaults to IMPRESSIONS — publish-campaigns.ts retry loop handles
- * new-account fallback (IMPRESSIONS → LINK_CLICKS → POST_ENGAGEMENT) for those goals.
- */
-export function billingEventForOptimization(optimizationGoal: string): string {
-  switch (optimizationGoal) {
-    case "POST_ENGAGEMENT":
-      return "POST_ENGAGEMENT";
-    case "LINK_CLICKS":
-    case "LANDING_PAGE_VIEWS":
-    case "REACH":
-      return "LINK_CLICKS";
-    case "OFFSITE_CONVERSIONS":
-    case "APP_INSTALLS":
-    case "LEAD_GENERATION":
-    default:
-      return "IMPRESSIONS";
-  }
 }
 
 export function mapBidStrategyToMeta(

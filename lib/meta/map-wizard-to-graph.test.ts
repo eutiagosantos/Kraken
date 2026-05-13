@@ -4,11 +4,13 @@ import {
   billingEventForOptimization,
   buildTargetingFromPublico,
   budgetMinorUnits,
+  defaultBillingEventForOptimizationGoal,
   mapBidStrategyToMeta,
   publicoTargetsDsaRegion,
   resolveStructureCounts,
   selectOptimizationForObjective,
   structureLabelForDb,
+  validBillingEventsForOptimizationGoal,
   wizardPublishPayloadSchema,
 } from "@/lib/meta/map-wizard-to-graph";
 import { defaultLifetimeSchedule } from "@/lib/meta/meta-datetime";
@@ -45,6 +47,26 @@ const basePayload = {
 };
 
 describe("wizardPublishPayloadSchema", () => {
+  it("rejects adSetBillingEvent incompatible with derived optimization goal", () => {
+    const res = wizardPublishPayloadSchema.safeParse({
+      ...basePayload,
+      objective: "OUTCOME_TRAFFIC",
+      pixelId: "",
+      adSetBillingEvent: "THRUPLAY",
+    });
+    expect(res.success).toBe(false);
+  });
+
+  it("accepts adSetBillingEvent IMPRESSIONS for traffic (LINK_CLICKS goal)", () => {
+    const res = wizardPublishPayloadSchema.safeParse({
+      ...basePayload,
+      objective: "OUTCOME_TRAFFIC",
+      pixelId: "",
+      adSetBillingEvent: "IMPRESSIONS",
+    });
+    expect(res.success).toBe(true);
+    if (res.success) expect(res.data.adSetBillingEvent).toBe("IMPRESSIONS");
+  });
   it("parses minimal valid payload", () => {
     const p = wizardPublishPayloadSchema.parse(basePayload);
     expect(p.creatives).toHaveLength(1);
@@ -487,19 +509,44 @@ describe("selectOptimizationForObjective", () => {
   });
 });
 
+describe("defaultBillingEventForOptimizationGoal", () => {
+  it("prefers specific billing when Meta allows multiple choices", () => {
+    expect(defaultBillingEventForOptimizationGoal("LINK_CLICKS")).toBe("LINK_CLICKS");
+    expect(defaultBillingEventForOptimizationGoal("THRUPLAY")).toBe("THRUPLAY");
+    expect(defaultBillingEventForOptimizationGoal("TWO_SECOND_CONTINUOUS_VIDEO_VIEWS")).toBe(
+      "TWO_SECOND_CONTINUOUS_VIDEO_VIEWS"
+    );
+  });
+
+  it("uses IMPRESSIONS for single-option goals", () => {
+    expect(defaultBillingEventForOptimizationGoal("REACH")).toBe("IMPRESSIONS");
+    expect(defaultBillingEventForOptimizationGoal("LANDING_PAGE_VIEWS")).toBe("IMPRESSIONS");
+    expect(defaultBillingEventForOptimizationGoal("OFFSITE_CONVERSIONS")).toBe("IMPRESSIONS");
+    expect(defaultBillingEventForOptimizationGoal("POST_ENGAGEMENT")).toBe("IMPRESSIONS");
+    expect(defaultBillingEventForOptimizationGoal("APP_INSTALLS")).toBe("IMPRESSIONS");
+  });
+});
+
+describe("validBillingEventsForOptimizationGoal", () => {
+  it("returns two options for goals with billing choice", () => {
+    expect(validBillingEventsForOptimizationGoal("LINK_CLICKS")).toEqual(["LINK_CLICKS", "IMPRESSIONS"]);
+    expect(validBillingEventsForOptimizationGoal("THRUPLAY")).toEqual(["THRUPLAY", "IMPRESSIONS"]);
+    expect(validBillingEventsForOptimizationGoal("TWO_SECOND_CONTINUOUS_VIDEO_VIEWS")).toEqual([
+      "TWO_SECOND_CONTINUOUS_VIDEO_VIEWS",
+      "IMPRESSIONS",
+    ]);
+  });
+
+  it("returns only IMPRESSIONS for other goals including unknown", () => {
+    expect(validBillingEventsForOptimizationGoal("REACH")).toEqual(["IMPRESSIONS"]);
+    expect(validBillingEventsForOptimizationGoal("UNKNOWN_GOAL_X")).toEqual(["IMPRESSIONS"]);
+  });
+});
+
 describe("billingEventForOptimization", () => {
-  it("uses LINK_CLICKS for link click goals", () => {
-    expect(billingEventForOptimization("LINK_CLICKS")).toBe("LINK_CLICKS");
-    expect(billingEventForOptimization("LANDING_PAGE_VIEWS")).toBe("LINK_CLICKS");
-  });
-
-  it("uses LINK_CLICKS billing for REACH and IMPRESSIONS for conversions-style goals", () => {
-    expect(billingEventForOptimization("REACH")).toBe("LINK_CLICKS");
-    expect(billingEventForOptimization("OFFSITE_CONVERSIONS")).toBe("IMPRESSIONS");
-  });
-
-  it("uses POST_ENGAGEMENT billing for POST_ENGAGEMENT goal (required pairing, safe on new accounts)", () => {
-    expect(billingEventForOptimization("POST_ENGAGEMENT")).toBe("POST_ENGAGEMENT");
+  it("delegates to default (alias)", () => {
+    expect(billingEventForOptimization("LINK_CLICKS")).toBe(defaultBillingEventForOptimizationGoal("LINK_CLICKS"));
+    expect(billingEventForOptimization("REACH")).toBe("IMPRESSIONS");
   });
 });
 

@@ -198,7 +198,7 @@ describe("isMetaBillingUnavailableError", () => {
     expect(isMetaBillingUnavailableError(e)).toBe(false);
   });
 
-  it("humanize includes LINK_CLICKS hint and resposta Meta", () => {
+  it("humanize mentions POST_ENGAGEMENT fallback and resposta Meta", () => {
     const e = new GraphApiError("Invalid parameter", {
       status: 400,
       errorUserTitle: "Opção de cobrança indisponível",
@@ -206,7 +206,7 @@ describe("isMetaBillingUnavailableError", () => {
       rawBody: "{}",
     });
     const out = humanizeMetaBillingUnavailableError(e);
-    expect(out).toContain("LINK_CLICKS");
+    expect(out).toContain("POST_ENGAGEMENT");
     expect(out).toContain("resposta Meta:");
   });
 });

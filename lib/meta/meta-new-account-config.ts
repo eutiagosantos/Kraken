@@ -1,15 +1,13 @@
 /**
- * Safe defaults for new Meta ad accounts with limited billing/spend history.
- * New accounts have severe restrictions on billing_event and optimization_goal combos.
- * Review and relax these once the account has meaningful spend history and unlocks
- * additional billing options (typically after the first invoice clears).
+ * Safe pairing for **new** Meta ad accounts when the official billing + optimization map is rejected.
+ * This is **not** the Marketing API default for mature accounts — see `lib/meta/billing-event.ts` for the official map.
  *
  * Confirmed safe on new accounts (May 2026):
  *   - billing_event: POST_ENGAGEMENT
  *   - optimization_goal: POST_ENGAGEMENT
  *   - bid_strategy: LOWEST_COST_WITHOUT_CAP (no bid_amount required)
  *
- * Blocked on new accounts:
+ * Blocked on new accounts (examples):
  *   - billing_event: IMPRESSIONS
  *   - billing_event: LINK_CLICKS
  *   - bid_strategy: COST_CAP / LOWEST_COST_WITH_BID_CAP (requires bid_amount and spend history)
@@ -23,8 +21,8 @@ export const META_NEW_ACCOUNT_BID_STRATEGY = "LOWEST_COST_WITHOUT_CAP" as const;
 export const META_BLOCKED_BILLING_EVENTS_NEW_ACCOUNT = ["IMPRESSIONS", "LINK_CLICKS"] as const;
 
 /**
- * Returns the correct billing_event for a given optimization_goal per Meta Marketing API rules.
- * Uses the safe POST_ENGAGEMENT pairing as the default fallback for new accounts.
+ * Returns the POST_ENGAGEMENT × POST_ENGAGEMENT fallback used when a new ad account rejects
+ * the billing_event from the official optimization_goal map (`billing-event.ts`).
  */
 export function safeNewAccountAdSetParams(): {
   optimization_goal: typeof META_NEW_ACCOUNT_OPTIMIZATION_GOAL;
