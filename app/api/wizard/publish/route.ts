@@ -15,9 +15,15 @@ import { normalizeActId } from "@/lib/meta/graph-campaign-publish";
 import { fetchUserFacebookPages, pageIdInUserPages } from "@/lib/meta/graph-user-pages";
 import { getMetaGraphAccessToken } from "@/lib/meta/graph-token";
 import { wizardPublishPayloadSchema } from "@/lib/meta/map-wizard-to-graph";
+import { GraphApiError } from "@/lib/meta/graph-client";
+import {
+  humanizeMetaObjectNotFoundError,
+  isMetaObjectNotFoundError,
+} from "@/lib/meta/humanize-graph-publish-error";
 import { runWizardPublish } from "@/lib/meta/publish-campaigns";
 import type { Database } from "@/lib/supabase/types";
 import {
+  humanizeWizardCreativeStorageDownloadError,
   validateCreativeStoragePathsForUser,
   WIZARD_CREATIVES_BUCKET,
 } from "@/lib/wizard/wizard-creatives-bucket";
@@ -178,8 +184,10 @@ export async function POST(request: Request) {
       const { data: blob, error: dlErr } = await supabase.storage.from(WIZARD_CREATIVES_BUCKET).download(path);
       if (dlErr || !blob) {
         return NextResponse.json(
-          { error: dlErr?.message ?? `Não foi possível descarregar o criativo em «${path}».` },
-          { status: 400 }
+          {
+            error: humanizeWizardCreativeStorageDownloadError(path, dlErr?.message),
+          },
+          { status: 400, headers: { "X-Kraken-Publish-Phase": "creative_storage_download" } }
         );
       }
       const buf = Buffer.from(await blob.arrayBuffer());
@@ -218,8 +226,14 @@ export async function POST(request: Request) {
     }
     return NextResponse.json(body);
   } catch (e) {
-    const message = e instanceof Error ? e.message : "publish_failed";
-    return NextResponse.json({ error: message }, { status: 500 });
+    let message = e instanceof Error ? e.message : "publish_failed";
+    if (e instanceof GraphApiError && isMetaObjectNotFoundError(e)) {
+      message = humanizeMetaObjectNotFoundError(e);
+    }
+    return NextResponse.json(
+      { error: message },
+      { status: 500, headers: { "X-Kraken-Publish-Phase": "meta_publish" } }
+    );
   } finally {
     if (deleteCreativesAfterPublish) {
       await removeStorageObjects(supabase, cleanupPaths);

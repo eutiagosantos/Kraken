@@ -108,6 +108,20 @@ export function humanizeMetaBillingBothFailedError(e: GraphApiError): string {
   return `${META_BILLING_BOTH_FAILED_HINT_PT} (resposta Meta: ${combinedGraphText(e)})`;
 }
 
+const META_OBJECT_NOT_FOUND_HINT_PT =
+  "Normalmente indica um ID inválido ou sem permissão: conta de anúncios, página, pixel, conjunto de anúncios ou recurso referenciado no pedido. Verifica no assistente a página e as contas seleccionadas; reconecta o Meta se mudaste permissões.";
+
+/** Meta Graph sometimes returns a bare «Object not found» when an edge ID does not exist or is inaccessible. */
+export function isMetaObjectNotFoundError(e: unknown): boolean {
+  if (!(e instanceof GraphApiError)) return false;
+  const blob = `${combinedGraphText(e)} ${e.rawBody ?? ""}`.toLowerCase();
+  return blob.includes("object not found");
+}
+
+export function humanizeMetaObjectNotFoundError(e: GraphApiError): string {
+  return `${META_OBJECT_NOT_FOUND_HINT_PT} (resposta Meta: ${combinedGraphText(e)})`;
+}
+
 /**
  * Appends a short PT hint for common Meta video processing failures (codec, duration, size).
  * Callers should pass Meta's own `processing_phase.errors[].message` when available.

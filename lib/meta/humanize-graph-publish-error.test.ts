@@ -6,11 +6,13 @@ import {
   humanizeMetaAudienceTooNarrowError,
   humanizeMetaBillingUnavailableError,
   humanizeMetaDetailedTargetingInvalidError,
+  humanizeMetaObjectNotFoundError,
   humanizeVideoProcessingError,
   isMetaAppDevelopmentModeError,
   isMetaAudienceTooNarrowError,
   isMetaBillingUnavailableError,
   isMetaDetailedTargetingInvalidParameterError,
+  isMetaObjectNotFoundError,
   messageIndicatesMetaAppDevelopmentMode,
 } from "@/lib/meta/humanize-graph-publish-error";
 
@@ -220,5 +222,35 @@ describe("humanizeMetaDetailedTargetingInvalidError", () => {
     const out = humanizeMetaDetailedTargetingInvalidError(e);
     expect(out).toContain("Buscar interesses");
     expect(out).toContain("resposta Meta:");
+  });
+});
+
+describe("isMetaObjectNotFoundError", () => {
+  it("detects Object not found in message", () => {
+    const e = new GraphApiError("Object not found", { status: 400, rawBody: "{}" });
+    expect(isMetaObjectNotFoundError(e)).toBe(true);
+  });
+
+  it("detects in rawBody when message is generic", () => {
+    const e = new GraphApiError("Invalid parameter", {
+      status: 400,
+      rawBody: '{"error":{"message":"Object not found"}}',
+    });
+    expect(isMetaObjectNotFoundError(e)).toBe(true);
+  });
+
+  it("returns false for unrelated errors", () => {
+    const e = new GraphApiError("Invalid OAuth access token.", { status: 401, rawBody: "{}" });
+    expect(isMetaObjectNotFoundError(e)).toBe(false);
+  });
+});
+
+describe("humanizeMetaObjectNotFoundError", () => {
+  it("includes ID hint and resposta Meta", () => {
+    const e = new GraphApiError("Object not found", { status: 400, rawBody: "{}" });
+    const out = humanizeMetaObjectNotFoundError(e);
+    expect(out).toContain("conta de anúncios");
+    expect(out).toContain("resposta Meta:");
+    expect(out).toContain("Object not found");
   });
 });

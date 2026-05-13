@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { validateCreativeStoragePathsForUser } from "@/lib/wizard/wizard-creatives-bucket";
+import {
+  humanizeWizardCreativeStorageDownloadError,
+  validateCreativeStoragePathsForUser,
+} from "@/lib/wizard/wizard-creatives-bucket";
 
 describe("validateCreativeStoragePathsForUser", () => {
   const uid = "aaaaaaaa-bbbb-4ccc-dddd-eeeeeeeeeeee";
@@ -42,5 +45,26 @@ describe("validateCreativeStoragePathsForUser", () => {
     expect(
       validateCreativeStoragePathsForUser(uid, [`${uid}/${session}/creative_0.png`], 1, "not-a-uuid")
     ).not.toBeNull();
+  });
+});
+
+describe("humanizeWizardCreativeStorageDownloadError", () => {
+  it("maps Object not found to PT with bucket and migration hints", () => {
+    const out = humanizeWizardCreativeStorageDownloadError("u/s/creative_0.jpg", "Object not found");
+    expect(out).toContain("Não foi encontrado");
+    expect(out).toContain("«u/s/creative_0.jpg»");
+    expect(out).toContain("wizard_creatives");
+    expect(out).toContain("NEXT_PUBLIC_SUPABASE_URL");
+  });
+
+  it("maps other not found variants", () => {
+    const out = humanizeWizardCreativeStorageDownloadError("a/b/c.png", "The object was not found");
+    expect(out).toContain("Não foi encontrado");
+  });
+
+  it("passes through other storage messages without long hint", () => {
+    const out = humanizeWizardCreativeStorageDownloadError("a/b/c.png", "JWT expired");
+    expect(out).toContain("JWT expired");
+    expect(out).not.toContain("migração `wizard_creatives`");
   });
 });
