@@ -83,10 +83,10 @@ export function humanizeMetaDetailedTargetingInvalidError(e: GraphApiError): str
 }
 
 const META_BILLING_UNAVAILABLE_HINT_PT =
-  "A conta de anúncios ainda não tem acesso a esta opção de cobrança (IMPRESSIONS). O Meta libera gradualmente para contas novas. Enquanto isso, a publicação será retentada automaticamente com cobrança por LINK_CLICKS; caso volte a falhar, aguarda algumas semanas até a conta consolidar histórico no Meta.";
+  "A conta de anúncios ainda não tem acesso a esta opção de cobrança (IMPRESSIONS). O Meta libera gradualmente para contas novas. Enquanto isso, a publicação será retentada automaticamente com cobrança por LINK_CLICKS e depois POST_ENGAGEMENT; caso volte a falhar, aguarda algumas semanas até a conta consolidar histórico no Meta.";
 
 const META_BILLING_BOTH_FAILED_HINT_PT =
-  "A conta de anúncios não tem acesso às opções de cobrança IMPRESSIONS nem LINK_CLICKS. O Meta libera estas opções gradualmente para contas novas — aguarda algumas semanas até a conta consolidar histórico no Meta.";
+  "A conta de anúncios não tem acesso às opções de cobrança IMPRESSIONS, LINK_CLICKS nem POST_ENGAGEMENT. O Meta libera estas opções gradualmente para contas novas — aguarda algumas semanas até a conta consolidar histórico no Meta.";
 
 /** Meta rejects ad set billing_event when the account is new and IMPRESSIONS billing is restricted. */
 export function isMetaBillingUnavailableError(e: unknown): boolean {

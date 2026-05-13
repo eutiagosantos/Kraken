@@ -294,6 +294,7 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
       let campaign!: { id: string };
       let adSetIds: string[] = [];
       let effectiveBillingEvent = billingEvent;
+      let effectiveOptimizationGoal = opt.optimization_goal;
 
       for (let depAttempt = 0; depAttempt < maxDeprecatedInterestAttempts; depAttempt++) {
         try {
@@ -320,7 +321,7 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
               name: `Conjunto ${si + 1}`.slice(0, 240),
               campaignId: campaign.id,
               targeting: workingTargeting,
-              optimizationGoal: opt.optimization_goal,
+              optimizationGoal: effectiveOptimizationGoal,
               promotedObject: opt.promoted_object,
               billingEvent: effectiveBillingEvent,
               bidStrategy: adSetBidStrategy,
@@ -366,6 +367,20 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
             continue;
           }
 
+          if (
+            e instanceof GraphApiError &&
+            isMetaBillingUnavailableError(e) &&
+            effectiveBillingEvent === "LINK_CLICKS" &&
+            depAttempt < maxDeprecatedInterestAttempts - 1
+          ) {
+            effectiveBillingEvent = "POST_ENGAGEMENT";
+            effectiveOptimizationGoal = "POST_ENGAGEMENT";
+            warnings.push(
+              "Opção de cobrança LINK_CLICKS também indisponível (conta nova no Meta); a publicação foi retentada com cobrança por POST_ENGAGEMENT e objetivo POST_ENGAGEMENT."
+            );
+            continue;
+          }
+
           const repl =
             e instanceof GraphApiError ? parseDeprecatedInterestReplacements(e.rawBody) : [];
           const { changed } =
@@ -386,7 +401,7 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
             continue;
           }
 
-          if (e instanceof GraphApiError && isMetaBillingUnavailableError(e) && effectiveBillingEvent === "LINK_CLICKS") {
+          if (e instanceof GraphApiError && isMetaBillingUnavailableError(e) && effectiveBillingEvent === "POST_ENGAGEMENT") {
             throw new Error(humanizeMetaBillingBothFailedError(e));
           }
           throw e;
