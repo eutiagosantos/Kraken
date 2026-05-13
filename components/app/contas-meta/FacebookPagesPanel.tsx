@@ -1,12 +1,31 @@
 "use client";
 
-import { Check, Copy, Loader2 } from "lucide-react";
+import { format, parseISO } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { Check, Copy, ExternalLink, Loader2 } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { AccountAvatar } from "@/components/app/contas-meta/AccountAvatar";
 import { cn } from "@/lib/utils";
 
 type FbPageRow = { id: string; name: string; pictureUrl?: string };
+
+type PagePostRow = {
+  id: string;
+  message: string;
+  createdTime: string;
+  permalinkUrl: string | null;
+  reactionCount: number;
+  commentCount: number;
+};
+
+function formatPostDate(iso: string): string {
+  try {
+    return format(parseISO(iso), "d MMM yyyy, HH:mm", { locale: ptBR });
+  } catch {
+    return iso;
+  }
+}
 
 export function FacebookPagesPanel({
   onConnect,
@@ -24,6 +43,10 @@ export function FacebookPagesPanel({
   const [error, setError] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [loadedOnce, setLoadedOnce] = useState(false);
+  const [selectedPageId, setSelectedPageId] = useState<string | null>(null);
+  const [posts, setPosts] = useState<PagePostRow[]>([]);
+  const [postsLoading, setPostsLoading] = useState(false);
+  const [postsError, setPostsError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -44,6 +67,25 @@ export function FacebookPagesPanel({
     }
   }, []);
 
+  const loadPosts = useCallback(async (pageId: string) => {
+    setPostsLoading(true);
+    setPostsError(null);
+    try {
+      const q = new URLSearchParams({ pageId, limit: "15" });
+      const res = await fetch(`/api/wizard/page-posts?${q.toString()}`, { credentials: "include" });
+      const raw = (await res.json().catch(() => ({}))) as { error?: string; data?: PagePostRow[] };
+      if (!res.ok) {
+        throw new Error(typeof raw.error === "string" ? raw.error : `Pedido falhou (${res.status})`);
+      }
+      setPosts(Array.isArray(raw.data) ? raw.data : []);
+    } catch (e) {
+      setPosts([]);
+      setPostsError(e instanceof Error ? e.message : "Não foi possível carregar as publicações.");
+    } finally {
+      setPostsLoading(false);
+    }
+  }, []);
+
   useLayoutEffect(() => {
     if (active) setLoading(true);
   }, [active, reloadKey]);
@@ -52,6 +94,25 @@ export function FacebookPagesPanel({
     if (!active) return;
     void load();
   }, [active, reloadKey, load]);
+
+  useEffect(() => {
+    setSelectedPageId(null);
+    setPosts([]);
+    setPostsError(null);
+  }, [reloadKey]);
+
+  useEffect(() => {
+    if (selectedPageId && !pages.some((p) => p.id === selectedPageId)) {
+      setSelectedPageId(null);
+      setPosts([]);
+      setPostsError(null);
+    }
+  }, [pages, selectedPageId]);
+
+  useEffect(() => {
+    if (!active || !selectedPageId) return;
+    void loadPosts(selectedPageId);
+  }, [active, selectedPageId, loadPosts]);
 
   const copyId = async (id: string) => {
     try {
@@ -92,61 +153,149 @@ export function FacebookPagesPanel({
     );
   }
 
+  const selectedPage = selectedPageId ? pages.find((p) => p.id === selectedPageId) : undefined;
+
   return (
     <div>
       <p className="mb-4 text-sm text-neutral-gray">
         Páginas que a sua identidade Meta gere (Graph API <code className="rounded bg-dashboard-track px-1 py-0.5 text-xs">me/accounts</code>
-        ). As mesmas opções aparecem no assistente de publicação ao escolher a Página do criativo.
+        ). Toque numa página para ver publicações recentes e totais de reações e comentários (Graph{" "}
+        <code className="rounded bg-dashboard-track px-1 py-0.5 text-xs">&#123;page-id&#125;/posts</code>).
       </p>
 
       {pages.length === 0 ? (
         <div className="flex min-h-[200px] flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-dashboard-border bg-dashboard-surface/50 px-6 py-14 text-center text-sm text-neutral-gray">
           <p>Nenhuma página encontrada com o token atual.</p>
           <p className="max-w-md text-xs text-neutral-silver">
-            Confirme permissões <span className="font-medium">pages_show_list</span> e que gere pelo menos uma
-            Página com a conta Facebook ligada ao Kraken.
+            Confirme permissões <span className="font-medium">pages_show_list</span>,{" "}
+            <span className="font-medium">pages_manage_ads</span> e{" "}
+            <span className="font-medium">pages_read_engagement</span> (última necessária para ver publicações abaixo) e
+            que gere pelo menos uma Página com a conta Facebook ligada ao Kraken.
           </p>
           <Button type="button" variant="primary" className="mt-1" onClick={onConnect}>
             Conectar ou reconectar Meta
           </Button>
         </div>
       ) : (
-        <ul className="grid gap-3 sm:grid-cols-2">
-          {pages.map((p) => (
-            <li
-              key={p.id}
-              className="flex items-center gap-3 rounded-xl border border-dashboard-border bg-white p-4 shadow-sm"
-            >
-              {p.pictureUrl ? (
-                <img
-                  src={p.pictureUrl}
-                  alt=""
-                  width={44}
-                  height={44}
-                  className="h-11 w-11 shrink-0 rounded-full object-cover"
-                />
-              ) : (
-                <AccountAvatar name={p.name} size="md" />
-              )}
-              <div className="min-w-0 flex-1">
-                <p className="truncate font-semibold text-neutral-black">{p.name}</p>
-                <p className="truncate font-mono text-xs text-neutral-silver">{p.id}</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => void copyId(p.id)}
+        <>
+          <ul className="grid gap-3 sm:grid-cols-2">
+            {pages.map((p) => (
+              <li
+                key={p.id}
                 className={cn(
-                  "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-dashboard-border text-neutral-silver transition-colors hover:bg-dashboard-track hover:text-neutral-black",
-                  copiedId === p.id && "border-semantic-green/40 text-semantic-green"
+                  "flex items-center gap-2 rounded-xl border bg-white p-3 shadow-sm transition-shadow sm:gap-3 sm:p-4",
+                  selectedPageId === p.id
+                    ? "border-brand-purple ring-2 ring-brand-purple/35"
+                    : "border-dashboard-border"
                 )}
-                title="Copiar ID da página"
-                aria-label={`Copiar ID ${p.id}`}
               >
-                {copiedId === p.id ? <Check className="h-4 w-4" aria-hidden /> : <Copy className="h-4 w-4" aria-hidden />}
-              </button>
-            </li>
-          ))}
-        </ul>
+                <button
+                  type="button"
+                  onClick={() => setSelectedPageId(p.id)}
+                  className="flex min-w-0 flex-1 items-center gap-3 rounded-lg text-left outline-none focus-visible:ring-2 focus-visible:ring-brand-purple/40"
+                >
+                  {p.pictureUrl ? (
+                    <img
+                      src={p.pictureUrl}
+                      alt=""
+                      width={44}
+                      height={44}
+                      className="h-11 w-11 shrink-0 rounded-full object-cover"
+                    />
+                  ) : (
+                    <AccountAvatar name={p.name} size="md" />
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-semibold text-neutral-black">{p.name}</p>
+                    <p className="truncate font-mono text-xs text-neutral-silver">{p.id}</p>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void copyId(p.id)}
+                  className={cn(
+                    "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-dashboard-border text-neutral-silver transition-colors hover:bg-dashboard-track hover:text-neutral-black",
+                    copiedId === p.id && "border-semantic-green/40 text-semantic-green"
+                  )}
+                  title="Copiar ID da página"
+                  aria-label={`Copiar ID ${p.id}`}
+                >
+                  {copiedId === p.id ? <Check className="h-4 w-4" aria-hidden /> : <Copy className="h-4 w-4" aria-hidden />}
+                </button>
+              </li>
+            ))}
+          </ul>
+
+          {selectedPageId && selectedPage ? (
+            <section
+              className="mt-8 rounded-xl border border-dashboard-border bg-white p-4 shadow-sm sm:p-5"
+              aria-labelledby="fb-page-posts-heading"
+            >
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+                <h2 id="fb-page-posts-heading" className="text-base font-semibold text-neutral-black">
+                  Publicações recentes — {selectedPage.name}
+                </h2>
+                <Button type="button" variant="subtle" className="text-sm" onClick={() => void loadPosts(selectedPageId)}>
+                  Atualizar
+                </Button>
+              </div>
+
+              {postsLoading ? (
+                <div className="flex items-center gap-2 py-10 text-sm text-neutral-silver">
+                  <Loader2 className="h-6 w-6 shrink-0 animate-spin text-brand-purple" aria-hidden />
+                  A carregar publicações…
+                </div>
+              ) : postsError ? (
+                <div className="rounded-lg border border-semantic-yellow/40 bg-semantic-yellow-bg px-3 py-3 text-sm text-neutral-black">
+                  <p className="font-medium text-semantic-red">Erro</p>
+                  <p className="mt-1 text-neutral-gray">{postsError}</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Button type="button" variant="subtle" className="px-3 py-2 text-sm" onClick={() => void loadPosts(selectedPageId)}>
+                      Tentar novamente
+                    </Button>
+                    <Button type="button" variant="primary" className="px-3 py-2 text-sm" onClick={onConnect}>
+                      Reconectar Meta
+                    </Button>
+                  </div>
+                </div>
+              ) : posts.length === 0 ? (
+                <p className="py-6 text-sm text-neutral-gray">Nenhuma publicação devolvida para esta página.</p>
+              ) : (
+                <ul className="divide-y divide-dashboard-border">
+                  {posts.map((post) => (
+                    <li key={post.id} className="py-4 first:pt-0">
+                      <p className="text-xs font-medium uppercase tracking-wide text-neutral-silver">
+                        {formatPostDate(post.createdTime)}
+                      </p>
+                      <p className="mt-1 line-clamp-4 text-sm text-neutral-black">
+                        {post.message.trim() ? post.message : <span className="italic text-neutral-silver">(sem texto)</span>}
+                      </p>
+                      <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-neutral-gray">
+                        <span>
+                          Reações: <strong className="text-neutral-black">{post.reactionCount}</strong>
+                        </span>
+                        <span>
+                          Comentários: <strong className="text-neutral-black">{post.commentCount}</strong>
+                        </span>
+                        {post.permalinkUrl ? (
+                          <a
+                            href={post.permalinkUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 font-medium text-brand-purple hover:underline"
+                          >
+                            Abrir no Facebook
+                            <ExternalLink className="h-3.5 w-3.5" aria-hidden />
+                          </a>
+                        ) : null}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          ) : null}
+        </>
       )}
     </div>
   );

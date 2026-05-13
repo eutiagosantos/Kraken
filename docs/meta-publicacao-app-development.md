@@ -43,9 +43,9 @@ Definidas em `app/api/wizard/publish/route.ts`:
 
 Este documento resume **como o Kraken usa cada permissão** e o que preparar para a **análise da Meta** (textos, screencast, conformidade). Não substitui as [políticas oficiais](https://developers.facebook.com/policy/) nem a documentação de cada permissão no [developers.facebook.com](https://developers.facebook.com/docs/permissions/reference).
 
-**Scopes atuais no OAuth (código):** ver `META_SCOPES` em `components/auth/KrakenLoginForm.tsx` e `components/auth/RegisterForm.tsx` — incluem `email`, `public_profile`, `ads_read`, `ads_management`, `business_management`, `pages_show_list`, `pages_manage_ads`.
+**Scopes atuais no OAuth (código):** ver `META_SCOPES` em `components/auth/KrakenLoginForm.tsx` e `components/auth/RegisterForm.tsx` — incluem `email`, `public_profile`, `ads_read`, `ads_management`, `business_management`, `pages_show_list`, `pages_manage_ads`, `pages_read_engagement`.
 
-**Referência técnica interna:** `docs/meta-publicacao-app-development.md`, `lib/meta/graph-user-pages.ts`, `lib/meta/graph-ad-accounts.ts`, `lib/meta/sync-ad-accounts.ts`, `app/api/wizard/publish/route.ts`, `lib/meta/graph-campaign-publish.ts`, `lib/meta/publish-campaigns.ts`.
+**Referência técnica interna:** `docs/meta-publicacao-app-development.md`, `lib/meta/graph-user-pages.ts`, `lib/meta/graph-page-posts.ts`, `lib/meta/graph-ad-accounts.ts`, `lib/meta/sync-ad-accounts.ts`, `app/api/wizard/pages/route.ts`, `app/api/wizard/page-posts/route.ts`, `components/app/contas-meta/FacebookPagesPanel.tsx`, `app/api/wizard/publish/route.ts`, `lib/meta/graph-campaign-publish.ts`, `lib/meta/publish-campaigns.ts`.
 
 ---
 
@@ -113,21 +113,25 @@ Criar e gerir campanhas, conjuntos de anúncios, anúncios e criativos via Marke
 
 ### Dependência: `pages_read_engagement`
 
-O formulário da Meta pode exigir **`pages_read_engagement`** em conjunto com `ads_management` (Standard Access). No repositório, **verificar** se `pages_read_engagement` está nos scopes OAuth; se a Meta exigir e o produto usar dados de envolvimento da Página, adicionar ao `META_SCOPES` e descrever o uso com precisão. **Não declarar uso** que o código não demonstra no screencast.
+O formulário da Meta pode exigir **`pages_read_engagement`** em conjunto com `ads_management` (Standard Access). No Kraken o scope está em `META_SCOPES` e o produto lê **publicações recentes da Página** e totais agregados de **reações** e **comentários** (resumos Graph) na aba **Páginas Facebook** de Contas Meta — ver secção `pages_read_engagement` abaixo e o screencast.
 
 ---
 
 ## `pages_read_engagement`
 
+### Uso no Kraken
+
+No ecrã **Contas Meta**, aba **Páginas Facebook**, o utilizador escolhe uma das Páginas listadas por `GET /me/accounts` e o servidor chama `GET /{page-id}/posts` com campos que incluem `reactions.summary(true)` e `comments.summary(true)` (`lib/meta/graph-page-posts.ts`, exposto por `GET /api/wizard/page-posts`). Só são aceites `pageId` que pertençam à lista de páginas do token (`pageIdInUserPages`). Os dados são mostrados apenas ao utilizador autenticado.
+
 ### Quando pedir
 
-Apenas se o app **ler** via API dados de envolvimento/métricas/comentários ao nível da Página que essa permissão cobre.
+O scope está pedido no OAuth porque o produto **lê** publicações da Página e contagens agregadas de engagement (reações e comentários) para visualização na própria app.
 
-### Texto sugerido (só se for verdade no produto)
+### Texto sugerido (formulário App Review — inglês comum)
 
-> We use `pages_read_engagement` to [descrever funcionalidade real, ex.: read Page engagement metrics for reports in …]. We only access Pages the user has authorized.
+> We use `pages_read_engagement` to show the authenticated user their recent Facebook Page posts and high-level engagement totals (reaction and comment counts from Graph API summaries) in our “Meta accounts” area, so they can review Page activity alongside ad setup. We only request Page IDs the user already manages via `/me/accounts`, and we do not sell Page data.
 
-Se ainda não houver implementação, o review pode falhar por uso não demonstrado — alinhar produto + OAuth + vídeo antes de submeter.
+Se o comportamento mudar, atualiza este documento e o vídeo de review para refletir chamadas reais.
 
 ---
 
@@ -176,7 +180,7 @@ Criar ou associar a conta na app (Supabase) ao iniciar sessão com Facebook.
 Recomendação: gravar em **inglês** ou com legendas EN; mostrar a app em modo aceite para review (muitas vezes **Live**).
 
 1. Abrir a app e iniciar **Facebook Login** com o diálogo de permissões visível (todos os scopes pedidos).
-2. **Contas Meta** — sincronizar / listar contas de anúncios.
+2. **Contas Meta** — sincronizar / listar contas de anúncios; na aba **Páginas Facebook**, seleccionar uma página e mostrar **publicações recentes** com reações e comentários (totais Graph).
 3. **Assistente (upload)** — escolher conta de anúncios, **Página**, e passos relevantes (público, pixel, etc., conforme UI).
 4. **Publicar** — ação que dispara a Marketing API; sucesso visível ou mensagem de erro clara; opcionalmente mostrar o resultado na Ads Manager de conta de teste.
 5. Se existir no produto: **reconectar** / **desligar** Meta ou link para definições de privacidade.
@@ -200,7 +204,7 @@ Completar no **Meta for Developers** o que o painel pedir para o produto e o tie
 | Item | Ação |
 |------|------|
 | `pages_show_list` + `pages_manage_ads` | Textos + vídeo mostrando lista de páginas e publicação com Página. |
-| `pages_read_engagement` + `ads_management` | Confirmar requisitos atuais da Meta; OAuth e vídeo alinhados ao uso real. |
+| `pages_read_engagement` + `ads_management` | OAuth inclui `pages_read_engagement`; vídeo mostra aba Páginas + `GET .../posts` na UI e alinha o texto EN acima. Confirmar requisitos actuais da Meta antes de submeter. |
 | `ads_read` | Texto alinhado a todas as leituras Graph reais. |
 | Screencast | OAuth completo + fluxo até publicação (ou passo máximo possível em teste). |
 | Privacidade | URL pública; consistente com armazenamento de tokens Meta. |

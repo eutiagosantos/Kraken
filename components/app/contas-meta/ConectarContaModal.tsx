@@ -333,6 +333,7 @@ export function ConectarContaModal({
                       <li>business_management ✓</li>
                       <li>pages_show_list ✓</li>
                       <li>pages_manage_ads ✓</li>
+                      <li>pages_read_engagement ✓</li>
                     </ul>
                   </div>
                   <div className="mt-8 flex flex-wrap justify-between gap-3 border-t border-dashboard-border pt-5">

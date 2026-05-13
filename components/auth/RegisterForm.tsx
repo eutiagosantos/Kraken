@@ -20,6 +20,7 @@ const META_SCOPES = [
   "business_management",
   "pages_show_list",
   "pages_manage_ads",
+  "pages_read_engagement",
 ].join(",");
 
 export function RegisterForm() {
