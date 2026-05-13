@@ -38,12 +38,16 @@ export function ContasHeader({
   comProblema,
   desconectadas,
   onConnect,
+  showStats = true,
+  description,
 }: {
   total: number;
   ativas: number;
   comProblema: number;
   desconectadas: number;
   onConnect: () => void;
+  showStats?: boolean;
+  description?: string;
 }) {
   return (
     <header className="mb-2">
@@ -53,7 +57,7 @@ export function ContasHeader({
             Contas Meta
           </h1>
           <p className="mt-1 text-sm text-neutral-gray">
-            Gerencie suas contas do Meta Ads conectadas à plataforma
+            {description ?? "Gerencie suas contas do Meta Ads conectadas à plataforma"}
           </p>
         </div>
         <Button type="button" variant="primary" className="shrink-0 self-start" onClick={onConnect}>
@@ -61,12 +65,14 @@ export function ContasHeader({
           Conectar Nova Conta
         </Button>
       </div>
-      <div className="mt-4 flex flex-wrap gap-3">
-        <StatPill label="Total" value={total} variant="neutral" />
-        <StatPill label="Ativas" value={ativas} variant="purple" />
-        <StatPill label="Com Problema" value={comProblema} variant="yellow" />
-        <StatPill label="Desconectadas" value={desconectadas} variant="red" />
-      </div>
+      {showStats ? (
+        <div className="mt-4 flex flex-wrap gap-3">
+          <StatPill label="Total" value={total} variant="neutral" />
+          <StatPill label="Ativas" value={ativas} variant="purple" />
+          <StatPill label="Com Problema" value={comProblema} variant="yellow" />
+          <StatPill label="Desconectadas" value={desconectadas} variant="red" />
+        </div>
+      ) : null}
     </header>
   );
 }
