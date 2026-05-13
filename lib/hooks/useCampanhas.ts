@@ -1,43 +1,36 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import useSWR from "swr";
 
 import type { Campanha } from "@/lib/mock-campanhas";
 
+import { swrJsonFetcher } from "@/lib/hooks/swr-json-fetcher";
+
+const SWR_DEDUP_MS = 30_000;
+
+function mapCampanhas(raw: Campanha[]): Campanha[] {
+  return raw.map((c) => ({
+    ...c,
+    createdAt: new Date(c.createdAt as unknown as string),
+    creatives: c.creatives.map((cr) => ({ ...cr })),
+    errors: c.errors?.map((e) => ({ ...e })),
+  }));
+}
+
 export function useCampanhas() {
-  const [campanhas, setCampanhas] = useState<Campanha[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data, error, isLoading, mutate } = useSWR<{ data?: Campanha[] }>(
+    "/api/campanhas",
+    swrJsonFetcher,
+    { dedupingInterval: SWR_DEDUP_MS }
+  );
 
-  const refetch = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/campanhas", { credentials: "include" });
-      const json = (await res.json()) as { data?: Campanha[]; error?: string };
-      if (!res.ok) {
-        throw new Error(json.error ?? "Falha ao carregar campanhas");
-      }
-      const raw = json.data ?? [];
-      setCampanhas(
-        raw.map((c) => ({
-          ...c,
-          createdAt: new Date(c.createdAt as unknown as string),
-          creatives: c.creatives.map((cr) => ({ ...cr })),
-          errors: c.errors?.map((e) => ({ ...e })),
-        }))
-      );
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Erro");
-      setCampanhas([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const campanhas = data?.data ? mapCampanhas(data.data) : [];
 
-  useEffect(() => {
-    void refetch();
-  }, [refetch]);
-
-  return { campanhas, setCampanhas, loading, error, refetch };
+  return {
+    campanhas,
+    setCampanhas: (next: Campanha[]) => void mutate({ data: next }, { revalidate: false }),
+    loading: isLoading,
+    error: error instanceof Error ? error.message : error ? "Erro" : null,
+    refetch: () => mutate(),
+  };
 }

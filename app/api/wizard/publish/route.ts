@@ -11,6 +11,7 @@ export const runtime = "nodejs";
 export const maxDuration = 300;
 
 import { getSessionUser } from "@/lib/api/session";
+import { invalidateUserDataShortCache } from "@/lib/api/user-data-short-cache";
 import { normalizeActId } from "@/lib/meta/graph-campaign-publish";
 import { fetchUserFacebookPages, pageIdInUserPages } from "@/lib/meta/graph-user-pages";
 import { getMetaGraphAccessToken } from "@/lib/meta/graph-token";
@@ -215,6 +216,7 @@ export async function POST(request: Request) {
       accounts: accountsOrdered,
       existingPublishJobId: parsed.data.publishOperationId,
     });
+    invalidateUserDataShortCache(user.id);
     const okCount = out.results.filter((r) => r.ok).length;
     const body = {
       publishId: out.publishId,

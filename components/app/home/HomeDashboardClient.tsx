@@ -1,14 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import useSWR from "swr";
 
-import type { MetricsChartPoint } from "@/lib/mock-data";
-import type { MockActiveUpload, MockActivity, MockCreativeLibraryItem, MockStat } from "@/lib/mock-data";
 import { ActivityFeed } from "@/components/app/home/ActivityFeed";
 import { CampaignProgress } from "@/components/app/home/CampaignProgress";
 import { CreativesSummary } from "@/components/app/home/CreativesSummary";
 import { MetricsChart } from "@/components/app/home/MetricsChart";
 import { StatsRow } from "@/components/app/home/StatsRow";
+import { swrJsonFetcher } from "@/lib/hooks/swr-json-fetcher";
+import type { MetricsChartPoint, MockActiveUpload, MockActivity, MockCreativeLibraryItem, MockStat } from "@/lib/mock-data";
 
 type Period = "7D" | "30D" | "90D";
 
@@ -20,47 +20,16 @@ type DashboardPayload = {
   metrics: Record<Period, MetricsChartPoint[]>;
 };
 
+const SWR_DEDUP_MS = 30_000;
+
 export function HomeDashboardClient() {
-  const [data, setData] = useState<DashboardPayload | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const { data, error, isLoading } = useSWR<DashboardPayload & { error?: string }>(
+    "/api/home/dashboard",
+    swrJsonFetcher,
+    { dedupingInterval: SWR_DEDUP_MS }
+  );
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch("/api/home/dashboard", { credentials: "include" });
-        const json = (await res.json()) as DashboardPayload & { error?: string };
-        if (!res.ok) {
-          throw new Error(json.error ?? "Falha ao carregar o painel");
-        }
-        if (!cancelled) {
-          setData({
-            stats: json.stats ?? [],
-            uploads: json.uploads ?? [],
-            activities: json.activities ?? [],
-            creatives: json.creatives ?? [],
-            metrics: json.metrics ?? ({} as Record<Period, MetricsChartPoint[]>),
-          });
-        }
-      } catch (e) {
-        if (!cancelled) {
-          setError(e instanceof Error ? e.message : "Erro");
-          setData({
-            stats: [],
-            uploads: [],
-            activities: [],
-            creatives: [],
-            metrics: {} as Record<Period, MetricsChartPoint[]>,
-          });
-        }
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  if (!data && !error) {
+  if (isLoading && !data) {
     return (
       <div className="mx-auto max-w-[1680px]">
         <p className="text-sm text-dashboard-muted">A carregar o painel…</p>
@@ -80,7 +49,7 @@ export function HomeDashboardClient() {
     <div className="mx-auto max-w-[1680px]">
       {error ? (
         <p className="mb-4 rounded-lg border border-semantic-yellow/40 bg-semantic-yellow-bg px-3 py-2 text-sm text-neutral-black">
-          {error}
+          {error instanceof Error ? error.message : "Erro"}
         </p>
       ) : null}
       <div className="flex flex-col gap-6 xl:grid xl:grid-cols-[1fr_minmax(280px,360px)] xl:items-start xl:gap-8">

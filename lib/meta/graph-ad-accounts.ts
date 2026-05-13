@@ -1,4 +1,5 @@
 import { META_GRAPH_ORIGIN } from "@/lib/meta/constants";
+import { metaTokenCacheFingerprint } from "@/lib/meta/token-cache-key";
 
 export type GraphAdAccount = {
   id: string;
@@ -11,7 +12,14 @@ type GraphListResponse<T> = {
   paging?: { next?: string };
 };
 
+const AD_ACCOUNTS_CACHE_TTL_MS = 5 * 60 * 1000;
+const adAccountsCache = new Map<string, { accounts: GraphAdAccount[]; expiresAt: number }>();
+
 export async function fetchGraphAdAccounts(accessToken: string): Promise<GraphAdAccount[]> {
+  const cacheKey = metaTokenCacheFingerprint(accessToken);
+  const hit = adAccountsCache.get(cacheKey);
+  if (hit && hit.expiresAt > Date.now()) return hit.accounts;
+
   const collected: GraphAdAccount[] = [];
   let nextUrl: string | null = null;
 
@@ -34,6 +42,7 @@ export async function fetchGraphAdAccounts(accessToken: string): Promise<GraphAd
     nextUrl = json.paging?.next ?? null;
   }
 
+  adAccountsCache.set(cacheKey, { accounts: collected, expiresAt: Date.now() + AD_ACCOUNTS_CACHE_TTL_MS });
   return collected;
 }
 

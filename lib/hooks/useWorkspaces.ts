@@ -1,37 +1,24 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import useSWR from "swr";
 
 import type { MockWorkspace } from "@/lib/mock-data";
 
+import { swrJsonFetcher } from "@/lib/hooks/swr-json-fetcher";
+
+const SWR_DEDUP_MS = 30_000;
+
 export function useWorkspaces() {
-  const [workspaces, setWorkspaces] = useState<MockWorkspace[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data, error, isLoading, mutate } = useSWR<{ data?: MockWorkspace[] }>(
+    "/api/workspaces",
+    swrJsonFetcher,
+    { dedupingInterval: SWR_DEDUP_MS }
+  );
 
-  const refetch = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/workspaces", { credentials: "include", cache: "no-store" });
-      const json = (await res.json()) as { data?: MockWorkspace[]; error?: string };
-      if (res.ok && json.data) {
-        setWorkspaces(json.data);
-      } else {
-        setWorkspaces([]);
-        setError(json.error ?? `Request failed with status ${res.status}`);
-      }
-    } catch {
-      setWorkspaces([]);
-      setError("Failed to fetch workspaces.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void refetch();
-  }, [refetch]);
-
-  return { workspaces, loading, error, refetch };
+  return {
+    workspaces: data?.data ?? [],
+    loading: isLoading,
+    error: error instanceof Error ? error.message : error ? "Failed to fetch workspaces." : null,
+    refetch: () => mutate(),
+  };
 }

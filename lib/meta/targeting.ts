@@ -1,3 +1,4 @@
+import { redisGetJson, redisSetJson } from "@/lib/cache/redis-json-cache";
 import { getFromCache, setInCache } from "@/lib/meta/cache";
 import type { InterestOption, LocationOption, MetaLocationType } from "@/lib/meta/types";
 
@@ -6,6 +7,8 @@ const GRAPH_URL = `https://graph.facebook.com/${GRAPH_VERSION}`;
 const DEFAULT_LOCALE = "pt_BR";
 const LOCATIONS_CACHE_TTL_MS = 1000 * 60 * 30;
 const INTERESTS_CACHE_TTL_MS = 1000 * 60 * 30;
+const LOCATIONS_CACHE_TTL_SEC = Math.floor(LOCATIONS_CACHE_TTL_MS / 1000);
+const INTERESTS_CACHE_TTL_SEC = Math.floor(INTERESTS_CACHE_TTL_MS / 1000);
 const SEARCH_LIMIT = 20;
 
 type MetaSearchResponse<T> = {
@@ -73,6 +76,12 @@ export async function searchTargetingLocations(query: string): Promise<LocationO
   const cached = getFromCache<LocationOption[]>(cacheKey);
   if (cached) return cached;
 
+  const fromRedis = await redisGetJson<LocationOption[]>(cacheKey);
+  if (fromRedis != null) {
+    setInCache(cacheKey, fromRedis, LOCATIONS_CACHE_TTL_MS);
+    return fromRedis;
+  }
+
   const token = getSystemUserToken();
   const url = new URL(`${GRAPH_URL}/search`);
   url.searchParams.set("type", "adgeolocation");
@@ -98,6 +107,7 @@ export async function searchTargetingLocations(query: string): Promise<LocationO
     }) ?? [];
 
   setInCache(cacheKey, result, LOCATIONS_CACHE_TTL_MS);
+  void redisSetJson(cacheKey, result, LOCATIONS_CACHE_TTL_SEC);
   return result;
 }
 
@@ -106,6 +116,12 @@ export async function searchTargetingInterests(query: string): Promise<InterestO
   const cacheKey = `meta:interests:${normalizedQuery}`;
   const cached = getFromCache<InterestOption[]>(cacheKey);
   if (cached) return cached;
+
+  const fromRedis = await redisGetJson<InterestOption[]>(cacheKey);
+  if (fromRedis != null) {
+    setInCache(cacheKey, fromRedis, INTERESTS_CACHE_TTL_MS);
+    return fromRedis;
+  }
 
   const token = getSystemUserToken();
   const url = new URL(`${GRAPH_URL}/search`);
@@ -129,5 +145,6 @@ export async function searchTargetingInterests(query: string): Promise<InterestO
     }) ?? [];
 
   setInCache(cacheKey, result, INTERESTS_CACHE_TTL_MS);
+  void redisSetJson(cacheKey, result, INTERESTS_CACHE_TTL_SEC);
   return result;
 }

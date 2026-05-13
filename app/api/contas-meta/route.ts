@@ -1,9 +1,15 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { devLogRouteMs } from "@/lib/api/dev-route-timing";
 import { getSessionUser } from "@/lib/api/session";
-import { syncMetaAdAccountsForUser } from "@/lib/meta/sync-ad-accounts";
+import {
+  getCachedContasMetaRows,
+  invalidateUserDataShortCache,
+  setCachedContasMetaRows,
+} from "@/lib/api/user-data-short-cache";
 import { rowToContaMeta } from "@/lib/contas-meta-map";
+import { syncMetaAdAccountsForUser } from "@/lib/meta/sync-ad-accounts";
 
 const postBodySchema = z.union([
   z.object({ action: z.literal("sync") }),
@@ -11,22 +17,30 @@ const postBodySchema = z.union([
 ]);
 
 export async function GET() {
+  const startedAt = Date.now();
   const { supabase, user } = await getSessionUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
-  const { data, error } = await supabase
-    .from("meta_ad_accounts")
-    .select("*")
-    .eq("user_id", user.id)
-    .order("connected_at", { ascending: false });
+  let rows = getCachedContasMetaRows(user.id);
+  if (!rows) {
+    const { data, error } = await supabase
+      .from("meta_ad_accounts")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("connected_at", { ascending: false });
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) {
+      devLogRouteMs("GET /api/contas-meta (error)", startedAt);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    rows = data ?? [];
+    setCachedContasMetaRows(user.id, rows);
   }
 
-  return NextResponse.json({ data: (data ?? []).map(rowToContaMeta) });
+  devLogRouteMs("GET /api/contas-meta", startedAt);
+  return NextResponse.json({ data: rows.map(rowToContaMeta) });
 }
 
 export async function POST(request: Request) {
@@ -65,6 +79,7 @@ export async function POST(request: Request) {
     if (result.error) {
       return NextResponse.json({ error: result.error, synced: result.synced }, { status: 502 });
     }
+    invalidateUserDataShortCache(user.id);
     return NextResponse.json({ ok: true, synced: result.synced });
   }
 
@@ -86,6 +101,7 @@ export async function POST(request: Request) {
     if (result.error) {
       return NextResponse.json({ error: result.error, synced: result.synced }, { status: 502 });
     }
+    invalidateUserDataShortCache(user.id);
     return NextResponse.json({ ok: true, synced: result.synced });
   }
 

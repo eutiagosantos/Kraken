@@ -1,4 +1,5 @@
 import { META_GRAPH_ORIGIN } from "@/lib/meta/constants";
+import { metaTokenCacheFingerprint } from "@/lib/meta/token-cache-key";
 
 export type UserFacebookPage = {
   id: string;
@@ -43,7 +44,8 @@ const pageCache = new Map<string, { pages: UserFacebookPage[]; expiresAt: number
  * Results are cached in-process for 10 minutes to avoid a Meta API round-trip on every publish.
  */
 export async function fetchUserFacebookPages(accessToken: string): Promise<UserFacebookPage[]> {
-  const cached = pageCache.get(accessToken);
+  const cacheKey = metaTokenCacheFingerprint(accessToken);
+  const cached = pageCache.get(cacheKey);
   if (cached && cached.expiresAt > Date.now()) return cached.pages;
   const collected: UserFacebookPage[] = [];
   const first = new URL(`${META_GRAPH_ORIGIN}/me/accounts`);
@@ -66,6 +68,6 @@ export async function fetchUserFacebookPages(accessToken: string): Promise<UserF
     nextUrl = json.paging?.next ?? null;
   }
 
-  pageCache.set(accessToken, { pages: collected, expiresAt: Date.now() + PAGE_CACHE_TTL_MS });
+  pageCache.set(cacheKey, { pages: collected, expiresAt: Date.now() + PAGE_CACHE_TTL_MS });
   return collected;
 }

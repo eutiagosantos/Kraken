@@ -2,9 +2,14 @@ import { format, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { NextResponse } from "next/server";
 
+import { devLogRouteMs } from "@/lib/api/dev-route-timing";
+import { getSessionUser } from "@/lib/api/session";
+import {
+  getCachedHomeDashboardRows,
+  setCachedHomeDashboardRows,
+} from "@/lib/api/user-data-short-cache";
 import type { MetricsChartPoint } from "@/lib/mock-data";
 import type { MockActiveUpload, MockActivity, MockCreativeLibraryItem, MockStat } from "@/lib/mock-data";
-import { getSessionUser } from "@/lib/api/session";
 
 function emptyWeek(): MetricsChartPoint[] {
   return ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"].map((name) => ({
@@ -32,29 +37,42 @@ function emptyMetrics() {
 }
 
 export async function GET() {
+  const startedAt = Date.now();
   const { supabase, user } = await getSessionUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
-  const [kpisRes, uploadsRes, activitiesRes, creativesRes] = await Promise.all([
-    supabase.from("home_kpis").select("*").eq("user_id", user.id).order("label"),
-    supabase.from("upload_jobs").select("*").eq("user_id", user.id).order("started_at", { ascending: false }).limit(12),
-    supabase.from("activity_events").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(25),
-    supabase.from("creative_library_items").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(12),
-  ]);
+  let rows = getCachedHomeDashboardRows(user.id);
+  if (!rows) {
+    const [kpisRes, uploadsRes, activitiesRes, creativesRes] = await Promise.all([
+      supabase.from("home_kpis").select("*").eq("user_id", user.id).order("label"),
+      supabase.from("upload_jobs").select("*").eq("user_id", user.id).order("started_at", { ascending: false }).limit(12),
+      supabase.from("activity_events").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(25),
+      supabase.from("creative_library_items").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(12),
+    ]);
 
-  if (kpisRes.error || uploadsRes.error || activitiesRes.error || creativesRes.error) {
-    const msg =
-      kpisRes.error?.message ||
-      uploadsRes.error?.message ||
-      activitiesRes.error?.message ||
-      creativesRes.error?.message ||
-      "query_failed";
-    return NextResponse.json({ error: msg }, { status: 500 });
+    if (kpisRes.error || uploadsRes.error || activitiesRes.error || creativesRes.error) {
+      const msg =
+        kpisRes.error?.message ||
+        uploadsRes.error?.message ||
+        activitiesRes.error?.message ||
+        creativesRes.error?.message ||
+        "query_failed";
+      devLogRouteMs("GET /api/home/dashboard (error)", startedAt);
+      return NextResponse.json({ error: msg }, { status: 500 });
+    }
+
+    rows = {
+      kpis: kpisRes.data ?? [],
+      uploads: uploadsRes.data ?? [],
+      activities: activitiesRes.data ?? [],
+      creatives: creativesRes.data ?? [],
+    };
+    setCachedHomeDashboardRows(user.id, rows);
   }
 
-  const stats: MockStat[] = (kpisRes.data ?? []).map((k) => ({
+  const stats: MockStat[] = rows.kpis.map((k) => ({
     label: k.label,
     value: k.value,
     delta: k.delta ?? "—",
@@ -64,7 +82,7 @@ export async function GET() {
     iconColor: k.icon_color || "#7132f5",
   }));
 
-  const uploads: MockActiveUpload[] = (uploadsRes.data ?? []).map((u) => ({
+  const uploads: MockActiveUpload[] = rows.uploads.map((u) => ({
     id: u.id,
     account: u.account_name,
     total: u.total,
@@ -73,7 +91,7 @@ export async function GET() {
     startedAt: format(new Date(u.started_at), "HH:mm", { locale: ptBR }),
   }));
 
-  const activities: MockActivity[] = (activitiesRes.data ?? []).map((a) => ({
+  const activities: MockActivity[] = rows.activities.map((a) => ({
     id: a.id,
     type: a.type as MockActivity["type"],
     message: a.message,
@@ -81,7 +99,7 @@ export async function GET() {
     time: formatDistanceToNow(new Date(a.created_at), { addSuffix: true, locale: ptBR }),
   }));
 
-  const creatives: MockCreativeLibraryItem[] = (creativesRes.data ?? []).map((c) => ({
+  const creatives: MockCreativeLibraryItem[] = rows.creatives.map((c) => ({
     id: c.id,
     name: c.name,
     format: c.format,
@@ -89,6 +107,7 @@ export async function GET() {
     campaignsCount: c.campaigns_count,
   }));
 
+  devLogRouteMs("GET /api/home/dashboard", startedAt);
   return NextResponse.json({
     stats,
     uploads,
