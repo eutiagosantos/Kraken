@@ -119,6 +119,23 @@ function buildUploadJobErrorDetails(results: PublishUnitResult[], warnings: stri
   } as Json;
 }
 
+/** Meta Ad `name` (wizard «Nome no Meta» = `creative.name`); suffix when several ads share one creative per flow. */
+function resolveMetaAdName(
+  creative: { name: string },
+  adSetIndex: number,
+  adIndexInSet: number,
+  adsPerAdset: number
+): string {
+  const trimmed = creative.name.trim();
+  const base = trimmed.length > 0 ? trimmed : "Anúncio";
+  if (adsPerAdset <= 1) {
+    return base.slice(0, 240);
+  }
+  const suffix = ` · ${adSetIndex + 1}-${adIndexInSet + 1}`;
+  const room = Math.max(0, 240 - suffix.length);
+  return `${base.slice(0, room)}${suffix}`.slice(0, 240);
+}
+
 function graphErrorMessage(e: unknown): string {
   if (e instanceof GraphApiError && isMetaAppDevelopmentModeError(e)) {
     return humanizeMetaAppDevelopmentModeError(e);
@@ -578,7 +595,7 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
           const ad = await graphCreateAd({
             actId: unit.actId,
             accessToken: ctx.accessToken,
-            name: `Anúncio ${si + 1}-1`.slice(0, 240),
+            name: resolveMetaAdName(creative, si, 0, counts.adsPerAdset),
             adSetId: adSetIds[si]!,
             creativeId: adCreative.id,
             status: ctx.payload.status,
@@ -750,7 +767,7 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
           const ad = await graphCreateAd({
             actId: unit.actId,
             accessToken: ctx.accessToken,
-            name: `Anúncio ${si + 1}-${ai + 1}`.slice(0, 240),
+            name: resolveMetaAdName(creative, si, ai, counts.adsPerAdset),
             adSetId: adSetIds[si]!,
             creativeId: adCreative.id,
             status: ctx.payload.status,
