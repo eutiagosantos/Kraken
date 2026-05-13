@@ -129,6 +129,48 @@ describe("wizardPublishPayloadSchema", () => {
     expect(p.campaignSchedule.openEndedFlight).toBe(false);
   });
 
+  it("accepts https destinationUrl", () => {
+    const p = wizardPublishPayloadSchema.parse({
+      ...basePayload,
+      destinationUrl: "https://landing.example/path",
+    });
+    expect(p.destinationUrl).toBe("https://landing.example/path");
+  });
+
+  it("rejects http destinationUrl", () => {
+    const res = wizardPublishPayloadSchema.safeParse({
+      ...basePayload,
+      destinationUrl: "http://insecure.example/",
+    });
+    expect(res.success).toBe(false);
+  });
+
+  it("rejects creative name longer than 256", () => {
+    const res = wizardPublishPayloadSchema.safeParse({
+      ...basePayload,
+      creatives: [{ id: "c1", name: "x".repeat(257), type: "image" }],
+    });
+    expect(res.success).toBe(false);
+  });
+
+  it("rejects adSetNames when length mismatches structure ad set count", () => {
+    const res = wizardPublishPayloadSchema.safeParse({
+      ...basePayload,
+      structure: "1-3-5",
+      adSetNames: ["A", "B"],
+    });
+    expect(res.success).toBe(false);
+  });
+
+  it("accepts adSetNames matching structure ad set count", () => {
+    const p = wizardPublishPayloadSchema.parse({
+      ...basePayload,
+      structure: "1-3-5",
+      adSetNames: ["Alpha", "Beta", "Gamma"],
+    });
+    expect(p.adSetNames).toEqual(["Alpha", "Beta", "Gamma"]);
+  });
+
   it("rejects custom flight with daily budget", () => {
     const res = wizardPublishPayloadSchema.safeParse({
       ...basePayload,

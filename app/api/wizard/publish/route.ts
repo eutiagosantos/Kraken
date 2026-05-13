@@ -132,7 +132,10 @@ export async function POST(request: Request) {
       );
     }
 
-    const adLinkUrl = process.env.META_AD_LINK_URL?.trim() || "https://www.facebook.com/business";
+    const adLinkUrl =
+      parsed.data.destinationUrl?.trim() ||
+      process.env.META_AD_LINK_URL?.trim() ||
+      "https://www.facebook.com/business";
 
     const tokenRes = await getMetaGraphAccessToken(supabase, user.id);
     if ("error" in tokenRes) {

@@ -22,7 +22,7 @@ interface Step1CreativesProps {
   onToggleAccount: (id: string) => void;
   onAddCreativeFiles: (files: File[]) => void;
   onRemoveCreative: (id: string) => void;
-  onUpdateCreative: (id: string, patch: Partial<Pick<Creative, "primaryText">>) => void;
+  onUpdateCreative: (id: string, patch: Partial<Pick<Creative, "primaryText" | "name">>) => void;
   onSelectAllAccounts: () => void;
   onNext: () => void;
 }

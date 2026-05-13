@@ -153,8 +153,20 @@ export function UploadWizard() {
     if (geoErr) {
       parts.push(geoErr);
     }
+    const dest = wizard.destinationUrl.trim();
+    if (!dest) {
+      parts.push("Indica a URL https do site (Saiba mais) no passo 2.");
+    } else {
+      try {
+        if (new URL(dest).protocol !== "https:") {
+          parts.push("A URL do site deve começar por https:// (passo 2).");
+        }
+      } catch {
+        parts.push("URL do site inválida. Corrige no passo 2.");
+      }
+    }
     return parts.length > 0 ? parts.join(" ") : null;
-  }, [wizard.pageId, wizard.publico]);
+  }, [wizard.pageId, wizard.publico, wizard.destinationUrl]);
 
   const addCreativeFiles = (files: File[]) => {
     files.forEach((file) => {
@@ -284,6 +296,10 @@ export function UploadWizard() {
               onSetCustomStructure={wizard.setCustomStructure}
               onSetNomenclatureTokens={wizard.setNomenclatureTokens}
               onSetNomenclaturePreview={wizard.setNomenclaturePreview}
+              destinationUrl={wizard.destinationUrl}
+              onSetDestinationUrl={wizard.setDestinationUrl}
+              adSetNames={wizard.adSetNames}
+              onSetAdSetNameAt={wizard.setAdSetNameAt}
               onPrev={() => wizard.setStep(1)}
               onNext={() => wizard.setStep(3)}
             />

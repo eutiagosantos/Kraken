@@ -310,10 +310,11 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
             billing_event: effectiveBillingEvent,
             objective: ctx.payload.objective,
           });
+          const adsetNameRaw = ctx.payload.adSetNames?.[si]?.trim();
           const adset = await graphCreateAdSet({
             actId,
             accessToken: ctx.accessToken,
-            name: `Conjunto ${si + 1}`.slice(0, 240),
+            name: (adsetNameRaw || `Conjunto ${si + 1}`).slice(0, 256),
             campaignId: campaign.id,
             targeting: workingTargeting,
             optimizationGoal: effectiveOptimizationGoal,

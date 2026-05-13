@@ -43,7 +43,7 @@ const publicoSchema = z.object({
 
 const creativeMetaSchema = z.object({
   id: z.string(),
-  name: z.string(),
+  name: z.string().min(1).max(256),
   type: z.enum(["image", "video"]),
   primaryText: z.string().max(2000).optional(),
 });
@@ -89,6 +89,10 @@ export const wizardPublishPayloadSchema = z
     campaignSchedule: campaignScheduleSchema.default(() => defaultCampaignSchedule()),
     /** When the derived `optimization_goal` allows multiple billing modes (ex. LINK_CLICKS vs IMPRESSIONS). */
     adSetBillingEvent: wizardAdSetBillingEventSchema.optional(),
+    /** Landing URL for «Saiba mais» (link_data / video_data CTA). Prefer https. */
+    destinationUrl: z.string().max(2048).optional(),
+    /** One label per ad set (same order as Meta ad sets). Omit for defaults «Conjunto 1»… */
+    adSetNames: z.array(z.string().min(1).max(256)).optional(),
   })
   .refine((d) => d.creativeStoragePaths.length === d.creatives.length, {
     message: "creativeStoragePaths deve ter uma entrada por criativo.",
@@ -236,6 +240,35 @@ export const wizardPublishPayloadSchema = z
           code: z.ZodIssueCode.custom,
           message: "adSetBillingEvent não é válido para o optimization_goal deste objetivo.",
           path: ["adSetBillingEvent"],
+        });
+      }
+    }
+    const dest = d.destinationUrl?.trim();
+    if (dest) {
+      try {
+        const u = new URL(dest);
+        if (u.protocol !== "https:") {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "destinationUrl deve usar https.",
+            path: ["destinationUrl"],
+          });
+        }
+      } catch {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "destinationUrl inválida.",
+          path: ["destinationUrl"],
+        });
+      }
+    }
+    if (d.adSetNames != null) {
+      const expected = adsetAndAdsCountsForWizardShape(d.structure, d.customStructure).adsets;
+      if (d.adSetNames.length !== expected) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `adSetNames deve ter ${expected} entradas (uma por conjunto).`,
+          path: ["adSetNames"],
         });
       }
     }

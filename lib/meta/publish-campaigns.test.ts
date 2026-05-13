@@ -164,6 +164,82 @@ describe("runWizardPublish", () => {
     expect(imageCreatives?.[0]?.thumb).toBe("https://cdn.example/preview.png");
   });
 
+  it("sends ad set name from payload adSetNames and CTA link from adLinkUrl", async () => {
+    const adsetBodies: Record<string, unknown>[] = [];
+    let adCreativeBody: Record<string, unknown> | null = null;
+
+    const fetchImpl: typeof fetch = vi.fn(async (input, init) => {
+      const url = requestUrl(input);
+      if (url.includes("/adimages")) {
+        return new Response(
+          JSON.stringify({ images: { f: { hash: "img_hash", url: "https://cdn.example/preview.png" } } }),
+          { status: 200 }
+        );
+      }
+      if (url.includes("/campaigns")) {
+        return new Response(JSON.stringify({ id: "meta-camp-1" }), { status: 200 });
+      }
+      if (url.includes("/adcreatives") && init?.method === "POST") {
+        adCreativeBody = JSON.parse(String(init.body)) as Record<string, unknown>;
+        return new Response(JSON.stringify({ id: "meta-cr-1" }), { status: 200 });
+      }
+      if (url.includes("/adsets") && init?.method === "POST") {
+        adsetBodies.push(JSON.parse(String(init.body)) as Record<string, unknown>);
+        return new Response(JSON.stringify({ id: "meta-as-1" }), { status: 200 });
+      }
+      if (url.includes("/ads") && !url.includes("adset")) {
+        return new Response(JSON.stringify({ id: "meta-ad-1" }), { status: 200 });
+      }
+      return new Response("unexpected", { status: 500 });
+    });
+
+    const payload = wizardPublishPayloadSchema.parse({
+      selectedAccountIds: ["111"],
+      creatives: [{ id: "c1", name: "Nome criativo meta", type: "image" }],
+      publishOperationId: PUBLISH_JOB_ID,
+      creativeStoragePaths: [
+        `00000000-0000-4000-8000-000000000001/${PUBLISH_JOB_ID}/creative_0.png`,
+      ],
+      campaignType: "CBO",
+      budget: 15,
+      budgetPeriod: "daily",
+      bidStrategy: "LOWEST_COST",
+      objective: "OUTCOME_TRAFFIC",
+      pixelId: "",
+      status: "PAUSED",
+      structure: "1-1-1",
+      customStructure: { campaigns: 1, adsets: 1, ads: 1 },
+      nomenclaturePreview: "N",
+      publico: publicoFixture,
+      adSetNames: ["Meu conjunto"],
+      destinationUrl: "https://payload-url.example/",
+    });
+
+    const { supabase } = createSupabaseMock();
+    await runWizardPublish({
+      supabase,
+      userId: "00000000-0000-4000-8000-000000000001",
+      accessToken: "token",
+      payload,
+      creativeFilesByIndex: new Map([[0, { buffer: Buffer.from([1, 2, 3]), mimeType: "image/png" }]]),
+      pageId: "1234567890",
+      adLinkUrl: "https://landing.example/special",
+      accounts: [{ meta_account_id: "act_111", name: "Conta A" }],
+      existingPublishJobId: PUBLISH_JOB_ID,
+      fetchImpl,
+    });
+
+    expect(adsetBodies).toHaveLength(1);
+    expect(adsetBodies[0]?.name).toBe("Meu conjunto");
+    expect(adCreativeBody).not.toBeNull();
+    const oss = (adCreativeBody as { object_story_spec?: Record<string, unknown> }).object_story_spec;
+    const linkData = oss?.link_data as Record<string, unknown> | undefined;
+    const cta = linkData?.call_to_action as { type?: string; value?: { link?: string } } | undefined;
+    expect(cta?.type).toBe("LEARN_MORE");
+    expect(cta?.value?.link).toBe("https://landing.example/special");
+    expect(linkData?.link).toBe("https://landing.example/special");
+  });
+
   it("CBO LOWEST_COST: sends bid_strategy on campaign, omits bid fields on ad set", async () => {
     const campaignBodies: Record<string, unknown>[] = [];
     const adsetBodies: Record<string, unknown>[] = [];

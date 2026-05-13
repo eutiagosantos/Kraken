@@ -24,5 +24,7 @@ export function getWizardPublishSliceFromStore(): WizardPublishStateSlice {
     publico: w.publico,
     campaignSchedule: w.campaignSchedule,
     adSetBillingEvent: w.adSetBillingEvent,
+    destinationUrl: w.destinationUrl,
+    adSetNames: w.adSetNames,
   };
 }

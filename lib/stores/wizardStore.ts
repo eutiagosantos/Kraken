@@ -67,6 +67,28 @@ export type BudgetPeriod = "daily" | "lifetime";
 export type WizardStatus = "ACTIVE" | "PAUSED";
 export type Structure = "1-1-1" | "1-3-5" | "1-50-1" | "custom";
 
+const PRESET_ADSET_COUNT: Record<Exclude<Structure, "custom">, number> = {
+  "1-1-1": 1,
+  "1-3-5": 3,
+  "1-50-1": 50,
+};
+
+function adsetCountForStructure(structure: Structure, customStructure: { adsets: number }): number {
+  if (structure === "custom") return customStructure.adsets;
+  return PRESET_ADSET_COUNT[structure];
+}
+
+/** Keep one name per ad set; new slots get «Conjunto n»; shrinking drops extras. */
+export function resizeAdSetNames(prev: string[], targetCount: number): string[] {
+  const out = prev.slice(0, targetCount).map((s, i) => (s.trim() ? s.trim() : `Conjunto ${i + 1}`));
+  while (out.length < targetCount) {
+    out.push(`Conjunto ${out.length + 1}`);
+  }
+  return out;
+}
+
+const defaultDestinationUrl = "https://www.facebook.com/business";
+
 const defaultPublico: Publico = {
   id: "default",
   name: "Público padrão",
@@ -102,6 +124,10 @@ const initialState = {
   publico: defaultPublico,
   /** Facebook Page ID for ad creatives — chosen in step 1 after accounts are selected. */
   pageId: null as string | null,
+  /** https URL for Meta «Saiba mais» / link_data. */
+  destinationUrl: defaultDestinationUrl,
+  /** Labels for each ad set (length = adset count for current structure). */
+  adSetNames: ["Conjunto 1"] as string[],
   campaignSchedule: defaultCampaignSchedule(),
   /** When `"wizard"`, the fila page should run `publishCampaigns` once (consumed synchronously). */
   publishJobTrigger: null as null | "wizard",
@@ -119,7 +145,7 @@ export type WizardQueuePublish = (typeof initialState)["queuePublish"];
 type WizardState = typeof initialState & {
   setStep: (step: 1 | 2 | 3) => void;
   addCreative: (creative: CreativeDraft) => void;
-  updateCreative: (id: string, patch: Partial<Pick<Creative, "primaryText">>) => void;
+  updateCreative: (id: string, patch: Partial<Pick<Creative, "primaryText" | "name">>) => void;
   removeCreative: (id: string) => void;
   toggleAccount: (id: string) => void;
   setSelectedAccountIds: (ids: string[]) => void;
@@ -139,6 +165,8 @@ type WizardState = typeof initialState & {
   setNomenclaturePreview: (value: string) => void;
   setPublico: (publico: Partial<Publico>) => void;
   setPageId: (pageId: string | null) => void;
+  setDestinationUrl: (value: string) => void;
+  setAdSetNameAt: (index: number, name: string) => void;
   setCampaignSchedule: (patch: Partial<CampaignSchedule>) => void;
   resetCreatives: () => void;
   reset: () => void;
@@ -195,11 +223,23 @@ export const useWizardStore = create<WizardState>()((set, get) => ({
     })),
   setAdSetBillingEvent: (adSetBillingEvent) => set({ adSetBillingEvent }),
   setStatus: (status) => set({ status }),
-  setStructure: (structure) => set({ structure }),
+  setStructure: (structure) =>
+    set((s) => {
+      const count = adsetCountForStructure(structure, s.customStructure);
+      return {
+        structure,
+        adSetNames: resizeAdSetNames(s.adSetNames, count),
+      };
+    }),
   setCustomStructure: (value) =>
-    set((s) => ({
-      customStructure: { ...s.customStructure, ...value },
-    })),
+    set((s) => {
+      const customStructure = { ...s.customStructure, ...value };
+      const count = adsetCountForStructure(s.structure, customStructure);
+      return {
+        customStructure,
+        adSetNames: resizeAdSetNames(s.adSetNames, count),
+      };
+    }),
   setNomenclatureTokens: (nomenclatureTokens) => set({ nomenclatureTokens }),
   setNomenclaturePreview: (nomenclaturePreview) => set({ nomenclaturePreview }),
   setPublico: (partial) =>
@@ -207,6 +247,14 @@ export const useWizardStore = create<WizardState>()((set, get) => ({
       publico: { ...s.publico, ...partial },
     })),
   setPageId: (pageId) => set({ pageId }),
+  setDestinationUrl: (destinationUrl) => set({ destinationUrl }),
+  setAdSetNameAt: (index, name) =>
+    set((s) => {
+      if (index < 0 || index >= s.adSetNames.length) return s;
+      const next = [...s.adSetNames];
+      next[index] = name;
+      return { adSetNames: next };
+    }),
   setCampaignSchedule: (patch) =>
     set((s) => ({
       campaignSchedule: {
@@ -225,6 +273,8 @@ export const useWizardStore = create<WizardState>()((set, get) => ({
       s.creatives.forEach((creative) => URL.revokeObjectURL(creative.preview));
       return {
         ...initialState,
+        destinationUrl: defaultDestinationUrl,
+        adSetNames: resizeAdSetNames([], 1),
         adSetBillingEvent: initialAdSetBillingChoice("OUTCOME_SALES", ""),
         queuePublish: { ...initialQueuePublish },
       };

@@ -12,6 +12,7 @@ import type {
   BudgetPeriod,
   BidStrategy,
 } from "@/lib/stores/wizardStore";
+import { resizeAdSetNames } from "@/lib/stores/wizardStore";
 
 /** Wizard fields required to build the publish API payload (no store actions). */
 export type WizardPublishStateSlice = {
@@ -33,6 +34,8 @@ export type WizardPublishStateSlice = {
   publico: Publico;
   campaignSchedule: CampaignSchedule;
   adSetBillingEvent: WizardAdSetBillingEvent | null;
+  destinationUrl: string;
+  adSetNames: string[];
 };
 
 export function buildWizardPublishPayload(wizard: WizardPublishStateSlice): {
@@ -56,13 +59,30 @@ export function buildWizardPublishPayload(wizard: WizardPublishStateSlice): {
     );
   }
 
+  const destinationUrl = wizard.destinationUrl.trim();
+  if (!destinationUrl) {
+    throw new Error("Indica a URL do site (https) para o botão «Saiba mais» no passo 2.");
+  }
+  try {
+    const u = new URL(destinationUrl);
+    if (u.protocol !== "https:") {
+      throw new Error("A URL do site deve começar por https://");
+    }
+  } catch (e) {
+    if (e instanceof Error && e.message.startsWith("A URL")) throw e;
+    throw new Error("URL do site inválida. Usa um endereço https completo (ex.: https://example.com).");
+  }
+
+  const adSetNamesSynced = resizeAdSetNames(wizard.adSetNames, adsets);
+
   const snapshot: WizardPublishPayloadInput = {
     selectedAccountIds: wizard.selectedAccountIds,
     creatives: wizard.creatives.map((c) => {
       const trimmed = c.primaryText.trim();
+      const displayName = (c.name.trim() || c.file.name).slice(0, 256);
       return {
         id: c.id,
-        name: c.name,
+        name: displayName,
         type: c.type,
         ...(trimmed ? { primaryText: trimmed } : {}),
       };
@@ -83,6 +103,8 @@ export function buildWizardPublishPayload(wizard: WizardPublishStateSlice): {
     campaignSchedule: { ...wizard.campaignSchedule },
     antiSpy: true,
     pageId,
+    destinationUrl,
+    adSetNames: adSetNamesSynced,
     ...(wizard.adSetBillingEvent != null ? { adSetBillingEvent: wizard.adSetBillingEvent } : {}),
   };
 

@@ -64,6 +64,10 @@ interface Step2ConfigProps {
   onSetCustomStructure: (value: Partial<{ campaigns: number; adsets: number; ads: number }>) => void;
   onSetNomenclatureTokens: (tokens: NomenclatureToken[]) => void;
   onSetNomenclaturePreview: (value: string) => void;
+  destinationUrl: string;
+  onSetDestinationUrl: (value: string) => void;
+  adSetNames: string[];
+  onSetAdSetNameAt: (index: number, name: string) => void;
   onPrev: () => void;
   onNext: () => void;
 }
@@ -123,6 +127,10 @@ export function Step2Config(props: Step2ConfigProps) {
     onSetCustomStructure,
     onSetNomenclatureTokens,
     onSetNomenclaturePreview,
+    destinationUrl,
+    onSetDestinationUrl,
+    adSetNames,
+    onSetAdSetNameAt,
     onPrev,
     onNext,
   } = props;
@@ -210,6 +218,42 @@ export function Step2Config(props: Step2ConfigProps) {
           campaignSchedule={campaignSchedule}
           onSetCampaignSchedule={onSetCampaignSchedule}
         />
+
+        <section className="space-y-4 rounded-xl border border-gray-200 bg-gray-50 p-4">
+          <div>
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-500">URL do site (Saiba mais)</h4>
+            <p className="mt-1 text-xs text-gray-600">Endereço https para o botão «Saiba mais» no anúncio (Marketing API: link + CTA).</p>
+            <input
+              type="url"
+              inputMode="url"
+              autoComplete="url"
+              value={destinationUrl}
+              onChange={(e) => onSetDestinationUrl(e.target.value.slice(0, 2048))}
+              className="mt-2 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900"
+              placeholder="https://teusite.com/pagina"
+            />
+          </div>
+          <div>
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-500">Nomes dos conjuntos no Meta</h4>
+            <p className="mt-1 text-xs text-gray-600">
+              Um rótulo por conjunto ({adSetNames.length} com a estrutura actual). Aparecem no Gestor de Anúncios.
+            </p>
+            <div className="mt-2 flex flex-col gap-2">
+              {adSetNames.map((label, idx) => (
+                <div key={idx} className="flex items-center gap-2">
+                  <span className="w-10 shrink-0 text-xs tabular-nums text-gray-500">{idx + 1}</span>
+                  <input
+                    type="text"
+                    value={label}
+                    maxLength={256}
+                    onChange={(e) => onSetAdSetNameAt(idx, e.target.value)}
+                    className="min-w-0 flex-1 rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-900"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
 
         <section className="rounded-xl border border-gray-200 bg-gray-50 p-4">
           <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-500">Estratégia de lance</h4>
