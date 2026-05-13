@@ -29,6 +29,8 @@ import { Step2Schedule } from "./Step2Schedule";
 import { StepFooter } from "./StepFooter";
 
 interface Step2ConfigProps {
+  /** Número de ficheiros criativos no passo 1 — usado só para dica de estrutura 1-N-1. */
+  creativeCount?: number;
   campaignType: CampaignType;
   budget: number;
   budgetPeriod: BudgetPeriod;
@@ -87,6 +89,7 @@ function billingEventLabelPt(optimizationGoal: string, event: WizardAdSetBilling
 
 export function Step2Config(props: Step2ConfigProps) {
   const {
+    creativeCount = 0,
     campaignType,
     budget,
     budgetPeriod,
@@ -370,6 +373,13 @@ export function Step2Config(props: Step2ConfigProps) {
                   />
                 ))}
               </div>
+            ) : null}
+            {creativeCount > 1 ? (
+              <p className="mt-2 text-xs leading-relaxed text-gray-600">
+                Com vários criativos, para os publicar na mesma campanha Meta (um criativo por conjunto), escolhe
+                estrutura personalizada 1-N-1 com N igual ao número de criativos (ex.: 2 criativos → 1 campanha, 2
+                conjuntos, 1 anúncio por conjunto).
+              </p>
             ) : null}
           </div>
           <div>

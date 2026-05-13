@@ -7,19 +7,14 @@ import type { NomenclaturePreviewContext } from "@/lib/wizard/nomenclature-previ
 import { buildWizardPublishPayload } from "@/lib/wizard/build-wizard-publish-payload";
 import { getWizardPublishSliceFromStore } from "@/lib/wizard/get-wizard-publish-slice";
 import { getPublicoGeoValidationErrorPt } from "@/lib/wizard/publico-geo-validation";
+import { adsetAndAdsCountsForWizardShape } from "@/lib/meta/map-wizard-to-graph";
 import { mockWizardDataAdapter } from "@/lib/wizard/data-adapter";
 import { isUploadJobInFlightStatus } from "@/lib/wizard/upload-jobs-in-flight";
-import { useWizardStore, type Publico, type Structure } from "@/lib/stores/wizardStore";
+import { useWizardStore, type Publico } from "@/lib/stores/wizardStore";
 import { Step1Creatives } from "./wizard/Step1Creatives";
 import { Step2Config } from "./wizard/Step2Config";
 import { Step3Publico } from "./wizard/Step3Publico";
 import { WizardStepIndicator } from "./wizard/WizardStepIndicator";
-
-const adsetsByStructure: Record<Exclude<Structure, "custom">, number> = {
-  "1-1-1": 1,
-  "1-3-5": 3,
-  "1-50-1": 50,
-};
 
 const lightSelectStyles = {
   control: (base: object) => ({ ...base, background: "#ffffff", borderColor: "#d1d5db", color: "#111827" }),
@@ -136,9 +131,18 @@ export function UploadWizard() {
     wizard.customStructure.ads,
   ]);
 
-  const adsetsPerStructure =
-    wizard.structure === "custom" ? wizard.customStructure.adsets : adsetsByStructure[wizard.structure];
-  const estimatedCampaigns = wizard.selectedAccountIds.length * wizard.creatives.length * adsetsPerStructure;
+  const estimatedCampaigns = useMemo(() => {
+    const { adsets, adsPerAdset } = adsetAndAdsCountsForWizardShape(wizard.structure, wizard.customStructure);
+    const fuse = wizard.creatives.length === adsets && adsPerAdset === 1;
+    return fuse
+      ? wizard.selectedAccountIds.length
+      : wizard.selectedAccountIds.length * wizard.creatives.length;
+  }, [
+    wizard.structure,
+    wizard.customStructure,
+    wizard.creatives.length,
+    wizard.selectedAccountIds.length,
+  ]);
 
   const step3PublishBlockedReason = useMemo(() => {
     const parts: string[] = [];
@@ -246,6 +250,7 @@ export function UploadWizard() {
             transition={{ duration: 0.2 }}
           >
             <Step2Config
+              creativeCount={wizard.creatives.length}
               campaignType={wizard.campaignType}
               budget={wizard.budget}
               budgetPeriod={wizard.budgetPeriod}

@@ -1,4 +1,5 @@
 import type { WizardPublishPayloadInput } from "@/lib/meta/map-wizard-to-graph";
+import { adsetAndAdsCountsForWizardShape } from "@/lib/meta/map-wizard-to-graph";
 import type { WizardAdSetBillingEvent } from "@/lib/meta/billing-event";
 import type { CampaignSchedule } from "@/lib/meta/campaign-schedule";
 import { getPublicoGeoValidationErrorPt } from "@/lib/wizard/publico-geo-validation";
@@ -45,6 +46,14 @@ export function buildWizardPublishPayload(wizard: WizardPublishStateSlice): {
   const geoErr = getPublicoGeoValidationErrorPt(wizard.publico);
   if (geoErr) {
     throw new Error(geoErr);
+  }
+
+  const { adsets, adsPerAdset } = adsetAndAdsCountsForWizardShape(wizard.structure, wizard.customStructure);
+  const fuseCreativesPerAdset = wizard.creatives.length === adsets && adsPerAdset === 1;
+  if (wizard.creatives.length > 1 && !fuseCreativesPerAdset) {
+    throw new Error(
+      "Para usar vários criativos na mesma campanha Meta, define uma estrutura em que o número de conjuntos é igual ao número de criativos e há 1 anúncio por conjunto (ex.: personalizada 1-N-1 com N = número de criativos)."
+    );
   }
 
   const snapshot: WizardPublishPayloadInput = {

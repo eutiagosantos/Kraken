@@ -268,6 +268,18 @@ export function resolveStructureCounts(payload: WizardPublishPayload): Structure
   return { metaCampaigns: 1, adsets: p.adsets, adsPerAdset: p.adsPerAdset };
 }
 
+/** Conjuntos e anúncios por conjunto a partir da estrutura do assistente (validação cliente/servidor). */
+export function adsetAndAdsCountsForWizardShape(
+  structure: WizardPublishPayload["structure"],
+  customStructure: WizardPublishPayload["customStructure"]
+): Pick<StructureCounts, "adsets" | "adsPerAdset"> {
+  if (structure === "custom") {
+    return { adsets: customStructure.adsets, adsPerAdset: customStructure.ads };
+  }
+  const p = PRESET_COUNTS[structure];
+  return { adsets: p.adsets, adsPerAdset: p.adsPerAdset };
+}
+
 /** Store in campanhas.structure: presets map to API-friendly slug; custom keeps counts */
 export function structureLabelForDb(payload: WizardPublishPayload, counts: StructureCounts): string {
   if (payload.structure === "custom") {

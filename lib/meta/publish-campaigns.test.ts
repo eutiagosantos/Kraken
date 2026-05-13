@@ -799,4 +799,156 @@ describe("runWizardPublish", () => {
     expect(adsetBodies[1].optimization_goal).toBe("LINK_CLICKS");
     expect(out.warnings.some((w) => w.includes("LINK_CLICKS") && w.includes("IMPRESSIONS"))).toBe(true);
   });
+
+  it("rejects publish when multiple creatives without matching structure", async () => {
+    const payload = wizardPublishPayloadSchema.parse({
+      selectedAccountIds: ["111"],
+      creatives: [
+        { id: "c1", name: "a.png", type: "image" },
+        { id: "c2", name: "b.png", type: "image" },
+      ],
+      publishOperationId: PUBLISH_JOB_ID,
+      creativeStoragePaths: [
+        `00000000-0000-4000-8000-000000000001/${PUBLISH_JOB_ID}/creative_0.png`,
+        `00000000-0000-4000-8000-000000000001/${PUBLISH_JOB_ID}/creative_1.png`,
+      ],
+      campaignType: "CBO",
+      budget: 15,
+      budgetPeriod: "daily",
+      bidStrategy: "LOWEST_COST",
+      objective: "OUTCOME_TRAFFIC",
+      pixelId: "",
+      status: "PAUSED",
+      structure: "1-1-1",
+      customStructure: { campaigns: 1, adsets: 1, ads: 1 },
+      nomenclaturePreview: "N",
+      publico: publicoFixture,
+    });
+
+    const { supabase } = createSupabaseMock();
+    await expect(
+      runWizardPublish({
+        supabase,
+        userId: "00000000-0000-4000-8000-000000000001",
+        accessToken: "token",
+        payload,
+        creativeFilesByIndex: new Map([
+          [0, { buffer: Buffer.from([1]), mimeType: "image/png" }],
+          [1, { buffer: Buffer.from([2]), mimeType: "image/png" }],
+        ]),
+        pageId: "1234567890",
+        adLinkUrl: "https://example.com",
+        accounts: [{ meta_account_id: "act_111", name: "Conta A" }],
+        existingPublishJobId: PUBLISH_JOB_ID,
+        fetchImpl: graphFetchOk(),
+      })
+    ).rejects.toThrow(/vários criativos/i);
+  });
+
+  it("fused mode: one campaign, each ad set gets its own creative and ad", async () => {
+    let campaignPosts = 0;
+    let adsetPosts = 0;
+    let adCreativePosts = 0;
+    const adBodies: Array<{ adset_id?: string; creative?: { creative_id?: string } }> = [];
+
+    const fetchImpl: typeof fetch = vi.fn(async (input, init) => {
+      const url = requestUrl(input);
+      if (url.includes("/adimages")) {
+        return new Response(
+          JSON.stringify({
+            images: { f: { hash: "img_hash", url: "https://cdn.example/preview.png" } },
+          }),
+          { status: 200 }
+        );
+      }
+      if (url.includes("/campaigns") && init?.method === "POST") {
+        campaignPosts++;
+        return new Response(JSON.stringify({ id: "meta-camp-fused" }), { status: 200 });
+      }
+      if (url.includes("/adsets") && init?.method === "POST") {
+        adsetPosts++;
+        return new Response(JSON.stringify({ id: `as-${adsetPosts}` }), { status: 200 });
+      }
+      if (url.includes("/adcreatives") && init?.method === "POST") {
+        adCreativePosts++;
+        return new Response(JSON.stringify({ id: `cr-${adCreativePosts}` }), { status: 200 });
+      }
+      if (url.includes("/ads") && !url.includes("adset") && init?.method === "POST") {
+        const b = JSON.parse(String(init.body ?? "{}")) as Record<string, unknown>;
+        adBodies.push({
+          adset_id: String(b.adset_id ?? ""),
+          creative: b.creative as { creative_id?: string },
+        });
+        return new Response(JSON.stringify({ id: `ad-${adBodies.length}` }), { status: 200 });
+      }
+      return new Response("unexpected", { status: 500 });
+    });
+
+    const payload = wizardPublishPayloadSchema.parse({
+      selectedAccountIds: ["111"],
+      creatives: [
+        { id: "c1", name: "a.png", type: "image" },
+        { id: "c2", name: "b.png", type: "image" },
+      ],
+      publishOperationId: PUBLISH_JOB_ID,
+      creativeStoragePaths: [
+        `00000000-0000-4000-8000-000000000001/${PUBLISH_JOB_ID}/creative_0.png`,
+        `00000000-0000-4000-8000-000000000001/${PUBLISH_JOB_ID}/creative_1.png`,
+      ],
+      campaignType: "CBO",
+      budget: 15,
+      budgetPeriod: "daily",
+      bidStrategy: "LOWEST_COST",
+      objective: "OUTCOME_TRAFFIC",
+      pixelId: "",
+      status: "PAUSED",
+      structure: "custom",
+      customStructure: { campaigns: 1, adsets: 2, ads: 1 },
+      nomenclaturePreview: "N",
+      publico: publicoFixture,
+    });
+
+    const { supabase, insertCampanhaRows } = createSupabaseMock();
+    const out = await runWizardPublish({
+      supabase,
+      userId: "00000000-0000-4000-8000-000000000001",
+      accessToken: "token",
+      payload,
+      creativeFilesByIndex: new Map([
+        [0, { buffer: Buffer.from([1, 2, 3]), mimeType: "image/png" }],
+        [1, { buffer: Buffer.from([4, 5, 6]), mimeType: "image/png" }],
+      ]),
+      pageId: "1234567890",
+      adLinkUrl: "https://example.com",
+      accounts: [{ meta_account_id: "act_111", name: "Conta A" }],
+      existingPublishJobId: PUBLISH_JOB_ID,
+      fetchImpl,
+    });
+
+    expect(campaignPosts).toBe(1);
+    expect(adsetPosts).toBe(2);
+    expect(adCreativePosts).toBe(2);
+    expect(adBodies).toHaveLength(2);
+    expect(adBodies[0].adset_id).toBe("as-1");
+    expect(adBodies[0].creative?.creative_id).toBe("cr-1");
+    expect(adBodies[1].adset_id).toBe("as-2");
+    expect(adBodies[1].creative?.creative_id).toBe("cr-2");
+
+    expect(out.results).toHaveLength(1);
+    expect(out.results[0].ok).toBe(true);
+    expect(out.results[0].metaCampaignId).toBe("meta-camp-fused");
+    expect(out.results[0].fusedCreativeNames).toEqual(["a.png", "b.png"]);
+
+    const concluida = insertCampanhaRows.find((r) => r.status === "concluida");
+    const metaIds = concluida?.meta_ids as {
+      adCreativeId?: string;
+      adCreativeIds?: string[];
+      adSetIds?: string[];
+    };
+    expect(metaIds?.adCreativeIds).toEqual(["cr-1", "cr-2"]);
+    expect(metaIds?.adCreativeId).toBe("cr-1");
+    expect(metaIds?.adSetIds).toEqual(["as-1", "as-2"]);
+    const crRows = concluida?.creatives as Array<{ name?: string }> | undefined;
+    expect(crRows?.map((c) => c.name)).toEqual(["a.png", "b.png"]);
+  });
 });

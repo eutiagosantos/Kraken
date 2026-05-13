@@ -12,6 +12,7 @@ import {
   structureLabelForDb,
   validBillingEventsForOptimizationGoal,
   wizardPublishPayloadSchema,
+  adsetAndAdsCountsForWizardShape,
 } from "@/lib/meta/map-wizard-to-graph";
 import { defaultLifetimeSchedule } from "@/lib/meta/meta-datetime";
 
@@ -598,5 +599,21 @@ describe("publicoTargetsDsaRegion", () => {
       },
     });
     expect(publicoTargetsDsaRegion(p.publico)).toBe(false);
+  });
+});
+
+describe("adsetAndAdsCountsForWizardShape", () => {
+  it("matches presets and custom structure", () => {
+    expect(adsetAndAdsCountsForWizardShape("1-1-1", { campaigns: 1, adsets: 1, ads: 1 })).toEqual({
+      adsets: 1,
+      adsPerAdset: 1,
+    });
+    expect(adsetAndAdsCountsForWizardShape("1-3-5", { campaigns: 1, adsets: 1, ads: 1 })).toEqual({
+      adsets: 3,
+      adsPerAdset: 5,
+    });
+    expect(
+      adsetAndAdsCountsForWizardShape("custom", { campaigns: 1, adsets: 4, ads: 1 })
+    ).toEqual({ adsets: 4, adsPerAdset: 1 });
   });
 });
