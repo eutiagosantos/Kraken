@@ -49,7 +49,15 @@ export function buildWizardPublishPayload(wizard: WizardPublishStateSlice): {
 
   const snapshot: WizardPublishPayloadInput = {
     selectedAccountIds: wizard.selectedAccountIds,
-    creatives: wizard.creatives.map((c) => ({ id: c.id, name: c.name, type: c.type })),
+    creatives: wizard.creatives.map((c) => {
+      const trimmed = c.primaryText.trim();
+      return {
+        id: c.id,
+        name: c.name,
+        type: c.type,
+        ...(trimmed ? { primaryText: trimmed } : {}),
+      };
+    }),
     campaignType: wizard.campaignType,
     budget: wizard.budget,
     budgetPeriod: wizard.budgetPeriod,

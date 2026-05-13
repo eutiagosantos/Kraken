@@ -504,7 +504,7 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
         pageId: ctx.pageId,
         media,
         linkUrl: ctx.adLinkUrl,
-        message: creative.name,
+        message: (creative.primaryText?.trim() || creative.name),
         fetchImpl,
       });
 

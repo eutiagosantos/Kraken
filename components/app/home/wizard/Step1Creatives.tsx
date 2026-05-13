@@ -22,6 +22,7 @@ interface Step1CreativesProps {
   onToggleAccount: (id: string) => void;
   onAddCreativeFiles: (files: File[]) => void;
   onRemoveCreative: (id: string) => void;
+  onUpdateCreative: (id: string, patch: Partial<Pick<Creative, "primaryText">>) => void;
   onSelectAllAccounts: () => void;
   onNext: () => void;
 }
@@ -38,6 +39,7 @@ export function Step1Creatives({
   onToggleAccount,
   onAddCreativeFiles,
   onRemoveCreative,
+  onUpdateCreative,
   onSelectAllAccounts,
   onNext,
 }: Step1CreativesProps) {
@@ -141,7 +143,9 @@ export function Step1Creatives({
               Selecionar arquivos
             </Button>
           </button>
-          {creatives.length ? <CreativeGrid creatives={creatives} onRemove={onRemoveCreative} /> : null}
+          {creatives.length ? (
+            <CreativeGrid creatives={creatives} onRemove={onRemoveCreative} onUpdateCreative={onUpdateCreative} />
+          ) : null}
         </section>
 
         <section>

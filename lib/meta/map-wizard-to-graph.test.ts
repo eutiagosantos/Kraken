@@ -74,6 +74,23 @@ describe("wizardPublishPayloadSchema", () => {
     expect(p.antiSpy).toBe(true);
   });
 
+  it("accepts optional primaryText up to 2000 characters", () => {
+    const text = "x".repeat(2000);
+    const p = wizardPublishPayloadSchema.parse({
+      ...basePayload,
+      creatives: [{ id: "c1", name: "a.png", type: "image", primaryText: text }],
+    });
+    expect(p.creatives[0].primaryText).toBe(text);
+  });
+
+  it("rejects primaryText longer than 2000 characters", () => {
+    const res = wizardPublishPayloadSchema.safeParse({
+      ...basePayload,
+      creatives: [{ id: "c1", name: "a.png", type: "image", primaryText: "y".repeat(2001) }],
+    });
+    expect(res.success).toBe(false);
+  });
+
   it("rejects when creativeStoragePaths length mismatches creatives", () => {
     const res = wizardPublishPayloadSchema.safeParse({
       ...basePayload,

@@ -162,6 +162,7 @@ export function UploadWizard() {
         type,
         preview: URL.createObjectURL(file),
         size: file.size,
+        primaryText: "",
       });
     });
   };
@@ -229,6 +230,7 @@ export function UploadWizard() {
               onToggleAccount={wizard.toggleAccount}
               onAddCreativeFiles={addCreativeFiles}
               onRemoveCreative={wizard.removeCreative}
+              onUpdateCreative={wizard.updateCreative}
               onSelectAllAccounts={() => wizard.setSelectedAccountIds(accounts.map((account) => account.id))}
               onNext={() => wizard.setStep(2)}
             />

@@ -24,7 +24,11 @@ export interface Creative {
   type: "image" | "video";
   preview: string;
   size: number;
+  /** Primary ad text for Meta; empty → publish falls back to `name` (filename). */
+  primaryText: string;
 }
+
+export type CreativeDraft = Omit<Creative, "primaryText"> & { primaryText?: string };
 
 export interface Localidade {
   type: "country" | "state" | "region" | "city";
@@ -114,7 +118,8 @@ export type WizardQueuePublish = (typeof initialState)["queuePublish"];
 
 type WizardState = typeof initialState & {
   setStep: (step: 1 | 2 | 3) => void;
-  addCreative: (creative: Creative) => void;
+  addCreative: (creative: CreativeDraft) => void;
+  updateCreative: (id: string, patch: Partial<Pick<Creative, "primaryText">>) => void;
   removeCreative: (id: string) => void;
   toggleAccount: (id: string) => void;
   setSelectedAccountIds: (ids: string[]) => void;
@@ -153,7 +158,14 @@ const initialQueuePublish: WizardQueuePublish = {
 export const useWizardStore = create<WizardState>()((set, get) => ({
   ...initialState,
   setStep: (step) => set({ step }),
-  addCreative: (creative) => set((s) => ({ creatives: [...s.creatives, creative] })),
+  addCreative: (creative) =>
+    set((s) => ({
+      creatives: [...s.creatives, { ...creative, primaryText: creative.primaryText ?? "" }],
+    })),
+  updateCreative: (id, patch) =>
+    set((s) => ({
+      creatives: s.creatives.map((c) => (c.id === id ? { ...c, ...patch } : c)),
+    })),
   removeCreative: (id) =>
     set((s) => ({
       creatives: s.creatives.filter((c) => c.id !== id),

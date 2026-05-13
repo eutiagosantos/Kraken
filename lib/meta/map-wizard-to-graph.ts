@@ -45,6 +45,7 @@ const creativeMetaSchema = z.object({
   id: z.string(),
   name: z.string(),
   type: z.enum(["image", "video"]),
+  primaryText: z.string().max(2000).optional(),
 });
 
 const storagePathString = z

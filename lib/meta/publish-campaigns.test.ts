@@ -490,7 +490,7 @@ describe("runWizardPublish", () => {
 
     const payload = wizardPublishPayloadSchema.parse({
       selectedAccountIds: ["111"],
-      creatives: [{ id: "c1", name: "promo.mp4", type: "video" }],
+      creatives: [{ id: "c1", name: "promo.mp4", type: "video", primaryText: "Copy da plataforma" }],
       publishOperationId: PUBLISH_JOB_ID,
       creativeStoragePaths: [
         `00000000-0000-4000-8000-000000000001/${PUBLISH_JOB_ID}/creative_0.mp4`,
@@ -535,6 +535,7 @@ describe("runWizardPublish", () => {
     const videoData = oss?.video_data as Record<string, unknown> | undefined;
     expect(videoData?.video_id).toBe("vid_777");
     expect(videoData?.image_url).toBe("https://thumb.example/p.jpg");
+    expect(videoData?.message).toBe("Copy da plataforma");
     const cta = videoData?.call_to_action as { type?: string; value?: { link?: string } } | undefined;
     expect(cta?.type).toBe("LEARN_MORE");
     expect(cta?.value?.link).toBe("https://example.com");
