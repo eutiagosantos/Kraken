@@ -46,8 +46,4 @@ export async function fetchGraphAdAccounts(accessToken: string): Promise<GraphAd
   return collected;
 }
 
-export function mapAccountStatus(status?: number): "ativa" | "suspensa" | "desconectada" {
-  if (status === 1) return "ativa";
-  if (status === 2 || status === 3) return "suspensa";
-  return "desconectada";
-}
+export { mapAccountStatus } from "./map-account-status";
