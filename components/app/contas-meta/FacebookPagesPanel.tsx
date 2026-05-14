@@ -48,6 +48,7 @@ function PostPreviewThumb({ post }: { post: PagePostRow }) {
       )}
     >
       {previewUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element -- Meta Graph preview URLs (dynamic hosts)
         <img
           src={previewUrl}
           alt=""
@@ -314,6 +315,7 @@ export function FacebookPagesPanel({
                   className="flex min-w-0 flex-1 items-center gap-3 rounded-lg text-left outline-none focus-visible:ring-2 focus-visible:ring-brand-purple/40"
                 >
                   {p.pictureUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- external Graph picture URL
                     <img
                       src={p.pictureUrl}
                       alt=""
