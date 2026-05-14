@@ -1,4 +1,4 @@
-import { GraphApiError } from "@/lib/meta/graph-client";
+import { GraphApiError } from "@/lib/meta/graph-api-error";
 
 const META_APP_DEV_MODE_HINT_PT =
   "A app Meta usada no login (Facebook) está em modo Desenvolvimento. Para publicar anúncios reais: em developers.facebook.com, abre a app do Kraken e muda o modo para Live; confirma permissões (ads_management, páginas, etc.) e verificação comercial se a Meta pedir. Para testes com a app em Dev: usa conta de anúncios de teste, página e utilizador com papel Admin/Developer/Tester nessa app.";

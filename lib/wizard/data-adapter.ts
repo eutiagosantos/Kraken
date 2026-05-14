@@ -251,7 +251,9 @@ export function createFetchWizardDataAdapter(): WizardDataAdapter {
           }
         }
         if (!res.ok) {
-          throw new Error(json?.error ?? raw.trim().slice(0, 280) || `catalog_publish_${res.status}`);
+          throw new Error(
+            json?.error ?? (raw.trim().slice(0, 280) || `catalog_publish_${res.status}`),
+          );
         }
         const rows = json?.results;
         if (rows?.some((r) => !r.ok)) {
