@@ -8,6 +8,44 @@ export type UserFacebookPage = {
   pageAccessToken?: string;
 };
 
+/** Safe JSON shape for clients — never include `pageAccessToken`. */
+export type PublicUserFacebookPage = {
+  id: string;
+  name: string;
+  pictureUrl?: string;
+};
+
+export function toPublicFacebookPage(p: UserFacebookPage): PublicUserFacebookPage {
+  const out: PublicUserFacebookPage = { id: p.id, name: p.name };
+  if (p.pictureUrl) out.pictureUrl = p.pictureUrl;
+  return out;
+}
+
+export function mapUserFacebookPagesToPublic(pages: UserFacebookPage[]): PublicUserFacebookPage[] {
+  return pages.map(toPublicFacebookPage);
+}
+
+export type ResolvePagePostsTokenResult =
+  | { ok: true; pageAccessToken: string }
+  | { ok: false; reason: "page_not_in_list" }
+  | { ok: false; reason: "page_access_token_unavailable" };
+
+/**
+ * Page posts with engagement must use a Page access token from `GET /me/accounts`.
+ * Calling `GET /{page-id}/posts` with summaries using only a user token often fails with permission errors.
+ */
+export function resolvePageAccessTokenForPosts(
+  pages: UserFacebookPage[],
+  pageId: string
+): ResolvePagePostsTokenResult {
+  const id = pageId.trim();
+  const p = pages.find((x) => x.id === id);
+  if (!p) return { ok: false, reason: "page_not_in_list" };
+  const t = p.pageAccessToken?.trim();
+  if (!t) return { ok: false, reason: "page_access_token_unavailable" };
+  return { ok: true, pageAccessToken: t };
+}
+
 type MeAccountRow = {
   id?: string;
   name?: string;

@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { mapMeAccountsNode, pageIdInUserPages, type UserFacebookPage } from "./graph-user-pages";
+import {
+  mapMeAccountsNode,
+  mapUserFacebookPagesToPublic,
+  pageIdInUserPages,
+  resolvePageAccessTokenForPosts,
+  toPublicFacebookPage,
+  type UserFacebookPage,
+} from "./graph-user-pages";
 
 describe("mapMeAccountsNode", () => {
   it("returns null without id", () => {
@@ -39,5 +46,63 @@ describe("pageIdInUserPages", () => {
     expect(pageIdInUserPages("222", pages)).toBe(false);
     expect(pageIdInUserPages("", pages)).toBe(false);
     expect(pageIdInUserPages("   ", pages)).toBe(false);
+  });
+});
+
+describe("toPublicFacebookPage", () => {
+  it("strips pageAccessToken from payload", () => {
+    const pub = toPublicFacebookPage({
+      id: "1",
+      name: "P",
+      pictureUrl: "https://x",
+      pageAccessToken: "secret",
+    });
+    expect(pub).toEqual({ id: "1", name: "P", pictureUrl: "https://x" });
+    expect("pageAccessToken" in pub).toBe(false);
+  });
+});
+
+describe("mapUserFacebookPagesToPublic", () => {
+  it("maps list without tokens", () => {
+    const pages: UserFacebookPage[] = [
+      { id: "a", name: "A", pageAccessToken: "t1" },
+      { id: "b", name: "B" },
+    ];
+    expect(mapUserFacebookPagesToPublic(pages)).toEqual([
+      { id: "a", name: "A" },
+      { id: "b", name: "B" },
+    ]);
+  });
+});
+
+describe("resolvePageAccessTokenForPosts", () => {
+  const pages: UserFacebookPage[] = [
+    { id: "111", name: "With", pageAccessToken: "page-token-xyz" },
+    { id: "222", name: "No token" },
+  ];
+
+  it("returns page token when present", () => {
+    expect(resolvePageAccessTokenForPosts(pages, "111")).toEqual({
+      ok: true,
+      pageAccessToken: "page-token-xyz",
+    });
+    expect(resolvePageAccessTokenForPosts(pages, " 111 ")).toEqual({
+      ok: true,
+      pageAccessToken: "page-token-xyz",
+    });
+  });
+
+  it("returns page_access_token_unavailable when page has no token", () => {
+    expect(resolvePageAccessTokenForPosts(pages, "222")).toEqual({
+      ok: false,
+      reason: "page_access_token_unavailable",
+    });
+  });
+
+  it("returns page_not_in_list when id missing", () => {
+    expect(resolvePageAccessTokenForPosts(pages, "999")).toEqual({
+      ok: false,
+      reason: "page_not_in_list",
+    });
   });
 });

@@ -108,6 +108,19 @@ export async function POST(request: Request) {
 
   if (parsed.data.action === "sync_with_token") {
     const token = parsed.data.token;
+    const scopeResult = await inspectTokenScopes(token);
+    if (!scopeResult.valid) {
+      return NextResponse.json({ error: scopeResult.error }, { status: 400 });
+    }
+    if (scopeResult.missingScopes.length > 0) {
+      return NextResponse.json(
+        {
+          error: `O token não inclui as permissões necessárias: ${scopeResult.missingScopes.join(", ")}. Gere um token com estes scopes no Graph API Explorer ou reconecte.`,
+          missingScopes: scopeResult.missingScopes,
+        },
+        { status: 400 }
+      );
+    }
     const { error: tokenErr } = await supabase.from("meta_user_tokens").upsert(
       {
         user_id: user.id,
