@@ -87,6 +87,7 @@ export function ConectarContaModal({
   const [showToken, setShowToken] = useState(false);
   const [validating, setValidating] = useState(false);
   const [tokenValid, setTokenValid] = useState<boolean | null>(null);
+  const [missingScopes, setMissingScopes] = useState<string[]>([]);
   const [nickname, setNickname] = useState("");
   const [connecting, setConnecting] = useState(false);
   const [previewAccounts, setPreviewAccounts] = useState<
@@ -125,6 +126,7 @@ export function ConectarContaModal({
     setTokenValid(null);
     setInspectError(null);
     setPreviewAccounts(null);
+    setMissingScopes([]);
     try {
       const res = await fetch("/api/contas-meta", {
         method: "POST",
@@ -135,6 +137,7 @@ export function ConectarContaModal({
       const json = (await res.json().catch(() => ({}))) as {
         error?: string;
         accounts?: { id: string; name: string; account_status?: number }[];
+        missingScopes?: string[];
       };
       if (!res.ok) {
         setTokenValid(false);
@@ -148,6 +151,7 @@ export function ConectarContaModal({
         return;
       }
       setPreviewAccounts(accounts);
+      setMissingScopes(json.missingScopes ?? []);
       setTokenValid(true);
     } catch {
       setTokenValid(false);
@@ -280,6 +284,7 @@ export function ConectarContaModal({
                           setTokenValid(null);
                           setPreviewAccounts(null);
                           setInspectError(null);
+                          setMissingScopes([]);
                         }}
                         className="w-full rounded-lg border border-neutral-border bg-neutral-white py-2.5 pl-3 pr-11 text-base outline-none focus:border-brand-purple focus:ring-2 focus:ring-brand-purple/25"
                       />
@@ -300,12 +305,29 @@ export function ConectarContaModal({
                     </p>
                   ) : null}
                   {tokenValid === true && previewAccounts?.length ? (
-                    <p className="mt-3 flex items-center gap-2 text-sm font-medium text-semantic-green">
-                      <Check className="h-4 w-4" aria-hidden />
-                      {previewAccounts.length === 1
-                        ? `Token válido! Conta identificada: ${previewAccounts[0].name || previewAccounts[0].id}`
-                        : `Token válido! ${previewAccounts.length} contas identificadas.`}
-                    </p>
+                    <div className="mt-3 flex flex-col gap-2">
+                      <p className="flex items-center gap-2 text-sm font-medium text-semantic-green">
+                        <Check className="h-4 w-4 shrink-0" aria-hidden />
+                        {previewAccounts.length === 1
+                          ? `Token válido! Conta identificada: ${previewAccounts[0].name || previewAccounts[0].id}`
+                          : `Token válido! ${previewAccounts.length} contas identificadas.`}
+                      </p>
+                      {missingScopes.length > 0 ? (
+                        <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm">
+                          <p className="flex items-center gap-2 font-medium text-amber-700">
+                            <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden />
+                            Permissões em falta — regenere o token com:
+                          </p>
+                          <ul className="mt-1.5 flex flex-wrap gap-1.5 pl-6">
+                            {missingScopes.map((s) => (
+                              <li key={s}>
+                                <code className="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-mono text-amber-800">{s}</code>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ) : null}
+                    </div>
                   ) : null}
                   {tokenValid === false ? (
                     <p className="mt-3 flex flex-col gap-1 text-sm font-medium text-semantic-red">

@@ -10,6 +10,7 @@ import {
 } from "@/lib/api/user-data-short-cache";
 import { rowToContaMeta } from "@/lib/contas-meta-map";
 import { fetchGraphAdAccounts } from "@/lib/meta/graph-ad-accounts";
+import { inspectTokenScopes } from "@/lib/meta/graph-inspect-token";
 import { syncMetaAdAccountsForUser } from "@/lib/meta/sync-ad-accounts";
 
 const postBodySchema = z.union([
@@ -59,14 +60,18 @@ export async function POST(request: Request) {
 
   if (parsed.data.action === "inspect_token") {
     try {
-      const accounts = await fetchGraphAdAccounts(parsed.data.token);
+      const [accounts, scopeResult] = await Promise.all([
+        fetchGraphAdAccounts(parsed.data.token),
+        inspectTokenScopes(parsed.data.token),
+      ]);
       if (accounts.length === 0) {
         return NextResponse.json(
           { error: "Este token não tem acesso a nenhuma conta de anúncios." },
           { status: 400 }
         );
       }
-      return NextResponse.json({ ok: true, accounts });
+      const missingScopes = scopeResult.valid ? scopeResult.missingScopes : [];
+      return NextResponse.json({ ok: true, accounts, missingScopes });
     } catch (e) {
       const message = e instanceof Error ? e.message : "inspect_failed";
       return NextResponse.json({ error: message }, { status: 502 });
