@@ -43,9 +43,7 @@ export async function GET(request: Request) {
     const isPermissionError =
       lower.includes("pages_read_engagement") ||
       lower.includes("(#10)") ||
-      lower.includes("(#200)") ||
-      lower.includes("permission") ||
-      lower.includes("oauth");
+      lower.includes("(#200)");
     if (isPermissionError) {
       return NextResponse.json(
         { error: "Permissão pages_read_engagement em falta. Reconecte a conta Meta (Contas Meta) para conceder essa permissão." },
