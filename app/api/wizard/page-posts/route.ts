@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/api/session";
 import { clampPagePostsLimit, fetchPagePostsWithEngagement } from "@/lib/meta/graph-page-posts";
 import { getMetaGraphAccessToken } from "@/lib/meta/graph-token";
-import { fetchUserFacebookPages, pageIdInUserPages } from "@/lib/meta/graph-user-pages";
+import { fetchUserFacebookPages } from "@/lib/meta/graph-user-pages";
 
 export async function GET(request: Request) {
   const { supabase, user } = await getSessionUser();
@@ -48,10 +48,14 @@ export async function GET(request: Request) {
       lower.includes("(#200)");
     if (isPermissionError) {
       return NextResponse.json(
-        { error: "Permissão pages_read_engagement em falta. Reconecte a conta Meta (Contas Meta) para conceder essa permissão." },
-        { status: 502 }
+        {
+          error:
+            "Permissão pages_read_engagement em falta. Reconecte a conta Meta (Contas Meta) para conceder essa permissão.",
+          code: "META_GRAPH_PERMISSION",
+        },
+        { status: 403 }
       );
     }
-    return NextResponse.json({ error: message }, { status: 502 });
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

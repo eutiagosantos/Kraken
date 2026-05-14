@@ -73,9 +73,19 @@ export function FacebookPagesPanel({
     try {
       const q = new URLSearchParams({ pageId, limit: "15" });
       const res = await fetch(`/api/wizard/page-posts?${q.toString()}`, { credentials: "include" });
-      const raw = (await res.json().catch(() => ({}))) as { error?: string; data?: PagePostRow[] };
+      const raw = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        code?: string;
+        data?: PagePostRow[];
+      };
       if (!res.ok) {
-        throw new Error(typeof raw.error === "string" ? raw.error : `Pedido falhou (${res.status})`);
+        const msg =
+          typeof raw.error === "string"
+            ? raw.error
+            : raw.code === "META_GRAPH_PERMISSION"
+              ? "Permissão em falta no token Meta. Reconecte em Contas Meta."
+              : `Pedido falhou (${res.status})`;
+        throw new Error(msg);
       }
       setPosts(Array.isArray(raw.data) ? raw.data : []);
     } catch (e) {

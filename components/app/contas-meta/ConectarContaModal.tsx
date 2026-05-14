@@ -6,6 +6,7 @@ import { AlertTriangle, Check, Eye, EyeOff, Key, Link2, Loader2 } from "lucide-r
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { StepIndicator } from "@/components/app/ui/StepIndicator";
+import { REQUIRED_TOKEN_SCOPES } from "@/lib/meta/graph-inspect-token";
 import { mapAccountStatus } from "@/lib/meta/map-account-status";
 import { cn } from "@/lib/utils";
 import { AccountAvatar } from "./AccountAvatar";
@@ -345,7 +346,17 @@ export function ConectarContaModal({
                       ← Voltar
                     </Button>
                     {tokenValid === true ? (
-                      <Button type="button" variant="primary" onClick={() => setStep(3)}>
+                      <Button
+                        type="button"
+                        variant="primary"
+                        onClick={() => setStep(3)}
+                        disabled={missingScopes.length > 0}
+                        title={
+                          missingScopes.length > 0
+                            ? "Regenere o token com todas as permissões listadas antes de continuar."
+                            : undefined
+                        }
+                      >
                         Continuar →
                       </Button>
                     ) : (
@@ -404,15 +415,24 @@ export function ConectarContaModal({
                     <p className="mt-1 text-xs text-neutral-gray">Um nome amigável para identificar esta conta na plataforma</p>
                   </div>
                   <div className="mt-4 rounded-lg border border-dashboard-border bg-dashboard-base px-4 py-3 text-sm">
-                    <p className="font-semibold text-neutral-black">Permissões detectadas</p>
+                    <p className="font-semibold text-neutral-black">Permissões necessárias (Graph)</p>
                     <ul className="mt-2 space-y-1 text-neutral-gray">
-                      <li>ads_management ✓</li>
-                      <li>ads_read ✓</li>
-                      <li>business_management ✓</li>
-                      <li>pages_show_list ✓</li>
-                      <li>pages_manage_ads ✓</li>
-                      <li>pages_read_engagement ✓</li>
+                      {REQUIRED_TOKEN_SCOPES.map((scope) => {
+                        const ok = !missingScopes.includes(scope);
+                        return (
+                          <li key={scope} className={cn(!ok && "font-medium text-semantic-red")}>
+                            <code className="rounded bg-neutral-white px-1 py-0.5 text-xs font-mono">{scope}</code>
+                            {ok ? " ✓" : " — em falta no token"}
+                          </li>
+                        );
+                      })}
                     </ul>
+                    {missingScopes.length > 0 ? (
+                      <p className="mt-2 text-xs text-semantic-red">
+                        Volte ao passo anterior, regenere o token (ex.: Graph API Explorer) com as permissões em falta e
+                        valide de novo.
+                      </p>
+                    ) : null}
                   </div>
                   <div className="mt-8 flex flex-wrap justify-between gap-3 border-t border-dashboard-border pt-5">
                     <Button type="button" variant="ghost" onClick={() => setStep(2)}>
@@ -422,7 +442,7 @@ export function ConectarContaModal({
                       type="button"
                       variant="primary"
                       onClick={handleConnect}
-                      disabled={connecting || !previewAccounts?.[0]}
+                      disabled={connecting || !previewAccounts?.[0] || missingScopes.length > 0}
                     >
                       <Check className="h-4 w-4" aria-hidden />
                       {connecting ? "Conectando..." : "Conectar Conta"}
