@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  invalidatePageCache,
   mapMeAccountsNode,
   mapUserFacebookPagesToPublic,
   pageIdInUserPages,
@@ -104,5 +105,11 @@ describe("resolvePageAccessTokenForPosts", () => {
       ok: false,
       reason: "page_not_in_list",
     });
+  });
+});
+
+describe("invalidatePageCache", () => {
+  it("is callable without throwing", () => {
+    expect(() => invalidatePageCache("any-user-access-token")).not.toThrow();
   });
 });

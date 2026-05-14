@@ -79,6 +79,11 @@ const MAX_ME_ACCOUNTS_PAGES = 10;
 const PAGE_CACHE_TTL_MS = 10 * 60 * 1000; // 10 min — pages rarely change
 const pageCache = new Map<string, { pages: UserFacebookPage[]; expiresAt: number }>();
 
+export function invalidatePageCache(accessToken: string): void {
+  const cacheKey = metaTokenCacheFingerprint(accessToken);
+  pageCache.delete(cacheKey);
+}
+
 /**
  * Lists Facebook Pages the user can manage (`GET /me/accounts`).
  * Requires `pages_show_list` / `pages_manage_ads` on the user access token.

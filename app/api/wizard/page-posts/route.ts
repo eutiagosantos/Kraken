@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 
 import { getSessionUser } from "@/lib/api/session";
-import { inspectTokenScopes } from "@/lib/meta/graph-inspect-token";
+import {
+  inspectTokenScopes,
+  REQUIRED_PAGE_TOKEN_SCOPES_FOR_ENGAGEMENT_POSTS,
+} from "@/lib/meta/graph-inspect-token";
 import { clampPagePostsLimit, fetchPagePostsWithEngagement } from "@/lib/meta/graph-page-posts";
 import { getMetaGraphAccessToken } from "@/lib/meta/graph-token";
 import { fetchUserFacebookPages, resolvePageAccessTokenForPosts } from "@/lib/meta/graph-user-pages";
@@ -28,22 +31,6 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: tokenRes.error }, { status: 400 });
   }
 
-  const scopeCheck = await inspectTokenScopes(tokenRes.accessToken);
-  if (!scopeCheck.valid) {
-    return NextResponse.json({ error: scopeCheck.error }, { status: 400 });
-  }
-  if (scopeCheck.missingScopes.length > 0) {
-    return NextResponse.json(
-      {
-        error:
-          "O token Meta guardado não inclui todas as permissões necessárias (incluindo pages_read_engagement). Reconecte a conta em Contas Meta ou volte a gerar o token com os scopes completos.",
-        code: "META_SCOPE_MISSING",
-        missingScopes: scopeCheck.missingScopes,
-      },
-      { status: 403 }
-    );
-  }
-
   try {
     const pages = await fetchUserFacebookPages(tokenRes.accessToken);
     const resolved = resolvePageAccessTokenForPosts(pages, pageId);
@@ -63,6 +50,24 @@ export async function GET(request: Request) {
         { status: 403 }
       );
     }
+
+    const pageScopeCheck = await inspectTokenScopes(resolved.pageAccessToken, {
+      requiredScopes: REQUIRED_PAGE_TOKEN_SCOPES_FOR_ENGAGEMENT_POSTS,
+    });
+    if (!pageScopeCheck.valid) {
+      return NextResponse.json({ error: pageScopeCheck.error }, { status: 400 });
+    }
+    if (pageScopeCheck.missingScopes.length > 0) {
+      return NextResponse.json(
+        {
+          error: `O token da Página não inclui as permissões necessárias: ${pageScopeCheck.missingScopes.join(", ")}. Reconecte a conta Meta em Contas Meta.`,
+          code: "PAGE_TOKEN_SCOPE_MISSING",
+          missingScopes: pageScopeCheck.missingScopes,
+        },
+        { status: 403 }
+      );
+    }
+
     const data = await fetchPagePostsWithEngagement(resolved.pageAccessToken, pageId, limit);
     return NextResponse.json({ data });
   } catch (e) {
@@ -76,8 +81,9 @@ export async function GET(request: Request) {
       return NextResponse.json(
         {
           error:
-            "Permissão pages_read_engagement em falta. Reconecte a conta Meta (Contas Meta) para conceder essa permissão.",
+            "Permissão pages_read_engagement em falta no token da Página. Reconecte a conta Meta (Contas Meta) para conceder essa permissão.",
           code: "META_GRAPH_PERMISSION",
+          detail: message,
         },
         { status: 403 }
       );

@@ -11,6 +11,7 @@ import {
 import { rowToContaMeta } from "@/lib/contas-meta-map";
 import { fetchGraphAdAccounts } from "@/lib/meta/graph-ad-accounts";
 import { inspectTokenScopes } from "@/lib/meta/graph-inspect-token";
+import { invalidatePageCache } from "@/lib/meta/graph-user-pages";
 import { syncMetaAdAccountsForUser } from "@/lib/meta/sync-ad-accounts";
 
 const postBodySchema = z.union([
@@ -102,6 +103,7 @@ export async function POST(request: Request) {
     if (result.error) {
       return NextResponse.json({ error: result.error, synced: result.synced }, { status: 502 });
     }
+    invalidatePageCache(providerToken);
     invalidateUserDataShortCache(user.id);
     return NextResponse.json({ ok: true, synced: result.synced });
   }
@@ -137,6 +139,7 @@ export async function POST(request: Request) {
     if (result.error) {
       return NextResponse.json({ error: result.error, synced: result.synced }, { status: 502 });
     }
+    invalidatePageCache(token);
     invalidateUserDataShortCache(user.id);
     return NextResponse.json({ ok: true, synced: result.synced });
   }

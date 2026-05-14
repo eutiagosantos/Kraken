@@ -8,12 +8,24 @@ export const REQUIRED_TOKEN_SCOPES = [
   "pages_read_engagement",
 ] as const;
 
+/** Page access tokens from `/me/accounts` often omit ad-account scopes; use this for Graph calls that only need Page permissions. */
+export const REQUIRED_PAGE_TOKEN_SCOPES_FOR_ENGAGEMENT_POSTS = [
+  "pages_show_list",
+  "pages_manage_ads",
+  "pages_read_engagement",
+] as const;
+
+export type InspectTokenScopesOptions = {
+  requiredScopes?: readonly string[];
+};
+
 export type InspectTokenResult =
   | { valid: false; error: string }
   | { valid: true; scopes: string[]; missingScopes: string[] };
 
 export async function inspectTokenScopes(
-  inputToken: string
+  inputToken: string,
+  options?: InspectTokenScopesOptions
 ): Promise<InspectTokenResult> {
   const appId = process.env.META_APP_ID;
   const appSecret = process.env.META_APP_SECRET;
@@ -42,6 +54,7 @@ export async function inspectTokenScopes(
   }
 
   const scopes = data.scopes ?? [];
-  const missingScopes = REQUIRED_TOKEN_SCOPES.filter((s) => !scopes.includes(s));
+  const required = options?.requiredScopes ?? REQUIRED_TOKEN_SCOPES;
+  const missingScopes = required.filter((s) => !scopes.includes(s));
   return { valid: true, scopes, missingScopes };
 }
