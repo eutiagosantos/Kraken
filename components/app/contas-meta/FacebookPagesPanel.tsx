@@ -17,6 +17,9 @@ type PagePostRow = {
   permalinkUrl: string | null;
   reactionCount: number;
   commentCount: number;
+  shareCount: number;
+  impressions: number | null;
+  engagedUsers: number | null;
 };
 
 function formatPostDate(iso: string): string {
@@ -47,6 +50,8 @@ export function FacebookPagesPanel({
   const [posts, setPosts] = useState<PagePostRow[]>([]);
   const [postsLoading, setPostsLoading] = useState(false);
   const [postsError, setPostsError] = useState<string | null>(null);
+  /** Optional Page access token from Graph API Explorer (same App as Kraken). */
+  const [optionalPageToken, setOptionalPageToken] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -71,8 +76,19 @@ export function FacebookPagesPanel({
     setPostsLoading(true);
     setPostsError(null);
     try {
-      const q = new URLSearchParams({ pageId, limit: "15" });
-      const res = await fetch(`/api/wizard/page-posts?${q.toString()}`, { credentials: "include" });
+      const trimmed = optionalPageToken.trim();
+      const res =
+        trimmed.length > 0
+          ? await fetch("/api/wizard/page-posts", {
+              method: "POST",
+              credentials: "include",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ pageId, limit: 15, pageAccessToken: trimmed }),
+            })
+          : await fetch(
+              `/api/wizard/page-posts?${new URLSearchParams({ pageId, limit: "15" }).toString()}`,
+              { credentials: "include" }
+            );
       const raw = (await res.json().catch(() => ({}))) as {
         error?: string;
         code?: string;
@@ -94,7 +110,7 @@ export function FacebookPagesPanel({
     } finally {
       setPostsLoading(false);
     }
-  }, []);
+  }, [optionalPageToken]);
 
   useLayoutEffect(() => {
     if (active) setLoading(true);
@@ -109,6 +125,7 @@ export function FacebookPagesPanel({
     setSelectedPageId(null);
     setPosts([]);
     setPostsError(null);
+    setOptionalPageToken("");
   }, [reloadKey]);
 
   useEffect(() => {
@@ -116,8 +133,13 @@ export function FacebookPagesPanel({
       setSelectedPageId(null);
       setPosts([]);
       setPostsError(null);
+      setOptionalPageToken("");
     }
   }, [pages, selectedPageId]);
+
+  useEffect(() => {
+    setOptionalPageToken("");
+  }, [selectedPageId]);
 
   useEffect(() => {
     if (!active || !selectedPageId) return;
@@ -169,8 +191,21 @@ export function FacebookPagesPanel({
     <div>
       <p className="mb-4 text-sm text-neutral-gray">
         Páginas que a sua identidade Meta gere (Graph API <code className="rounded bg-dashboard-track px-1 py-0.5 text-xs">me/accounts</code>
-        ). Toque numa página para ver publicações recentes e totais de reações e comentários (Graph{" "}
-        <code className="rounded bg-dashboard-track px-1 py-0.5 text-xs">&#123;page-id&#125;/posts</code>).
+        ). Toque numa página para ver publicações recentes, partilhas e totais de reações e comentários (Graph{" "}
+        <code className="rounded bg-dashboard-track px-1 py-0.5 text-xs">&#123;page-id&#125;/posts</code>
+        ). Se <code className="rounded bg-dashboard-track px-1 py-0.5 text-xs">/me/accounts</code> não devolver{" "}
+        <code className="rounded bg-dashboard-track px-1 py-0.5 text-xs">access_token</code> da página, pode colar um{" "}
+        <strong className="font-medium text-neutral-black">Page access token</strong> gerado no{" "}
+        <a
+          href="https://developers.facebook.com/tools/explorer/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-medium text-brand-purple underline-offset-2 hover:underline"
+        >
+          Explorador da Graph API
+        </a>{" "}
+        (em &quot;User or Page&quot; escolha a Página, gere o token e use a <strong className="font-medium text-neutral-black">mesma app</strong>{" "}
+        que o Kraken). Com <code className="rounded bg-dashboard-track px-1 py-0.5 text-xs">read_insights</code> no token, mostramos também impressões e utilizadores envolvidos (lifetime) por publicação.
       </p>
 
       {pages.length === 0 ? (
@@ -252,6 +287,29 @@ export function FacebookPagesPanel({
                 </Button>
               </div>
 
+              <div className="mb-5 rounded-lg border border-dashboard-border bg-dashboard-surface/60 p-3 sm:p-4">
+                <label htmlFor="fb-optional-page-token" className="text-sm font-semibold text-neutral-black">
+                  Token da Página (opcional)
+                </label>
+                <p className="mt-1 text-xs text-neutral-gray">
+                  Só necessário se o token OAuth não trouxer <code className="rounded bg-white px-1">access_token</code> em{" "}
+                  <code className="rounded bg-white px-1">/me/accounts</code>. Cole aqui o Page token da Página selecionada.
+                </p>
+                <textarea
+                  id="fb-optional-page-token"
+                  value={optionalPageToken}
+                  onChange={(e) => setOptionalPageToken(e.target.value)}
+                  onBlur={() => {
+                    if (selectedPageId && optionalPageToken.trim()) void loadPosts(selectedPageId);
+                  }}
+                  placeholder="EAAG… (Page access token)"
+                  rows={2}
+                  autoComplete="off"
+                  spellCheck={false}
+                  className="mt-2 w-full resize-y rounded-lg border border-neutral-border bg-white px-3 py-2 font-mono text-xs text-neutral-black outline-none placeholder:text-neutral-silver focus:border-brand-purple focus:ring-2 focus:ring-brand-purple/25"
+                />
+              </div>
+
               {postsLoading ? (
                 <div className="flex items-center gap-2 py-10 text-sm text-neutral-silver">
                   <Loader2 className="h-6 w-6 shrink-0 animate-spin text-brand-purple" aria-hidden />
@@ -289,6 +347,19 @@ export function FacebookPagesPanel({
                         <span>
                           Comentários: <strong className="text-neutral-black">{post.commentCount}</strong>
                         </span>
+                        <span>
+                          Partilhas: <strong className="text-neutral-black">{post.shareCount ?? 0}</strong>
+                        </span>
+                        {post.impressions != null ? (
+                          <span>
+                            Impressões: <strong className="text-neutral-black">{post.impressions}</strong>
+                          </span>
+                        ) : null}
+                        {post.engagedUsers != null ? (
+                          <span>
+                            Envolvidos: <strong className="text-neutral-black">{post.engagedUsers}</strong>
+                          </span>
+                        ) : null}
                         {post.permalinkUrl ? (
                           <a
                             href={post.permalinkUrl}

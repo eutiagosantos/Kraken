@@ -13,6 +13,7 @@ export const META_FACEBOOK_OAUTH_SCOPE_LIST = [
   "pages_read_engagement",
   "pages_read_user_content",
   "pages_manage_posts",
+  "read_insights",
 ] as const;
 
 export const META_FACEBOOK_OAUTH_SCOPES = META_FACEBOOK_OAUTH_SCOPE_LIST.join(",");

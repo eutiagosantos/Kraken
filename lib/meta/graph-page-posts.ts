@@ -15,6 +15,10 @@ export type PagePostEngagement = {
   permalinkUrl: string | null;
   reactionCount: number;
   commentCount: number;
+  shareCount: number;
+  /** Filled when `read_insights` is on the Page token and Graph returns metrics; otherwise null. */
+  impressions: number | null;
+  engagedUsers: number | null;
 };
 
 type Summary = { total_count?: number };
@@ -29,6 +33,12 @@ function countFromEngagementEdge(edge: unknown): number {
   if (!edge || typeof edge !== "object") return 0;
   const summary = (edge as { summary?: unknown }).summary;
   return totalFromSummary(summary);
+}
+
+function countFromShares(shares: unknown): number {
+  if (!shares || typeof shares !== "object") return 0;
+  const c = (shares as { count?: number }).count;
+  return typeof c === "number" && Number.isFinite(c) ? Math.max(0, Math.floor(c)) : 0;
 }
 
 /** Maps one node from `GET /{page-id}/posts`; exported for unit tests. */
@@ -52,6 +62,9 @@ export function mapGraphPagePostRow(row: Record<string, unknown> | null | undefi
     permalinkUrl,
     reactionCount: countFromEngagementEdge(row.reactions),
     commentCount: countFromEngagementEdge(row.comments),
+    shareCount: countFromShares(row.shares),
+    impressions: null,
+    engagedUsers: null,
   };
 }
 
@@ -72,7 +85,7 @@ export async function fetchPagePostsWithEngagement(
   const url = new URL(`${META_GRAPH_ORIGIN}/${encodeURIComponent(pid)}/posts`);
   url.searchParams.set(
     "fields",
-    "id,message,story,created_time,permalink_url,reactions.summary(true),comments.summary(true)"
+    "id,message,story,created_time,permalink_url,shares,reactions.summary(true),comments.summary(true)"
   );
   url.searchParams.set("limit", String(safeLimit));
   url.searchParams.set("access_token", accessToken);

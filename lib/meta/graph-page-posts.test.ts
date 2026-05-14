@@ -32,6 +32,9 @@ describe("mapGraphPagePostRow", () => {
       permalinkUrl: "https://www.facebook.com/permalink",
       reactionCount: 7,
       commentCount: 2,
+      shareCount: 0,
+      impressions: null,
+      engagedUsers: null,
     });
   });
 
@@ -44,6 +47,8 @@ describe("mapGraphPagePostRow", () => {
     const m = mapGraphPagePostRow(row);
     expect(m?.message).toBe("João partilhou uma foto.");
     expect(m?.reactionCount).toBe(0);
+    expect(m?.shareCount).toBe(0);
+    expect(m?.impressions).toBeNull();
   });
 
   it("returns null without id or created_time", () => {
