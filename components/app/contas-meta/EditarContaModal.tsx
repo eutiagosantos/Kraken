@@ -5,6 +5,7 @@ import { Loader2 } from "lucide-react";
 import { ModalPortal } from "@/components/app/ui/ModalPortal";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
+import { CurrencyInputBrl } from "@/components/ui/CurrencyInputBrl";
 import { Input } from "@/components/ui/Input";
 import type { ContaMeta } from "@/lib/mock-contas";
 
@@ -28,7 +29,7 @@ export function EditarContaModal({
   onSave: (id: string, patch: Partial<Pick<ContaMeta, "nickname" | "defaultBudget" | "defaultStructure" | "defaultAntiSpy">>) => void | Promise<void>;
 }) {
   const [nickname, setNickname] = useState("");
-  const [defaultBudget, setDefaultBudget] = useState("");
+  const [defaultBudget, setDefaultBudget] = useState(0);
   const [defaultStructure, setDefaultStructure] = useState<string>("1-50-1");
   const [defaultAntiSpy, setDefaultAntiSpy] = useState(false);
   const [notifications, setNotifications] = useState<Record<string, boolean>>({
@@ -42,7 +43,7 @@ export function EditarContaModal({
   useEffect(() => {
     if (conta && open) {
       setNickname(conta.nickname ?? "");
-      setDefaultBudget(String(conta.defaultBudget));
+      setDefaultBudget(conta.defaultBudget);
       setDefaultStructure(conta.defaultStructure);
       setDefaultAntiSpy(conta.defaultAntiSpy);
       setSaveError(null);
@@ -108,25 +109,14 @@ export function EditarContaModal({
                 value={nickname}
                 onChange={(e) => setNickname(e.target.value)}
               />
-              <div>
-                <label htmlFor="edit-budget-conta" className="mb-1.5 block text-sm font-semibold text-neutral-black">
-                  Orçamento padrão (R$)
-                </label>
-                <div className="relative">
-                  <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-neutral-gray">
-                    R$
-                  </span>
-                  <input
-                    id="edit-budget-conta"
-                    type="text"
-                    inputMode="decimal"
-                    value={defaultBudget}
-                    onChange={(e) => setDefaultBudget(e.target.value.replace(/[^\d.,]/g, ""))}
-                    className="w-full rounded-lg border border-neutral-border bg-neutral-white py-2.5 pl-10 pr-3 text-base outline-none focus:border-brand-purple focus:ring-2 focus:ring-brand-purple/25"
-                  />
-                </div>
-                <p className="mt-1 text-xs text-neutral-gray">Pré-preenchido ao iniciar um novo upload com esta conta</p>
-              </div>
+              <CurrencyInputBrl
+                id="edit-budget-conta"
+                label="Orçamento padrão"
+                value={defaultBudget}
+                onValueChange={(v) => setDefaultBudget(v ?? 0)}
+                min={0}
+              />
+              <p className="mt-1 text-xs text-neutral-gray">Pré-preenchido ao iniciar um novo upload com esta conta</p>
               <label className="flex flex-col gap-1.5">
                 <span className="text-sm font-semibold text-neutral-black">Estrutura padrão</span>
                 <select
@@ -193,7 +183,7 @@ export function EditarContaModal({
                 disabled={submitting}
                 onClick={() => {
                   void (async () => {
-                    const budget = Number(defaultBudget.replace(/\./g, "").replace(",", ".")) || 0;
+                    const budget = defaultBudget;
                     setSaveError(null);
                     setSubmitting(true);
                     try {

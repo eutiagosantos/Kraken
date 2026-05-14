@@ -5,6 +5,7 @@ import { Loader2, Plus, Trash2 } from "lucide-react";
 import { ModalPortal } from "@/components/app/ui/ModalPortal";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
+import { CurrencyInputBrl } from "@/components/ui/CurrencyInputBrl";
 import { Input } from "@/components/ui/Input";
 import type {
   Campanha,
@@ -76,7 +77,7 @@ export function EditCampanhaModal({
   const [account, setAccount] = useState("");
   const [accountId, setAccountId] = useState("");
   const [structure, setStructure] = useState<CampanhaStructure>("1-50-1");
-  const [budget, setBudget] = useState("");
+  const [dailyBudget, setDailyBudget] = useState(0);
   const [objective, setObjective] = useState("");
   const [antiSpy, setAntiSpy] = useState(false);
   const [status, setStatus] = useState<CampanhaStatus>("ativa");
@@ -94,7 +95,7 @@ export function EditCampanhaModal({
       setAccount(campanha.account);
       setAccountId(campanha.accountId);
       setStructure(campanha.structure);
-      setBudget(String(campanha.dailyBudget));
+      setDailyBudget(campanha.dailyBudget);
       setObjective(campanha.objective);
       setAntiSpy(campanha.antiSpy);
       setStatus(campanha.status);
@@ -120,7 +121,7 @@ export function EditCampanhaModal({
   function handleSave() {
     if (!campanha) return;
     void (async () => {
-      const n = parseFloat(budget.replace(",", "."));
+      const n = dailyBudget;
       const ac = parseInt(adsCreated, 10);
       const at = parseInt(adsTotal, 10);
       const trend = parseTrendInput(trendRaw);
@@ -150,7 +151,7 @@ export function EditCampanhaModal({
             accountId: accountId.trim() || campanha.accountId,
             structure,
             objective,
-            dailyBudget: Number.isFinite(n) ? n : campanha.dailyBudget,
+            dailyBudget: Number.isFinite(n) && n >= 0 ? n : campanha.dailyBudget,
             antiSpy,
             status,
             adsCreated: Number.isFinite(ac) && ac >= 0 ? ac : campanha.adsCreated,
@@ -236,24 +237,14 @@ export function EditCampanhaModal({
                         ))}
                       </select>
                     </label>
-                    <div>
-                      <label htmlFor="edit-budget" className="mb-1.5 block text-sm font-semibold text-neutral-black">
-                        Orçamento diário
-                      </label>
-                      <div className="relative">
-                        <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-neutral-gray">
-                          R$
-                        </span>
-                        <input
-                          id="edit-budget"
-                          type="text"
-                          inputMode="decimal"
-                          value={budget}
-                          onChange={(e) => setBudget(e.target.value.replace(/[^\d.,]/g, ""))}
-                          className="w-full rounded-lg border border-neutral-border bg-neutral-white py-2.5 pl-10 pr-3 font-ui text-base text-neutral-black outline-none focus:border-brand-purple focus:ring-2 focus:ring-brand-purple/25"
-                        />
-                      </div>
-                    </div>
+                    <CurrencyInputBrl
+                      id="edit-budget"
+                      label="Orçamento diário"
+                      value={dailyBudget}
+                      onValueChange={(v) => setDailyBudget(v ?? 0)}
+                      min={0}
+                      className="md:col-span-1"
+                    />
                     <label className="flex flex-col gap-1.5">
                       <span className="text-sm font-semibold text-neutral-black">Objetivo</span>
                       <select value={objective} onChange={(e) => setObjective(e.target.value)} className={selectClass}>

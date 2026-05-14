@@ -22,6 +22,7 @@ import {
   buildNomenclaturePreview,
   type NomenclaturePreviewContext,
 } from "@/lib/wizard/nomenclature-preview";
+import { CurrencyInputBrl } from "@/components/ui/CurrencyInputBrl";
 import { BidStrategyCard } from "./BidStrategyCard";
 import { CampaignTypeCard } from "./CampaignTypeCard";
 import { NomenclatureEditor } from "./NomenclatureEditor";
@@ -262,16 +263,16 @@ export function Step2Config(props: Step2ConfigProps) {
         <section className="grid gap-3 rounded-xl border border-gray-200 bg-gray-50 p-4 lg:grid-cols-[1fr_180px]">
           <div>
             <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-500">Orçamento da campanha</h4>
-            <div className="mt-2 flex items-center rounded-lg border border-gray-300 bg-white">
-              <span className="px-3 text-sm text-gray-500">R$</span>
-              <input
-                type="number"
-                min={6}
-                value={budget}
-                onChange={(event) => onSetBudget(Number(event.target.value))}
-                className="w-full bg-transparent py-2 text-sm text-gray-900 outline-none"
-              />
-            </div>
+            <CurrencyInputBrl
+              id="wizard-campaign-budget"
+              className="mt-2"
+              value={budget}
+              onValueChange={(v) => {
+                if (v !== undefined) onSetBudget(v);
+              }}
+              min={6}
+              inputClassName="border-gray-300 py-2 text-sm text-gray-900 focus:border-[#7132f5] focus:ring-[#7132f5]/25"
+            />
           </div>
           <div>
             <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-500">Periodicidade</h4>
@@ -371,16 +372,25 @@ export function Step2Config(props: Step2ConfigProps) {
                 <label className="text-xs uppercase tracking-wider text-gray-500">
                   {bidStrategy === "ROAS" ? "Meta de ROAS" : "Limite de lance (BRL)"}
                 </label>
-                <input
-                  type="number"
-                  value={bidStrategy === "ROAS" ? roasTarget ?? "" : bidLimit ?? ""}
-                  onChange={(event) =>
-                    bidStrategy === "ROAS"
-                      ? onSetRoasTarget(event.target.value ? Number(event.target.value) : undefined)
-                      : onSetBidLimit(event.target.value ? Number(event.target.value) : undefined)
-                  }
-                  className="mt-2 w-44 rounded-md border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-900"
-                />
+                {bidStrategy === "ROAS" ? (
+                  <input
+                    type="number"
+                    value={roasTarget ?? ""}
+                    onChange={(event) =>
+                      onSetRoasTarget(event.target.value ? Number(event.target.value) : undefined)
+                    }
+                    className="mt-2 w-44 rounded-md border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-900"
+                  />
+                ) : (
+                  <CurrencyInputBrl
+                    id="wizard-bid-limit"
+                    className="mt-2 w-44"
+                    value={bidLimit}
+                    onValueChange={onSetBidLimit}
+                    allowEmpty
+                    inputClassName="border-gray-300 px-2 py-1.5 text-sm text-gray-900 focus:border-[#7132f5] focus:ring-[#7132f5]/25"
+                  />
+                )}
               </motion.div>
             ) : null}
           </AnimatePresence>
