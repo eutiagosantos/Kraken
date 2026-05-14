@@ -163,9 +163,12 @@ export function FilaProcessamentoClient() {
         : serverOnlyActive
           ? progressFromJob(activeJobs[0])
           : queuePublish.progress;
-  const publishCardProgress = queuePublish.error || queuePublish.success
-    ? rawPublishProgress
-    : Math.max(rawPublishProgress, Math.round(smoothProgress));
+  const publishCardProgress =
+    queuePublish.error || queuePublish.success
+      ? rawPublishProgress
+      : embeddedRecentJob
+        ? rawPublishProgress
+        : Math.max(rawPublishProgress, Math.round(smoothProgress));
 
   const recentTitle = queuePublish.error
     ? "Erro na publicação"
