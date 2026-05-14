@@ -3,6 +3,10 @@ const intlBrl = new Intl.NumberFormat("pt-BR", {
   maximumFractionDigits: 2,
 });
 
+const intlIntegerPtBr = new Intl.NumberFormat("pt-BR", {
+  maximumFractionDigits: 0,
+});
+
 /**
  * Keeps only valid pt-BR money typing: digits, at most one `,` as decimal separator,
  * optional `.` as thousands separator on the integer side; max 2 fractional digits.
@@ -48,4 +52,41 @@ export function parseBrlToNumber(s: string): number | undefined {
 /** Formatted integer + decimal part for input (no R$ symbol). */
 export function formatBrlInputValue(n: number): string {
   return intlBrl.format(n);
+}
+
+/**
+ * Applies pt-BR thousand separators while typing (after {@link sanitizeBrlTyping}).
+ * Keeps trailing `,` and fractional digits so the user can type decimals without fighting the mask.
+ */
+export function formatBrlTypingDisplay(sanitized: string): string {
+  const s = sanitized.trim();
+  if (!s) return "";
+
+  const commaIdx = s.indexOf(",");
+  const intRaw = commaIdx === -1 ? s : s.slice(0, commaIdx);
+  const fracRaw = commaIdx === -1 ? "" : s.slice(commaIdx + 1);
+  const intDigits = intRaw.replace(/\./g, "");
+
+  if (!intDigits && fracRaw) {
+    return `0,${fracRaw}`;
+  }
+
+  const hasTrailingComma = commaIdx !== -1 && fracRaw.length === 0;
+  if (!intDigits && hasTrailingComma) {
+    return "0,";
+  }
+  if (!intDigits) {
+    return "";
+  }
+
+  const intNum = parseInt(intDigits, 10);
+  if (!Number.isFinite(intNum)) {
+    return "";
+  }
+  const intPart = intlIntegerPtBr.format(intNum);
+
+  if (commaIdx === -1) {
+    return intPart;
+  }
+  return `${intPart},${fracRaw}`;
 }

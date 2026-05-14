@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { formatBrlInputValue, parseBrlToNumber, sanitizeBrlTyping } from "./brl-money-input";
+import {
+  formatBrlInputValue,
+  formatBrlTypingDisplay,
+  parseBrlToNumber,
+  sanitizeBrlTyping,
+} from "./brl-money-input";
 
 describe("sanitizeBrlTyping", () => {
   it("strips non-numeric junk", () => {
@@ -54,5 +59,26 @@ describe("formatBrlInputValue", () => {
 
   it("formats 50 without forced decimals", () => {
     expect(formatBrlInputValue(50)).toBe("50");
+  });
+});
+
+describe("formatBrlTypingDisplay", () => {
+  it("groups thousands while typing", () => {
+    expect(formatBrlTypingDisplay("1234")).toBe("1.234");
+    expect(formatBrlTypingDisplay("1000000")).toBe("1.000.000");
+  });
+
+  it("keeps trailing comma for decimal entry", () => {
+    expect(formatBrlTypingDisplay("12,")).toBe("12,");
+    expect(formatBrlTypingDisplay("1234,")).toBe("1.234,");
+  });
+
+  it("formats integer and fraction together", () => {
+    expect(formatBrlTypingDisplay("1234,5")).toBe("1.234,5");
+    expect(formatBrlTypingDisplay("1234,56")).toBe("1.234,56");
+  });
+
+  it("normalizes leading comma fraction", () => {
+    expect(formatBrlTypingDisplay(",5")).toBe("0,5");
   });
 });

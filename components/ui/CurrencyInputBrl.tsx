@@ -2,7 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
-import { formatBrlInputValue, parseBrlToNumber, sanitizeBrlTyping } from "@/lib/brl-money-input";
+import {
+  formatBrlInputValue,
+  formatBrlTypingDisplay,
+  parseBrlToNumber,
+  sanitizeBrlTyping,
+} from "@/lib/brl-money-input";
 
 export interface CurrencyInputBrlProps {
   id: string;
@@ -98,7 +103,8 @@ export function CurrencyInputBrl({
           }}
           onChange={(e) => {
             const sanitized = sanitizeBrlTyping(e.target.value);
-            setText(sanitized);
+            const display = formatBrlTypingDisplay(sanitized);
+            setText(display);
             const parsed = parseBrlToNumber(sanitized);
             if (parsed === undefined) {
               if (allowEmpty && sanitized.trim() === "") {
