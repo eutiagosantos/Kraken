@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { clampPagePostsLimit, mapGraphPagePostRow } from "@/lib/meta/graph-page-posts";
+import {
+  clampPagePostsLimit,
+  mapGraphPagePostRow,
+  pickPostPreviewFromGraphRow,
+} from "@/lib/meta/graph-page-posts";
 
 describe("clampPagePostsLimit", () => {
   it("clamps to 1..25", () => {
@@ -12,6 +16,77 @@ describe("clampPagePostsLimit", () => {
   it("defaults invalid input to 10", () => {
     expect(clampPagePostsLimit(undefined)).toBe(10);
     expect(clampPagePostsLimit(NaN)).toBe(10);
+  });
+});
+
+describe("pickPostPreviewFromGraphRow", () => {
+  it("prefers full_picture over attachment images", () => {
+    const row = {
+      full_picture: "https://fb.cdn/full.jpg",
+      attachments: {
+        data: [
+          {
+            media_type: "photo",
+            media: { image: { src: "https://fb.cdn/att.jpg" } },
+          },
+        ],
+      },
+    };
+    expect(pickPostPreviewFromGraphRow(row)).toEqual({
+      previewImageUrl: "https://fb.cdn/full.jpg",
+      mediaType: "photo",
+      isCarousel: false,
+    });
+  });
+
+  it("uses first attachment image when full_picture missing", () => {
+    const row = {
+      attachments: {
+        data: [
+          {
+            media_type: "photo",
+            media: { image: { src: "https://fb.cdn/only-att.jpg" } },
+          },
+        ],
+      },
+    };
+    expect(pickPostPreviewFromGraphRow(row)).toEqual({
+      previewImageUrl: "https://fb.cdn/only-att.jpg",
+      mediaType: "photo",
+      isCarousel: false,
+    });
+  });
+
+  it("maps video media_type and thumbnail from subattachments", () => {
+    const row = {
+      attachments: {
+        data: [
+          {
+            media_type: "video",
+            media: {},
+            subattachments: {
+              data: [
+                { media_type: "photo", media: { image: { src: "https://fb.cdn/slide1.jpg" } } },
+                { media_type: "photo", media: { image: { src: "https://fb.cdn/slide2.jpg" } } },
+              ],
+            },
+          },
+        ],
+      },
+    };
+    expect(pickPostPreviewFromGraphRow(row)).toEqual({
+      previewImageUrl: "https://fb.cdn/slide1.jpg",
+      mediaType: "video",
+      isCarousel: true,
+    });
+  });
+
+  it("returns null preview for text-only row", () => {
+    expect(pickPostPreviewFromGraphRow({ message: "hi" })).toEqual({
+      previewImageUrl: null,
+      mediaType: "unknown",
+      isCarousel: false,
+    });
   });
 });
 
@@ -33,6 +108,9 @@ describe("mapGraphPagePostRow", () => {
       reactionCount: 7,
       commentCount: 2,
       shareCount: 0,
+      previewImageUrl: null,
+      mediaType: "unknown",
+      isCarousel: false,
       impressions: null,
       engagedUsers: null,
     });
@@ -49,6 +127,9 @@ describe("mapGraphPagePostRow", () => {
     expect(m?.reactionCount).toBe(0);
     expect(m?.shareCount).toBe(0);
     expect(m?.impressions).toBeNull();
+    expect(m?.previewImageUrl).toBeNull();
+    expect(m?.mediaType).toBe("unknown");
+    expect(m?.isCarousel).toBe(false);
   });
 
   it("maps shares count", () => {
@@ -59,6 +140,22 @@ describe("mapGraphPagePostRow", () => {
       shares: { count: 4 },
     };
     expect(mapGraphPagePostRow(row)?.shareCount).toBe(4);
+  });
+
+  it("maps full_picture and link media_type", () => {
+    const row = {
+      id: "p_link",
+      message: "Check this",
+      created_time: "2024-03-10T10:00:00+0000",
+      full_picture: "https://fb.cdn/og.png",
+      attachments: {
+        data: [{ media_type: "link", media: { image: { src: "https://fb.cdn/og2.png" } } }],
+      },
+    };
+    const m = mapGraphPagePostRow(row);
+    expect(m?.previewImageUrl).toBe("https://fb.cdn/og.png");
+    expect(m?.mediaType).toBe("link");
+    expect(m?.isCarousel).toBe(false);
   });
 
   it("returns null without id or created_time", () => {

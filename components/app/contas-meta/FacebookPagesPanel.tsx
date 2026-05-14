@@ -2,10 +2,11 @@
 
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Check, Copy, ExternalLink, Loader2 } from "lucide-react";
+import { Check, Copy, ExternalLink, ImageOff, Loader2, Play } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { AccountAvatar } from "@/components/app/contas-meta/AccountAvatar";
+import type { PagePostMediaType } from "@/lib/meta/graph-page-posts";
 import { cn } from "@/lib/utils";
 
 type FbPageRow = { id: string; name: string; pictureUrl?: string };
@@ -20,6 +21,9 @@ type PagePostRow = {
   shareCount: number;
   impressions: number | null;
   engagedUsers: number | null;
+  previewImageUrl?: string | null;
+  mediaType?: PagePostMediaType;
+  isCarousel?: boolean;
 };
 
 function formatPostDate(iso: string): string {
@@ -28,6 +32,71 @@ function formatPostDate(iso: string): string {
   } catch {
     return iso;
   }
+}
+
+function PostPreviewThumb({ post }: { post: PagePostRow }) {
+  const previewUrl = post.previewImageUrl ?? null;
+  const mediaType = post.mediaType ?? "unknown";
+  const isCarousel = post.isCarousel ?? false;
+  const showPlay = mediaType === "video" && Boolean(previewUrl);
+
+  const frame = (
+    <div
+      className={cn(
+        "relative aspect-video w-[132px] shrink-0 overflow-hidden rounded-lg bg-dashboard-track sm:w-[156px]",
+        post.permalinkUrl && "transition-transform duration-200 group-hover/thumb:scale-[1.02]"
+      )}
+    >
+      {previewUrl ? (
+        <img
+          src={previewUrl}
+          alt=""
+          width={312}
+          height={176}
+          loading="lazy"
+          decoding="async"
+          referrerPolicy="no-referrer"
+          className="h-full w-full object-cover"
+        />
+      ) : (
+        <div className="flex h-full min-h-[74px] flex-col items-center justify-center gap-1 px-2 text-center text-neutral-silver">
+          <ImageOff className="h-7 w-7 opacity-60" aria-hidden />
+          <span className="text-[10px] font-medium leading-tight">Sem pré-visualização</span>
+        </div>
+      )}
+      {showPlay ? (
+        <div
+          className="pointer-events-none absolute inset-0 flex items-center justify-center bg-gradient-to-t from-black/50 via-black/15 to-transparent"
+          aria-hidden
+        >
+          <span className="flex h-11 w-11 items-center justify-center rounded-full bg-white/95 text-brand-purple shadow-md ring-1 ring-black/10">
+            <Play className="ml-0.5 h-5 w-5 fill-current" aria-hidden />
+          </span>
+        </div>
+      ) : null}
+      {isCarousel ? (
+        <span className="absolute bottom-1.5 right-1.5 rounded-md bg-black/65 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
+          Álbum
+        </span>
+      ) : null}
+    </div>
+  );
+
+  if (post.permalinkUrl) {
+    return (
+      <a
+        href={post.permalinkUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="group/thumb shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-brand-purple/40 focus-visible:ring-offset-2"
+        aria-label="Abrir publicação no Facebook"
+      >
+        {frame}
+      </a>
+    );
+  }
+
+  return frame;
 }
 
 export function FacebookPagesPanel({
@@ -331,47 +400,58 @@ export function FacebookPagesPanel({
               ) : posts.length === 0 ? (
                 <p className="py-6 text-sm text-neutral-gray">Nenhuma publicação devolvida para esta página.</p>
               ) : (
-                <ul className="divide-y divide-dashboard-border">
+                <ul className="grid gap-3 sm:gap-4">
                   {posts.map((post) => (
-                    <li key={post.id} className="py-4 first:pt-0">
-                      <p className="text-xs font-medium uppercase tracking-wide text-neutral-silver">
-                        {formatPostDate(post.createdTime)}
-                      </p>
-                      <p className="mt-1 line-clamp-4 text-sm text-neutral-black">
-                        {post.message.trim() ? post.message : <span className="italic text-neutral-silver">(sem texto)</span>}
-                      </p>
-                      <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-neutral-gray">
-                        <span>
-                          Reações: <strong className="text-neutral-black">{post.reactionCount}</strong>
-                        </span>
-                        <span>
-                          Comentários: <strong className="text-neutral-black">{post.commentCount}</strong>
-                        </span>
-                        <span>
-                          Partilhas: <strong className="text-neutral-black">{post.shareCount ?? 0}</strong>
-                        </span>
-                        {post.impressions !== null && post.impressions !== undefined ? (
-                          <span>
-                            Impressões: <strong className="text-neutral-black">{post.impressions}</strong>
-                          </span>
-                        ) : null}
-                        {post.engagedUsers !== null && post.engagedUsers !== undefined ? (
-                          <span>
-                            Envolvidos: <strong className="text-neutral-black">{post.engagedUsers}</strong>
-                          </span>
-                        ) : null}
-                        {post.permalinkUrl ? (
-                          <a
-                            href={post.permalinkUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 font-medium text-brand-purple hover:underline"
-                          >
-                            Abrir no Facebook
-                            <ExternalLink className="h-3.5 w-3.5" aria-hidden />
-                          </a>
-                        ) : null}
-                      </div>
+                    <li key={post.id}>
+                      <article className="flex gap-3 rounded-xl border border-dashboard-border bg-dashboard-surface/80 p-3 shadow-sm transition-shadow duration-200 hover:border-brand-purple/25 hover:shadow-md sm:gap-4 sm:p-4">
+                        <PostPreviewThumb post={post} />
+                        <div className="flex min-w-0 flex-1 flex-col justify-between gap-2">
+                          <div>
+                            <p className="text-xs font-medium uppercase tracking-wide text-neutral-silver">
+                              {formatPostDate(post.createdTime)}
+                            </p>
+                            <p className="mt-1 line-clamp-3 text-sm leading-snug text-neutral-black sm:line-clamp-4">
+                              {post.message.trim() ? (
+                                post.message
+                              ) : (
+                                <span className="italic text-neutral-silver">(sem texto)</span>
+                              )}
+                            </p>
+                          </div>
+                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-dashboard-border/80 pt-2 text-xs text-neutral-gray sm:gap-x-4">
+                            <span>
+                              Reações: <strong className="text-neutral-black">{post.reactionCount}</strong>
+                            </span>
+                            <span>
+                              Comentários: <strong className="text-neutral-black">{post.commentCount}</strong>
+                            </span>
+                            <span>
+                              Partilhas: <strong className="text-neutral-black">{post.shareCount ?? 0}</strong>
+                            </span>
+                            {post.impressions !== null && post.impressions !== undefined ? (
+                              <span>
+                                Impressões: <strong className="text-neutral-black">{post.impressions}</strong>
+                              </span>
+                            ) : null}
+                            {post.engagedUsers !== null && post.engagedUsers !== undefined ? (
+                              <span>
+                                Envolvidos: <strong className="text-neutral-black">{post.engagedUsers}</strong>
+                              </span>
+                            ) : null}
+                            {post.permalinkUrl ? (
+                              <a
+                                href={post.permalinkUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 font-medium text-brand-purple underline-offset-2 hover:underline"
+                              >
+                                Abrir no Facebook
+                                <ExternalLink className="h-3.5 w-3.5" aria-hidden />
+                              </a>
+                            ) : null}
+                          </div>
+                        </div>
+                      </article>
                     </li>
                   ))}
                 </ul>
