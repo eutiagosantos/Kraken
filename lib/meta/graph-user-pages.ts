@@ -5,12 +5,14 @@ export type UserFacebookPage = {
   id: string;
   name: string;
   pictureUrl?: string;
+  pageAccessToken?: string;
 };
 
 type MeAccountRow = {
   id?: string;
   name?: string;
   picture?: string | { data?: { url?: string } };
+  access_token?: string;
 };
 
 /** Maps a single `me/accounts` node; exported for unit tests. */
@@ -24,7 +26,8 @@ export function mapMeAccountsNode(row: MeAccountRow): UserFacebookPage | null {
   else if (p && typeof p === "object" && typeof p.data?.url === "string" && p.data.url.trim()) {
     pictureUrl = p.data.url.trim();
   }
-  return pictureUrl ? { id, name, pictureUrl } : { id, name };
+  const pageAccessToken = typeof row.access_token === "string" && row.access_token.trim() ? row.access_token.trim() : undefined;
+  return { id, name, ...(pictureUrl ? { pictureUrl } : {}), ...(pageAccessToken ? { pageAccessToken } : {}) };
 }
 
 export function pageIdInUserPages(pageId: string, pages: UserFacebookPage[]): boolean {
@@ -49,7 +52,7 @@ export async function fetchUserFacebookPages(accessToken: string): Promise<UserF
   if (cached && cached.expiresAt > Date.now()) return cached.pages;
   const collected: UserFacebookPage[] = [];
   const first = new URL(`${META_GRAPH_ORIGIN}/me/accounts`);
-  first.searchParams.set("fields", "id,name,picture{url}");
+  first.searchParams.set("fields", "id,name,picture{url},access_token");
   first.searchParams.set("limit", "100");
   first.searchParams.set("access_token", accessToken);
   let nextUrl: string | null = first.toString();

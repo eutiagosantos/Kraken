@@ -29,13 +29,15 @@ export async function GET(request: Request) {
 
   try {
     const pages = await fetchUserFacebookPages(tokenRes.accessToken);
-    if (!pageIdInUserPages(pageId, pages)) {
+    const matchedPage = pages.find((p) => p.id === pageId.trim());
+    if (!matchedPage) {
       return NextResponse.json(
         { error: "Esta página não está na lista de Páginas que a sua conta Meta gere. Escolha outra." },
         { status: 403 }
       );
     }
-    const data = await fetchPagePostsWithEngagement(tokenRes.accessToken, pageId, limit);
+    const effectiveToken = matchedPage.pageAccessToken ?? tokenRes.accessToken;
+    const data = await fetchPagePostsWithEngagement(effectiveToken, pageId, limit);
     return NextResponse.json({ data });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Não foi possível carregar as publicações da página.";
