@@ -40,13 +40,18 @@ export async function GET(request: Request) {
   } catch (e) {
     const message = e instanceof Error ? e.message : "Não foi possível carregar as publicações da página.";
     const lower = message.toLowerCase();
-    const hint =
+    const isPermissionError =
       lower.includes("pages_read_engagement") ||
+      lower.includes("(#10)") ||
       lower.includes("(#200)") ||
       lower.includes("permission") ||
-      lower.includes("oauth")
-        ? " Reconecte a conta Meta (Contas Meta) para aceitar a permissão pages_read_engagement."
-        : "";
-    return NextResponse.json({ error: `${message}${hint}` }, { status: 502 });
+      lower.includes("oauth");
+    if (isPermissionError) {
+      return NextResponse.json(
+        { error: "Permissão pages_read_engagement em falta. Reconecte a conta Meta (Contas Meta) para conceder essa permissão." },
+        { status: 502 }
+      );
+    }
+    return NextResponse.json({ error: message }, { status: 502 });
   }
 }
