@@ -25,7 +25,9 @@ export async function POST(request: Request) {
   }
 
   const pageId = parsed.data.pageId.trim();
-  const uniqueActs = [...new Set(parsed.data.metaAccountIds.map((id) => normalizeActId(id)))].filter(Boolean);
+  const uniqueActs = Array.from(
+    new Set(parsed.data.metaAccountIds.map((id) => normalizeActId(id)))
+  ).filter(Boolean);
   if (uniqueActs.length === 0) {
     return NextResponse.json({ error: "Indica pelo menos uma conta de anúncios." }, { status: 400 });
   }
