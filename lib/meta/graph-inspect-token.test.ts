@@ -23,7 +23,12 @@ describe("inspectTokenScopes", () => {
           JSON.stringify({
             data: {
               is_valid: true,
-              scopes: ["pages_read_engagement", "pages_manage_ads", "pages_show_list"],
+              scopes: [
+                "pages_read_engagement",
+                "pages_manage_ads",
+                "pages_show_list",
+                "pages_read_user_content",
+              ],
             },
           }),
       }))
@@ -55,6 +60,12 @@ describe("inspectTokenScopes", () => {
 
     const r = await inspectTokenScopes("token");
     expect(r.valid).toBe(true);
-    if (r.valid) expect(r.missingScopes).toEqual(["ads_management", "ads_read"]);
+    if (r.valid)
+      expect(r.missingScopes).toEqual([
+        "ads_management",
+        "ads_read",
+        "pages_read_user_content",
+        "pages_manage_posts",
+      ]);
   });
 });

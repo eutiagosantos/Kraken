@@ -212,8 +212,10 @@ export function Step1Creatives({
               ) : fbPages.length === 0 ? (
                 <p className="text-sm text-amber-800">
                   Nenhuma página encontrada. Em Contas Meta, reconecta a conta — são necessárias as permissões{" "}
-                  <code className="rounded bg-gray-100 px-1">pages_show_list</code> e{" "}
-                  <code className="rounded bg-gray-100 px-1">pages_manage_ads</code>.
+                  <code className="rounded bg-gray-100 px-1">pages_show_list</code>,{" "}
+                  <code className="rounded bg-gray-100 px-1">pages_manage_ads</code>,{" "}
+                  <code className="rounded bg-gray-100 px-1">pages_read_engagement</code> e{" "}
+                  <code className="rounded bg-gray-100 px-1">pages_read_user_content</code> (Graph v25+).
                 </p>
               ) : (
                 <select

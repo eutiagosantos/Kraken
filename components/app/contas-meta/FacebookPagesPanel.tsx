@@ -178,9 +178,11 @@ export function FacebookPagesPanel({
           <p>Nenhuma página encontrada com o token atual.</p>
           <p className="max-w-md text-xs text-neutral-silver">
             Confirme permissões <span className="font-medium">pages_show_list</span>,{" "}
-            <span className="font-medium">pages_manage_ads</span> e{" "}
-            <span className="font-medium">pages_read_engagement</span> (última necessária para ver publicações abaixo) e
-            que gere pelo menos uma Página com a conta Facebook ligada ao Kraken.
+            <span className="font-medium">pages_manage_ads</span>,{" "}
+            <span className="font-medium">pages_read_engagement</span> e{" "}
+            <span className="font-medium">pages_read_user_content</span> (Graph v25+; necessárias para ver publicações
+            abaixo) e que gere pelo menos uma Página com a conta Facebook ligada ao Kraken. Para criar/editar posts na
+            Página, inclua também <span className="font-medium">pages_manage_posts</span>.
           </p>
           <Button type="button" variant="primary" className="mt-1" onClick={onConnect}>
             Conectar ou reconectar Meta

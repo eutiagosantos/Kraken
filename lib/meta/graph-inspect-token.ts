@@ -6,6 +6,8 @@ export const REQUIRED_TOKEN_SCOPES = [
   "pages_show_list",
   "pages_manage_ads",
   "pages_read_engagement",
+  "pages_read_user_content",
+  "pages_manage_posts",
 ] as const;
 
 /** Page access tokens from `/me/accounts` often omit ad-account scopes; use this for Graph calls that only need Page permissions. */
@@ -13,6 +15,7 @@ export const REQUIRED_PAGE_TOKEN_SCOPES_FOR_ENGAGEMENT_POSTS = [
   "pages_show_list",
   "pages_manage_ads",
   "pages_read_engagement",
+  "pages_read_user_content",
 ] as const;
 
 export type InspectTokenScopesOptions = {

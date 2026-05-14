@@ -9,17 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { buildOAuthReturnRedirectTo } from "@/lib/auth/supabase-oauth-redirects";
 import { useSupabase } from "@/lib/hooks/useSupabase";
-
-const META_SCOPES = [
-  "email",
-  "public_profile",
-  "ads_read",
-  "ads_management",
-  "business_management",
-  "pages_show_list",
-  "pages_manage_ads",
-  "pages_read_engagement",
-].join(",");
+import { META_FACEBOOK_OAUTH_SCOPES } from "@/lib/meta/facebook-oauth-scopes";
 
 export function KrakenLoginForm() {
   const router = useRouter();
@@ -70,7 +60,7 @@ export function KrakenLoginForm() {
       provider: "facebook",
       options: {
         redirectTo,
-        scopes: META_SCOPES,
+        scopes: META_FACEBOOK_OAUTH_SCOPES,
       },
     });
     if (error) {

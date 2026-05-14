@@ -86,7 +86,7 @@ export function invalidatePageCache(accessToken: string): void {
 
 /**
  * Lists Facebook Pages the user can manage (`GET /me/accounts`).
- * Requires `pages_show_list` / `pages_manage_ads` on the user access token.
+ * Requires `pages_show_list` / `pages_manage_ads` on the user access token (and Page content scopes such as `pages_read_user_content` for v25+ post listing).
  * Results are cached in-process for 10 minutes to avoid a Meta API round-trip on every publish.
  */
 export async function fetchUserFacebookPages(accessToken: string): Promise<UserFacebookPage[]> {

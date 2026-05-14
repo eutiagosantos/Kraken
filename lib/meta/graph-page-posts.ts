@@ -58,7 +58,7 @@ export function mapGraphPagePostRow(row: Record<string, unknown> | null | undefi
 /**
  * Recent Page posts with reaction and comment totals (Graph summaries).
  * Pass a **Page access token** from `GET /me/accounts` (see `/api/wizard/page-posts`); engagement fields require
- * `pages_read_engagement` (and app access level) on the underlying grant.
+ * `pages_read_engagement` and `pages_read_user_content` (and app access level) on the underlying grant.
  */
 export async function fetchPagePostsWithEngagement(
   accessToken: string,

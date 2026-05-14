@@ -9,19 +9,10 @@ import { Input } from "@/components/ui/Input";
 import { messageForSignUpAuthError } from "@/lib/auth/supabase-auth-error-message";
 import { buildOAuthReturnRedirectTo } from "@/lib/auth/supabase-oauth-redirects";
 import { useSupabase } from "@/lib/hooks/useSupabase";
+import { META_FACEBOOK_OAUTH_SCOPES } from "@/lib/meta/facebook-oauth-scopes";
 import { cn } from "@/lib/utils";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const META_SCOPES = [
-  "email",
-  "public_profile",
-  "ads_read",
-  "ads_management",
-  "business_management",
-  "pages_show_list",
-  "pages_manage_ads",
-  "pages_read_engagement",
-].join(",");
 
 export function RegisterForm() {
   const router = useRouter();
@@ -95,7 +86,7 @@ export function RegisterForm() {
       provider: "facebook",
       options: {
         redirectTo,
-        scopes: META_SCOPES,
+        scopes: META_FACEBOOK_OAUTH_SCOPES,
       },
     });
     if (error) {

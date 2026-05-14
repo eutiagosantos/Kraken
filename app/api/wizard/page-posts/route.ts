@@ -9,6 +9,8 @@ import { clampPagePostsLimit, fetchPagePostsWithEngagement } from "@/lib/meta/gr
 import { getMetaGraphAccessToken } from "@/lib/meta/graph-token";
 import { fetchUserFacebookPages, resolvePageAccessTokenForPosts } from "@/lib/meta/graph-user-pages";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(request: Request) {
   const { supabase, user } = await getSessionUser();
   if (!user) {
@@ -44,7 +46,7 @@ export async function GET(request: Request) {
       return NextResponse.json(
         {
           error:
-            "A Meta não devolveu um token de página para esta Página (resposta de /me/accounts sem access_token). Reconecte a conta Meta em Contas Meta e aceite as permissões de Página, ou confirme no Access Token Debugger que o token inclui pages_read_engagement / pages_manage_ads.",
+            "A Meta não devolveu um token de página para esta Página (resposta de /me/accounts sem access_token). Reconecte a conta Meta em Contas Meta e aceite as permissões de Página, ou confirme no Access Token Debugger que o token inclui pages_read_engagement, pages_read_user_content e pages_manage_ads.",
           code: "PAGE_ACCESS_TOKEN_UNAVAILABLE",
         },
         { status: 403 }
@@ -75,13 +77,14 @@ export async function GET(request: Request) {
     const lower = message.toLowerCase();
     const isPermissionError =
       lower.includes("pages_read_engagement") ||
+      lower.includes("pages_read_user_content") ||
       lower.includes("(#10)") ||
       lower.includes("(#200)");
     if (isPermissionError) {
       return NextResponse.json(
         {
           error:
-            "Permissão pages_read_engagement em falta no token da Página. Reconecte a conta Meta (Contas Meta) para conceder essa permissão.",
+            "Faltam permissões de Página no token (ex.: pages_read_engagement, pages_read_user_content). Reconecte a conta Meta em Contas Meta e aceite os novos scopes.",
           code: "META_GRAPH_PERMISSION",
           detail: message,
         },
