@@ -3,7 +3,7 @@
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Check, Copy, ExternalLink, Loader2 } from "lucide-react";
-import { useCallback, useEffect, useLayoutEffect, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { AccountAvatar } from "@/components/app/contas-meta/AccountAvatar";
 import { cn } from "@/lib/utils";
@@ -52,6 +52,8 @@ export function FacebookPagesPanel({
   const [postsError, setPostsError] = useState<string | null>(null);
   /** Optional Page access token from Graph API Explorer (same App as Kraken). */
   const [optionalPageToken, setOptionalPageToken] = useState("");
+  const optionalPageTokenRef = useRef(optionalPageToken);
+  optionalPageTokenRef.current = optionalPageToken;
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -76,7 +78,7 @@ export function FacebookPagesPanel({
     setPostsLoading(true);
     setPostsError(null);
     try {
-      const trimmed = optionalPageToken.trim();
+      const trimmed = optionalPageTokenRef.current.trim();
       const res =
         trimmed.length > 0
           ? await fetch("/api/wizard/page-posts", {
@@ -110,7 +112,7 @@ export function FacebookPagesPanel({
     } finally {
       setPostsLoading(false);
     }
-  }, [optionalPageToken]);
+  }, []);
 
   useLayoutEffect(() => {
     if (active) setLoading(true);
@@ -136,10 +138,6 @@ export function FacebookPagesPanel({
       setOptionalPageToken("");
     }
   }, [pages, selectedPageId]);
-
-  useEffect(() => {
-    setOptionalPageToken("");
-  }, [selectedPageId]);
 
   useEffect(() => {
     if (!active || !selectedPageId) return;
@@ -238,7 +236,12 @@ export function FacebookPagesPanel({
               >
                 <button
                   type="button"
-                  onClick={() => setSelectedPageId(p.id)}
+                  onClick={() => {
+                    setSelectedPageId((prev) => {
+                      if (prev !== p.id) setOptionalPageToken("");
+                      return p.id;
+                    });
+                  }}
                   className="flex min-w-0 flex-1 items-center gap-3 rounded-lg text-left outline-none focus-visible:ring-2 focus-visible:ring-brand-purple/40"
                 >
                   {p.pictureUrl ? (
@@ -299,9 +302,6 @@ export function FacebookPagesPanel({
                   id="fb-optional-page-token"
                   value={optionalPageToken}
                   onChange={(e) => setOptionalPageToken(e.target.value)}
-                  onBlur={() => {
-                    if (selectedPageId && optionalPageToken.trim()) void loadPosts(selectedPageId);
-                  }}
                   placeholder="EAAG… (Page access token)"
                   rows={2}
                   autoComplete="off"
@@ -350,12 +350,12 @@ export function FacebookPagesPanel({
                         <span>
                           Partilhas: <strong className="text-neutral-black">{post.shareCount ?? 0}</strong>
                         </span>
-                        {post.impressions != null ? (
+                        {post.impressions !== null && post.impressions !== undefined ? (
                           <span>
                             Impressões: <strong className="text-neutral-black">{post.impressions}</strong>
                           </span>
                         ) : null}
-                        {post.engagedUsers != null ? (
+                        {post.engagedUsers !== null && post.engagedUsers !== undefined ? (
                           <span>
                             Envolvidos: <strong className="text-neutral-black">{post.engagedUsers}</strong>
                           </span>

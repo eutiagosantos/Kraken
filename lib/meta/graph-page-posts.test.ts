@@ -51,6 +51,16 @@ describe("mapGraphPagePostRow", () => {
     expect(m?.impressions).toBeNull();
   });
 
+  it("maps shares count", () => {
+    const row = {
+      id: "p1",
+      message: "x",
+      created_time: "2024-01-15T12:00:00+0000",
+      shares: { count: 4 },
+    };
+    expect(mapGraphPagePostRow(row)?.shareCount).toBe(4);
+  });
+
   it("returns null without id or created_time", () => {
     expect(mapGraphPagePostRow({ created_time: "2024-01-01T00:00:00+0000" })).toBeNull();
     expect(mapGraphPagePostRow({ id: "x" })).toBeNull();

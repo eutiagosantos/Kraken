@@ -121,7 +121,11 @@ O formulário da Meta pode exigir **`pages_read_engagement`** em conjunto com `a
 
 ### Uso no Kraken
 
-No ecrã **Contas Meta**, aba **Páginas Facebook**, o utilizador escolhe uma das Páginas listadas por `GET /me/accounts` e o servidor chama `GET /{page-id}/posts` com campos que incluem `reactions.summary(true)` e `comments.summary(true)` (`lib/meta/graph-page-posts.ts`, exposto por `GET /api/wizard/page-posts`). Só são aceites `pageId` que pertençam à lista de páginas do token (`pageIdInUserPages`). Os dados são mostrados apenas ao utilizador autenticado.
+No ecrã **Contas Meta**, aba **Páginas Facebook**, o utilizador escolhe uma das Páginas listadas por `GET /me/accounts` e o servidor chama `GET /{page-id}/posts` com campos que incluem `reactions.summary(true)`, `comments.summary(true)` e `shares` (`lib/meta/graph-page-posts.ts`, exposto por `GET /api/wizard/page-posts` ou `POST /api/wizard/page-posts` com `pageAccessToken` opcional). Só são aceites `pageId` que pertençam à lista de páginas do token (`pageIdInUserPages`). Os dados são mostrados apenas ao utilizador autenticado.
+
+**Token colado (Explorador da Graph API):** se `GET /me/accounts` não devolver `access_token` por página, o utilizador pode colar um **Page access token** gerado no Explorador para a **mesma app** que o Kraken (`META_APP_ID`); o servidor valida o token com `debug_token` (tipo `PAGE` e `profile_id` igual ao `pageId`).
+
+**`read_insights`:** com este scope no token da Página (OAuth em `META_FACEBOOK_OAUTH_SCOPE_LIST` + reconexão), o servidor tenta também `GET /{post-id}/insights` para métricas lifetime `post_impressions` e `post_engaged_users` por publicação. Em modo **Live**, a Meta pode exigir **App Review** para `read_insights`.
 
 ### Quando pedir
 
