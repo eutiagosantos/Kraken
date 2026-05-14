@@ -201,7 +201,7 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
   }
 
   const counts = resolveStructureCounts(ctx.payload);
-  const structureDb = structureLabelForDb(ctx.payload, counts);
+  const structureDb = structureLabelForDb(ctx.payload);
   const totalMinor = budgetMinorUnits(ctx.payload.budget);
   const isCbo = ctx.payload.campaignType === "CBO" || ctx.payload.campaignType === "DPA";
   const opt = selectOptimizationForObjective(ctx.payload.objective, ctx.payload.pixelId);

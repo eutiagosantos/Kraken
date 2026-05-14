@@ -10,6 +10,12 @@ export const REQUIRED_TOKEN_SCOPES = [
   "pages_manage_posts",
 ] as const;
 
+/** Scopes exigidos para rotas que criam/editam catálogos, feeds e product sets na Meta. */
+export const REQUIRED_TOKEN_SCOPES_FOR_CATALOG = [
+  ...REQUIRED_TOKEN_SCOPES,
+  "catalog_management",
+] as const;
+
 /** Page access tokens from `/me/accounts` often omit ad-account scopes; use this for Graph calls that only need Page permissions. */
 export const REQUIRED_PAGE_TOKEN_SCOPES_FOR_ENGAGEMENT_POSTS = [
   "pages_show_list",

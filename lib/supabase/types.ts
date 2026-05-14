@@ -300,6 +300,258 @@ export interface Database {
         };
         Relationships: [];
       };
+      meta_catalogs: {
+        Row: {
+          id: string;
+          user_id: string;
+          workspace_id: string | null;
+          meta_ad_account_id: string | null;
+          business_id: string;
+          meta_catalog_id: string;
+          name: string;
+          raw_snapshot: Json | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          workspace_id?: string | null;
+          meta_ad_account_id?: string | null;
+          business_id: string;
+          meta_catalog_id: string;
+          name?: string;
+          raw_snapshot?: Json | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          workspace_id?: string | null;
+          meta_ad_account_id?: string | null;
+          business_id?: string;
+          meta_catalog_id?: string;
+          name?: string;
+          raw_snapshot?: Json | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      meta_product_sets: {
+        Row: {
+          id: string;
+          user_id: string;
+          catalog_id: string;
+          meta_product_set_id: string;
+          name: string;
+          filter: Json | null;
+          is_dynamic: boolean;
+          metadata: Json | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          catalog_id: string;
+          meta_product_set_id: string;
+          name?: string;
+          filter?: Json | null;
+          is_dynamic?: boolean;
+          metadata?: Json | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          catalog_id?: string;
+          meta_product_set_id?: string;
+          name?: string;
+          filter?: Json | null;
+          is_dynamic?: boolean;
+          metadata?: Json | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      meta_product_feeds: {
+        Row: {
+          id: string;
+          user_id: string;
+          catalog_id: string;
+          meta_feed_id: string;
+          name: string;
+          schedule: Json | null;
+          last_sync_status: string | null;
+          last_error: Json | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          catalog_id: string;
+          meta_feed_id: string;
+          name?: string;
+          schedule?: Json | null;
+          last_sync_status?: string | null;
+          last_error?: Json | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          catalog_id?: string;
+          meta_feed_id?: string;
+          name?: string;
+          schedule?: Json | null;
+          last_sync_status?: string | null;
+          last_error?: Json | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      meta_feed_uploads: {
+        Row: {
+          id: string;
+          user_id: string;
+          feed_id: string;
+          meta_upload_id: string | null;
+          status: string;
+          response: Json | null;
+          errors: Json | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          feed_id: string;
+          meta_upload_id?: string | null;
+          status?: string;
+          response?: Json | null;
+          errors?: Json | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          feed_id?: string;
+          meta_upload_id?: string | null;
+          status?: string;
+          response?: Json | null;
+          errors?: Json | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      meta_sync_jobs: {
+        Row: {
+          id: string;
+          user_id: string;
+          job_type: string;
+          payload: Json;
+          idempotency_key: string | null;
+          status: string;
+          attempt_count: number;
+          next_run_at: string;
+          last_error: Json | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          job_type: string;
+          payload?: Json;
+          idempotency_key?: string | null;
+          status?: string;
+          attempt_count?: number;
+          next_run_at?: string;
+          last_error?: Json | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          job_type?: string;
+          payload?: Json;
+          idempotency_key?: string | null;
+          status?: string;
+          attempt_count?: number;
+          next_run_at?: string;
+          last_error?: Json | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      meta_webhook_events: {
+        Row: {
+          id: string;
+          topic: string | null;
+          payload: Json;
+          signature_valid: boolean;
+          received_at: string;
+          processed_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          topic?: string | null;
+          payload?: Json;
+          signature_valid?: boolean;
+          received_at?: string;
+          processed_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          topic?: string | null;
+          payload?: Json;
+          signature_valid?: boolean;
+          received_at?: string;
+          processed_at?: string | null;
+        };
+        Relationships: [];
+      };
+      meta_publish_audit: {
+        Row: {
+          id: string;
+          user_id: string;
+          operation: string;
+          request_payload: Json | null;
+          response_payload: Json | null;
+          graph_error: Json | null;
+          fbtrace_id: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          operation: string;
+          request_payload?: Json | null;
+          response_payload?: Json | null;
+          graph_error?: Json | null;
+          fbtrace_id?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          operation?: string;
+          request_payload?: Json | null;
+          response_payload?: Json | null;
+          graph_error?: Json | null;
+          fbtrace_id?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       activity_events: {
         Row: {
           id: string;

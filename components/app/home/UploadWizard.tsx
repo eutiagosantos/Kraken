@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { NomenclaturePreviewContext } from "@/lib/wizard/nomenclature-preview";
-import { buildWizardPublishPayload } from "@/lib/wizard/build-wizard-publish-payload";
+import { buildWizardPublishPayload, tryBuildCatalogPublishPayload } from "@/lib/wizard/build-wizard-publish-payload";
 import { getWizardPublishSliceFromStore } from "@/lib/wizard/get-wizard-publish-slice";
 import { getPublicoGeoValidationErrorPt } from "@/lib/wizard/publico-geo-validation";
 import { adsetAndAdsCountsForWizardShape } from "@/lib/meta/map-wizard-to-graph";
@@ -29,6 +29,39 @@ const lightSelectStyles = {
   input: (base: object) => ({ ...base, color: "#111827" }),
   singleValue: (base: object) => ({ ...base, color: "#111827" }),
 };
+
+function computeStep3PublishBlocked(wizard: ReturnType<typeof useWizardStore.getState>): string | null {
+  const parts: string[] = [];
+  if (!wizard.pageId?.trim()) {
+    parts.push("Escolhe uma Página Facebook no passo 1 (Criativos e contas).");
+  }
+  const geoErr = getPublicoGeoValidationErrorPt(wizard.publico);
+  if (geoErr) {
+    parts.push(geoErr);
+  }
+  const dest = wizard.destinationUrl.trim();
+  if (!dest) {
+    parts.push("Indica a URL https do site (Saiba mais) no passo 2.");
+  } else {
+    try {
+      if (new URL(dest).protocol !== "https:") {
+        parts.push("A URL do site deve começar por https:// (passo 2).");
+      }
+    } catch {
+      parts.push("URL do site inválida. Corrige no passo 2.");
+    }
+  }
+  if (
+    wizard.campaignType === "DPA" &&
+    wizard.creatives.length === 0 &&
+    !tryBuildCatalogPublishPayload(getWizardPublishSliceFromStore())
+  ) {
+    parts.push(
+      "Para DPA sem ficheiros criativos, preenche Business ID, ID do catálogo, product set e pixel no passo 2 (todos obrigatórios)."
+    );
+  }
+  return parts.length > 0 ? parts.join(" ") : null;
+}
 
 export function UploadWizard() {
   const router = useRouter();
@@ -150,29 +183,7 @@ export function UploadWizard() {
     wizard.selectedAccountIds.length,
   ]);
 
-  const step3PublishBlockedReason = useMemo(() => {
-    const parts: string[] = [];
-    if (!wizard.pageId?.trim()) {
-      parts.push("Escolhe uma Página Facebook no passo 1 (Criativos e contas).");
-    }
-    const geoErr = getPublicoGeoValidationErrorPt(wizard.publico);
-    if (geoErr) {
-      parts.push(geoErr);
-    }
-    const dest = wizard.destinationUrl.trim();
-    if (!dest) {
-      parts.push("Indica a URL https do site (Saiba mais) no passo 2.");
-    } else {
-      try {
-        if (new URL(dest).protocol !== "https:") {
-          parts.push("A URL do site deve começar por https:// (passo 2).");
-        }
-      } catch {
-        parts.push("URL do site inválida. Corrige no passo 2.");
-      }
-    }
-    return parts.length > 0 ? parts.join(" ") : null;
-  }, [wizard.pageId, wizard.publico, wizard.destinationUrl]);
+  const step3PublishBlockedReason = computeStep3PublishBlocked(wizard);
 
   const addCreativeFiles = (files: File[]) => {
     files.forEach((file) => {
@@ -335,6 +346,16 @@ export function UploadWizard() {
               onSetDestinationUrl={wizard.setDestinationUrl}
               adSetNames={wizard.adSetNames}
               onSetAdSetNameAt={wizard.setAdSetNameAt}
+              catalogBusinessId={wizard.catalogBusinessId}
+              catalogMetaCatalogId={wizard.catalogMetaCatalogId}
+              catalogProductSetId={wizard.catalogProductSetId}
+              catalogCustomEvent={wizard.catalogCustomEvent}
+              catalogInstagramActorId={wizard.catalogInstagramActorId}
+              onSetCatalogBusinessId={wizard.setCatalogBusinessId}
+              onSetCatalogMetaCatalogId={wizard.setCatalogMetaCatalogId}
+              onSetCatalogProductSetId={wizard.setCatalogProductSetId}
+              onSetCatalogCustomEvent={wizard.setCatalogCustomEvent}
+              onSetCatalogInstagramActorId={wizard.setCatalogInstagramActorId}
               onPrev={() => wizard.setStep(1)}
               onNext={() => wizard.setStep(3)}
             />

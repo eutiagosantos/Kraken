@@ -1,12 +1,12 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useMemo } from "react";
 import { LayoutGrid, Loader2, ShoppingBag, Sliders } from "lucide-react";
-import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import type {
   BidStrategy,
   BudgetPeriod,
   CampaignType,
+  CatalogCustomEventChoice,
   NomenclatureToken,
   Structure,
   WizardStatus,
@@ -68,6 +68,16 @@ interface Step2ConfigProps {
   onSetDestinationUrl: (value: string) => void;
   adSetNames: string[];
   onSetAdSetNameAt: (index: number, name: string) => void;
+  catalogBusinessId: string;
+  catalogMetaCatalogId: string;
+  catalogProductSetId: string;
+  catalogCustomEvent: CatalogCustomEventChoice;
+  catalogInstagramActorId: string;
+  onSetCatalogBusinessId: (value: string) => void;
+  onSetCatalogMetaCatalogId: (value: string) => void;
+  onSetCatalogProductSetId: (value: string) => void;
+  onSetCatalogCustomEvent: (value: CatalogCustomEventChoice) => void;
+  onSetCatalogInstagramActorId: (value: string) => void;
   onPrev: () => void;
   onNext: () => void;
 }
@@ -131,6 +141,16 @@ export function Step2Config(props: Step2ConfigProps) {
     onSetDestinationUrl,
     adSetNames,
     onSetAdSetNameAt,
+    catalogBusinessId,
+    catalogMetaCatalogId,
+    catalogProductSetId,
+    catalogCustomEvent,
+    catalogInstagramActorId,
+    onSetCatalogBusinessId,
+    onSetCatalogMetaCatalogId,
+    onSetCatalogProductSetId,
+    onSetCatalogCustomEvent,
+    onSetCatalogInstagramActorId,
     onPrev,
     onNext,
   } = props;
@@ -175,16 +195,69 @@ export function Step2Config(props: Step2ConfigProps) {
               selected={campaignType === "DPA"}
               onClick={() => onSetCampaignType("DPA")}
               icon={<ShoppingBag className="h-4 w-4" />}
-              title="CBO (rótulo catálogo)"
-              description="Orçamento ao nível da campanha como CBO. Catálogo DPA real (produtos dinâmicos) ainda não está implementado na API deste fluxo."
-              badge={
-                <Badge variant="success" className="text-[10px]">
-                  Anti-Spy
-                </Badge>
-              }
+              title="DPA · Catálogo"
+              description="Campanha com catálogo e produtos dinâmicos (template). Preenche os IDs abaixo e publica pela fila — usa a API de catálogo no servidor."
             />
           </div>
         </section>
+
+        {campaignType === "DPA" ? (
+          <section className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-4">
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-emerald-800">Catálogo Meta (DPA)</h4>
+            <p className="mt-1 text-xs text-emerald-900/80">
+              Business ID, ID do catálogo e do product set vêm do Commerce Manager / Business Settings. O pixel deve ser o
+              da mesma conta de anúncios.
+            </p>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              <label className="block text-xs font-medium text-gray-700">
+                Business ID
+                <input
+                  value={catalogBusinessId}
+                  onChange={(e) => onSetCatalogBusinessId(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
+                  placeholder="ex. 1234567890"
+                />
+              </label>
+              <label className="block text-xs font-medium text-gray-700">
+                ID catálogo (Meta)
+                <input
+                  value={catalogMetaCatalogId}
+                  onChange={(e) => onSetCatalogMetaCatalogId(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
+                />
+              </label>
+              <label className="block text-xs font-medium text-gray-700">
+                ID product set
+                <input
+                  value={catalogProductSetId}
+                  onChange={(e) => onSetCatalogProductSetId(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
+                />
+              </label>
+              <label className="block text-xs font-medium text-gray-700">
+                Evento de conversão
+                <select
+                  value={catalogCustomEvent}
+                  onChange={(e) => onSetCatalogCustomEvent(e.target.value as CatalogCustomEventChoice)}
+                  className="mt-1 w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
+                >
+                  <option value="PURCHASE">Purchase</option>
+                  <option value="ADD_TO_CART">AddToCart</option>
+                  <option value="CONTENT_VIEW">ViewContent</option>
+                </select>
+              </label>
+              <label className="block text-xs font-medium text-gray-700 sm:col-span-2">
+                Instagram actor ID (opcional, para placements Instagram)
+                <input
+                  value={catalogInstagramActorId}
+                  onChange={(e) => onSetCatalogInstagramActorId(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
+                  placeholder="ID da identidade Instagram da página"
+                />
+              </label>
+            </div>
+          </section>
+        ) : null}
 
         <section className="grid gap-3 rounded-xl border border-gray-200 bg-gray-50 p-4 lg:grid-cols-[1fr_180px]">
           <div>

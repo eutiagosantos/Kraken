@@ -1,4 +1,5 @@
 import { META_GRAPH_ORIGIN } from "@/lib/meta/constants";
+import { computeMetaAppSecretProof, metaAppSecretFromEnv } from "@/lib/meta/meta-app-secret-proof";
 
 export type GraphFetch = typeof fetch;
 
@@ -8,6 +9,7 @@ export class GraphApiError extends Error {
   readonly errorSubcode?: number;
   readonly errorUserTitle?: string;
   readonly errorUserMsg?: string;
+  readonly fbtraceId?: string;
   /** Short JSON snippet from `error_data` when serializable (debugging / Meta blame hints). */
   readonly errorDataSummary?: string;
   readonly rawBody: string;
@@ -21,6 +23,7 @@ export class GraphApiError extends Error {
       errorUserTitle?: string;
       errorUserMsg?: string;
       errorDataSummary?: string;
+      fbtraceId?: string;
       rawBody: string;
     }
   ) {
@@ -31,6 +34,7 @@ export class GraphApiError extends Error {
     this.errorSubcode = opts.errorSubcode;
     this.errorUserTitle = opts.errorUserTitle;
     this.errorUserMsg = opts.errorUserMsg;
+    this.fbtraceId = opts.fbtraceId;
     this.errorDataSummary = opts.errorDataSummary;
     this.rawBody = opts.rawBody;
   }
@@ -43,6 +47,7 @@ function parseGraphErrorJson(body: string): {
   errorUserTitle?: string;
   errorUserMsg?: string;
   errorDataSummary?: string;
+  fbtraceId?: string;
 } {
   try {
     const j = JSON.parse(body) as {
@@ -53,6 +58,7 @@ function parseGraphErrorJson(body: string): {
         error_user_title?: string;
         error_user_msg?: string;
         error_data?: unknown;
+        fbtrace_id?: string;
       };
     };
     const e = j.error;
@@ -78,12 +84,22 @@ function parseGraphErrorJson(body: string): {
         errorUserTitle: typeof e.error_user_title === "string" ? e.error_user_title : undefined,
         errorUserMsg: userMsg,
         errorDataSummary,
+        fbtraceId: typeof e.fbtrace_id === "string" && e.fbtrace_id.trim() ? e.fbtrace_id.trim() : undefined,
       };
     }
   } catch {
     /* ignore */
   }
   return { message: body.slice(0, 400) };
+}
+
+/** Appends `access_token` and optional `appsecret_proof` when `META_APP_SECRET` is set (server). */
+export function attachGraphAccessTokenToUrl(url: URL, accessToken: string): void {
+  url.searchParams.set("access_token", accessToken);
+  const secret = metaAppSecretFromEnv();
+  if (secret) {
+    url.searchParams.set("appsecret_proof", computeMetaAppSecretProof(accessToken, secret));
+  }
 }
 
 export function graphUrl(path: string): string {
@@ -103,7 +119,7 @@ export async function graphJsonPost<T = unknown>(options: {
 }): Promise<T> {
   const fetchFn = options.fetchImpl ?? fetch;
   const url = new URL(graphUrl(options.path));
-  url.searchParams.set("access_token", options.accessToken);
+  attachGraphAccessTokenToUrl(url, options.accessToken);
 
   let lastErr: GraphApiError | null = null;
   for (let attempt = 0; attempt < 3; attempt++) {
@@ -128,6 +144,7 @@ export async function graphJsonPost<T = unknown>(options: {
         errorUserTitle: parsed.errorUserTitle,
         errorUserMsg: parsed.errorUserMsg,
         errorDataSummary: parsed.errorDataSummary,
+        fbtraceId: parsed.fbtraceId,
         rawBody: raw,
       });
       if (res.status >= 500 && attempt < 2) {
@@ -162,7 +179,7 @@ export async function graphJsonGet<T = unknown>(options: {
       url.searchParams.set(k, v);
     }
   }
-  url.searchParams.set("access_token", options.accessToken);
+  attachGraphAccessTokenToUrl(url, options.accessToken);
   const res = await fetchFn(url.toString(), { method: "GET" });
   const raw = await res.text();
   if (!res.ok) {
@@ -174,6 +191,7 @@ export async function graphJsonGet<T = unknown>(options: {
       errorUserTitle: parsed.errorUserTitle,
       errorUserMsg: parsed.errorUserMsg,
       errorDataSummary: parsed.errorDataSummary,
+      fbtraceId: parsed.fbtraceId,
       rawBody: raw,
     });
   }
@@ -196,7 +214,7 @@ export async function graphDelete(options: {
 }): Promise<void> {
   const fetchFn = options.fetchImpl ?? fetch;
   const url = new URL(graphUrl(options.path));
-  url.searchParams.set("access_token", options.accessToken);
+  attachGraphAccessTokenToUrl(url, options.accessToken);
   const res = await fetchFn(url.toString(), { method: "DELETE" });
   const raw = await res.text();
   if (!res.ok) {
@@ -208,6 +226,7 @@ export async function graphDelete(options: {
       errorUserTitle: parsed.errorUserTitle,
       errorUserMsg: parsed.errorUserMsg,
       errorDataSummary: parsed.errorDataSummary,
+      fbtraceId: parsed.fbtraceId,
       rawBody: raw,
     });
   }
@@ -221,7 +240,7 @@ export async function graphFormPost<T = unknown>(options: {
 }): Promise<T> {
   const fetchFn = options.fetchImpl ?? fetch;
   const url = new URL(graphUrl(options.path));
-  url.searchParams.set("access_token", options.accessToken);
+  attachGraphAccessTokenToUrl(url, options.accessToken);
 
   const res = await fetchFn(url.toString(), { method: "POST", body: options.formData });
   const raw = await res.text();
@@ -234,6 +253,7 @@ export async function graphFormPost<T = unknown>(options: {
       errorUserTitle: parsed.errorUserTitle,
       errorUserMsg: parsed.errorUserMsg,
       errorDataSummary: parsed.errorDataSummary,
+      fbtraceId: parsed.fbtraceId,
       rawBody: raw,
     });
   }

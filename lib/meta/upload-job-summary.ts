@@ -1,5 +1,5 @@
 import type { WizardPublishPayload } from "@/lib/meta/map-wizard-to-graph";
-import { resolveStructureCounts, structureLabelForDb } from "@/lib/meta/map-wizard-to-graph";
+import { structureLabelForDb } from "@/lib/meta/map-wizard-to-graph";
 import type { Json } from "@/lib/supabase/types";
 
 const MAX_CREATIVE_NAMES = 8;
@@ -12,8 +12,7 @@ export function buildUploadJobSummary(
   payload: WizardPublishPayload,
   accounts: Array<{ meta_account_id: string; name: string }>
 ): Json {
-  const counts = resolveStructureCounts(payload);
-  const structureDb = structureLabelForDb(payload, counts);
+  const structureDb = structureLabelForDb(payload);
   const names = payload.creatives.map((c) => c.name);
   const creativeNames = names.slice(0, MAX_CREATIVE_NAMES);
   const creativeNamesExtra = Math.max(0, names.length - creativeNames.length);

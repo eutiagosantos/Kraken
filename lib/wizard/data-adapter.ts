@@ -10,6 +10,8 @@ import {
   type WizardPreset,
 } from "@/lib/mock-data/wizard";
 import type { Publico } from "@/lib/stores/wizardStore";
+import { tryBuildCatalogPublishPayload } from "@/lib/wizard/build-wizard-publish-payload";
+import { getWizardPublishSliceFromStore } from "@/lib/wizard/get-wizard-publish-slice";
 
 export interface PublishPayload {
   /** Validated server-side together with `creativeStoragePaths` after Supabase upload. */
@@ -223,6 +225,49 @@ export function createFetchWizardDataAdapter(): WizardDataAdapter {
       } = await supabase.auth.getUser();
       if (!user) {
         throw new Error("Sessão em falta. Inicia sessão para publicar.");
+      }
+
+      const catalogBody = tryBuildCatalogPublishPayload(getWizardPublishSliceFromStore());
+      if (catalogBody) {
+        const res = await fetch("/api/meta/catalog-publish", {
+          ...opts,
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(catalogBody),
+        });
+        const raw = await res.text();
+        type CatJson = {
+          error?: string;
+          ok?: boolean;
+          warnings?: string[];
+          results?: PublishResult["results"];
+        };
+        let json: CatJson | null = null;
+        if (raw.trim()) {
+          try {
+            json = JSON.parse(raw) as CatJson;
+          } catch {
+            /* ignore */
+          }
+        }
+        if (!res.ok) {
+          throw new Error(json?.error ?? raw.trim().slice(0, 280) || `catalog_publish_${res.status}`);
+        }
+        const rows = json?.results;
+        if (rows?.some((r) => !r.ok)) {
+          const failed = rows.filter((r) => !r.ok);
+          const detail = failed
+            .map((r) => `${r.accountName ?? "Conta"}: ${r.error ?? "Erro"}`)
+            .join("\n");
+          const w = json?.warnings;
+          const warnSuffix = w && w.length > 0 ? `\n\nAvisos:\n${w.join("\n")}` : "";
+          throw new Error((failed.length === rows.length ? detail : `Algumas contas falharam:\n${detail}`) + warnSuffix);
+        }
+        return {
+          publishId: `catalog-${Date.now()}`,
+          warnings: json?.warnings,
+          results: json?.results,
+        };
       }
 
       const initRes = await fetch("/api/wizard/publish/init", { ...opts, method: "POST" });

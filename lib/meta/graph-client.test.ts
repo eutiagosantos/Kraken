@@ -11,6 +11,7 @@ describe("graphJsonPost", () => {
             message: "Invalid OAuth access token.",
             code: 190,
             error_user_title: "Token inválido",
+            fbtrace_id: "trace1",
           },
         }),
         { status: 400, headers: { "Content-Type": "application/json" } }
@@ -26,6 +27,7 @@ describe("graphJsonPost", () => {
     ).rejects.toSatisfy((e: unknown) => {
       expect(e).toBeInstanceOf(GraphApiError);
       expect((e as GraphApiError).graphCode).toBe(190);
+      expect((e as GraphApiError).fbtraceId).toBe("trace1");
       return true;
     });
   });

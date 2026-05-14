@@ -67,6 +67,8 @@ export type BudgetPeriod = "daily" | "lifetime";
 export type WizardStatus = "ACTIVE" | "PAUSED";
 export type Structure = "1-1-1" | "1-3-5" | "1-50-1" | "custom";
 
+export type CatalogCustomEventChoice = "PURCHASE" | "ADD_TO_CART" | "CONTENT_VIEW";
+
 const PRESET_ADSET_COUNT: Record<Exclude<Structure, "custom">, number> = {
   "1-1-1": 1,
   "1-3-5": 3,
@@ -138,6 +140,12 @@ const initialState = {
     error: null as string | null,
     success: false,
   },
+  /** Catálogo Meta (DPA) — usado com `POST /api/meta/catalog-publish` quando preenchido. */
+  catalogBusinessId: "",
+  catalogMetaCatalogId: "",
+  catalogProductSetId: "",
+  catalogCustomEvent: "PURCHASE" as CatalogCustomEventChoice,
+  catalogInstagramActorId: "",
 };
 
 export type WizardQueuePublish = (typeof initialState)["queuePublish"];
@@ -174,6 +182,11 @@ type WizardState = typeof initialState & {
   /** Returns `"wizard"` if a job was pending and was cleared; otherwise `null`. */
   consumePublishJobTrigger: () => null | "wizard";
   patchQueuePublish: (partial: Partial<WizardQueuePublish>) => void;
+  setCatalogBusinessId: (value: string) => void;
+  setCatalogMetaCatalogId: (value: string) => void;
+  setCatalogProductSetId: (value: string) => void;
+  setCatalogCustomEvent: (value: CatalogCustomEventChoice) => void;
+  setCatalogInstagramActorId: (value: string) => void;
 };
 
 const initialQueuePublish: WizardQueuePublish = {
@@ -289,4 +302,9 @@ export const useWizardStore = create<WizardState>()((set, get) => ({
     set((s) => ({
       queuePublish: { ...s.queuePublish, ...partial },
     })),
+  setCatalogBusinessId: (catalogBusinessId) => set({ catalogBusinessId }),
+  setCatalogMetaCatalogId: (catalogMetaCatalogId) => set({ catalogMetaCatalogId }),
+  setCatalogProductSetId: (catalogProductSetId) => set({ catalogProductSetId }),
+  setCatalogCustomEvent: (catalogCustomEvent) => set({ catalogCustomEvent }),
+  setCatalogInstagramActorId: (catalogInstagramActorId) => set({ catalogInstagramActorId }),
 }));

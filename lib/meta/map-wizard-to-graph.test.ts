@@ -383,16 +383,14 @@ describe("resolveStructureCounts", () => {
 describe("structureLabelForDb", () => {
   it("maps 1-1-1 to API slug and custom to prefixed string", () => {
     const p1 = wizardPublishPayloadSchema.parse(basePayload);
-    const c1 = resolveStructureCounts(p1);
-    expect(structureLabelForDb(p1, c1)).toBe("1-1-5");
+    expect(structureLabelForDb(p1)).toBe("1-1-5");
 
     const p2 = wizardPublishPayloadSchema.parse({
       ...basePayload,
       structure: "custom",
       customStructure: { campaigns: 2, adsets: 4, ads: 3 },
     });
-    const c2 = resolveStructureCounts(p2);
-    expect(structureLabelForDb(p2, c2)).toBe("custom:2-4-3");
+    expect(structureLabelForDb(p2)).toBe("custom:2-4-3");
   });
 });
 

@@ -765,7 +765,7 @@ describe("runWizardPublish", () => {
       publico: publicoFixture,
     });
 
-    const { supabase, insertCampanhaRows } = createSupabaseMock();
+    const { supabase } = createSupabaseMock();
     const out = await runWizardPublish({
       supabase,
       userId: "00000000-0000-4000-8000-000000000001",

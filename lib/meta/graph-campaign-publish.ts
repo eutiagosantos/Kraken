@@ -193,14 +193,31 @@ export async function graphCreateAdCreative(options: {
     linkUrl: options.linkUrl,
     message: options.message,
   });
-  const body = {
+  return graphCreateAdCreativeFromBody({
+    actId: options.actId,
+    accessToken: options.accessToken,
+    name: options.name,
+    body: { object_story_spec: objectStorySpec },
+    fetchImpl: options.fetchImpl,
+  });
+}
+
+/** Raw `adcreatives` body (e.g. catalog `object_story_spec` + `degrees_of_freedom_spec`). */
+export async function graphCreateAdCreativeFromBody(options: {
+  actId: string;
+  accessToken: string;
+  name: string;
+  body: Record<string, unknown>;
+  fetchImpl?: GraphFetch;
+}): Promise<{ id: string }> {
+  const merged: Record<string, unknown> = {
+    ...options.body,
     name: options.name.slice(0, 256),
-    object_story_spec: objectStorySpec,
   };
   return graphJsonPost<{ id: string }>({
     path: `${options.actId}/adcreatives`,
     accessToken: options.accessToken,
-    body,
+    body: merged,
     fetchImpl: options.fetchImpl,
   });
 }

@@ -26,5 +26,10 @@ export function getWizardPublishSliceFromStore(): WizardPublishStateSlice {
     adSetBillingEvent: w.adSetBillingEvent,
     destinationUrl: w.destinationUrl,
     adSetNames: w.adSetNames,
+    catalogBusinessId: w.catalogBusinessId,
+    catalogMetaCatalogId: w.catalogMetaCatalogId,
+    catalogProductSetId: w.catalogProductSetId,
+    catalogCustomEvent: w.catalogCustomEvent,
+    catalogInstagramActorId: w.catalogInstagramActorId,
   };
 }

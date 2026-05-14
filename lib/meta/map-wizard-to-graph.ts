@@ -28,7 +28,7 @@ const localidadeSchema = z.object({
   name: z.string(),
 });
 
-const publicoSchema = z.object({
+export const publicoSchema = z.object({
   id: z.string(),
   name: z.string(),
   type: z.enum(["saved", "custom"]),
@@ -277,7 +277,14 @@ export const wizardPublishPayloadSchema = z
 export type WizardPublishPayload = z.infer<typeof wizardPublishPayloadSchema>;
 
 /** Client-side wizard state before init + storage upload (sem `publishOperationId` nem paths). */
-export type WizardPublishPayloadInput = Omit<WizardPublishPayload, "creativeStoragePaths" | "publishOperationId">;
+export type WizardPublishPayloadInput = Omit<WizardPublishPayload, "creativeStoragePaths" | "publishOperationId"> & {
+  /** Optional: only sent to `/api/meta/catalog-publish` (wizard Zod strips unknown keys on `/api/wizard/publish`). */
+  catalogBusinessId?: string;
+  catalogMetaCatalogId?: string;
+  catalogProductSetId?: string;
+  catalogCustomEvent?: "PURCHASE" | "ADD_TO_CART" | "CONTENT_VIEW";
+  catalogInstagramActorId?: string;
+};
 
 export type StructureCounts = {
   /** Meta campaigns we create per account×creative (always 1 per publish unit in MVP) */
@@ -314,7 +321,7 @@ export function adsetAndAdsCountsForWizardShape(
 }
 
 /** Store in campanhas.structure: presets map to API-friendly slug; custom keeps counts */
-export function structureLabelForDb(payload: WizardPublishPayload, counts: StructureCounts): string {
+export function structureLabelForDb(payload: WizardPublishPayload): string {
   if (payload.structure === "custom") {
     const c = payload.customStructure;
     return `custom:${c.campaigns}-${c.adsets}-${c.ads}`;

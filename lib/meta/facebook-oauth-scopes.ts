@@ -7,6 +7,8 @@ export const META_FACEBOOK_OAUTH_SCOPE_LIST = [
   "public_profile",
   "ads_read",
   "ads_management",
+  /** Catalog / feeds / product sets (Marketing API + Catalog API). */
+  "catalog_management",
   "business_management",
   "pages_show_list",
   "pages_manage_ads",
