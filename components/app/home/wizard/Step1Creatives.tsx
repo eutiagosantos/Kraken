@@ -24,7 +24,11 @@ interface Step1CreativesProps {
   onRemoveCreative: (id: string) => void;
   onUpdateCreative: (id: string, patch: Partial<Pick<Creative, "primaryText" | "name">>) => void;
   onSelectAllAccounts: () => void;
-  onNext: () => void;
+  onNext: () => void | Promise<void>;
+  /** Erro ao guardar vínculo página–conta antes de avançar (ex.: POST link-facebook-page). */
+  advanceError?: string | null;
+  /** True enquanto POST link-facebook-page está em curso. */
+  advanceBusy?: boolean;
 }
 
 export function Step1Creatives({
@@ -42,6 +46,8 @@ export function Step1Creatives({
   onUpdateCreative,
   onSelectAllAccounts,
   onNext,
+  advanceError,
+  advanceBusy,
 }: Step1CreativesProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragActive, setDragActive] = useState(false);
@@ -236,14 +242,29 @@ export function Step1Creatives({
         </section>
       </div>
       <StepFooter
-        left={<div />}
+        left={
+          advanceError ? (
+            <p className="max-w-md text-sm text-red-600" role="alert">
+              {advanceError}
+            </p>
+          ) : (
+            <div />
+          )
+        }
         right={
           <Button
-            onClick={onNext}
-            disabled={creatives.length === 0 || selectedAccountIds.length === 0 || !pageId}
+            onClick={() => void onNext()}
+            disabled={creatives.length === 0 || selectedAccountIds.length === 0 || !pageId || advanceBusy}
             className="px-5 py-2.5 text-sm"
           >
-            Continuar → Configuração
+            {advanceBusy ? (
+              <>
+                <Loader2 className="mr-2 inline h-4 w-4 animate-spin" aria-hidden />
+                A guardar…
+              </>
+            ) : (
+              "Continuar → Configuração"
+            )}
           </Button>
         }
       />

@@ -121,6 +121,8 @@ export interface Database {
           uploads_in_period: number | null;
           uploads_with_error: number | null;
           nickname: string | null;
+          facebook_page_id: string | null;
+          facebook_page_name: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -154,6 +156,8 @@ export interface Database {
           uploads_in_period?: number | null;
           uploads_with_error?: number | null;
           nickname?: string | null;
+          facebook_page_id?: string | null;
+          facebook_page_name?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -187,6 +191,8 @@ export interface Database {
           uploads_in_period?: number | null;
           uploads_with_error?: number | null;
           nickname?: string | null;
+          facebook_page_id?: string | null;
+          facebook_page_name?: string | null;
           created_at?: string;
           updated_at?: string;
         };

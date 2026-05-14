@@ -98,5 +98,11 @@ export function rowToContaMeta(row: MetaAdAccountRow): ContaMeta {
     adsRejected: row.ads_rejected ?? 0,
     uploadsInPeriod: row.uploads_in_period ?? 0,
     uploadsWithError: row.uploads_with_error ?? 0,
+    ...(row.facebook_page_id?.trim()
+      ? { linkedFacebookPageId: row.facebook_page_id.trim() }
+      : {}),
+    ...(row.facebook_page_name?.trim()
+      ? { linkedFacebookPageName: row.facebook_page_name.trim() }
+      : {}),
   };
 }

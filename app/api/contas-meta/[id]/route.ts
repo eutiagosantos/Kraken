@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { invalidateUserDataShortCache } from "@/lib/api/user-data-short-cache";
 import { getSessionUser } from "@/lib/api/session";
 import { rowToContaMeta } from "@/lib/contas-meta-map";
+import { getMetaGraphAccessToken } from "@/lib/meta/graph-token";
+import { invalidatePageCache } from "@/lib/meta/graph-user-pages";
 import type { Database } from "@/lib/supabase/types";
 
 type MetaAdAccountUpdate = Database["public"]["Tables"]["meta_ad_accounts"]["Update"];
@@ -12,6 +15,8 @@ const patchSchema = z.object({
   defaultBudget: z.number().optional().nullable(),
   defaultStructure: z.string().max(32).optional().nullable(),
   defaultAntiSpy: z.boolean().optional().nullable(),
+  facebookPageId: z.string().max(64).optional().nullable(),
+  facebookPageName: z.string().max(512).optional().nullable(),
 });
 
 export async function GET(_: Request, { params }: { params: { id: string } }) {
@@ -54,6 +59,14 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   if (parsed.data.defaultBudget !== undefined) updates.default_budget = parsed.data.defaultBudget;
   if (parsed.data.defaultStructure !== undefined) updates.default_structure = parsed.data.defaultStructure;
   if (parsed.data.defaultAntiSpy !== undefined) updates.default_anti_spy = parsed.data.defaultAntiSpy;
+  if (parsed.data.facebookPageId !== undefined) {
+    const t = parsed.data.facebookPageId?.trim();
+    updates.facebook_page_id = t && t.length > 0 ? t : null;
+  }
+  if (parsed.data.facebookPageName !== undefined) {
+    const t = parsed.data.facebookPageName?.trim();
+    updates.facebook_page_name = t && t.length > 0 ? t : null;
+  }
 
   const { data, error } = await supabase
     .from("meta_ad_accounts")
@@ -70,6 +83,10 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     return NextResponse.json({ error: "Not found." }, { status: 404 });
   }
 
+  if (parsed.data.facebookPageId !== undefined || parsed.data.facebookPageName !== undefined) {
+    invalidateUserDataShortCache(user.id);
+  }
+
   return NextResponse.json({ data: rowToContaMeta(data) });
 }
 
@@ -79,10 +96,24 @@ export async function DELETE(_: Request, { params }: { params: { id: string } })
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
-  const { error } = await supabase.from("meta_ad_accounts").delete().eq("id", params.id).eq("user_id", user.id);
+  const { data: deleted, error } = await supabase
+    .from("meta_ad_accounts")
+    .delete()
+    .eq("id", params.id)
+    .eq("user_id", user.id)
+    .select("id");
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+  if (!deleted?.length) {
+    return NextResponse.json({ error: "Not found." }, { status: 404 });
+  }
+
+  invalidateUserDataShortCache(user.id);
+  const tokenRes = await getMetaGraphAccessToken(supabase, user.id);
+  if ("accessToken" in tokenRes) {
+    invalidatePageCache(tokenRes.accessToken);
   }
 
   return NextResponse.json({ ok: true });

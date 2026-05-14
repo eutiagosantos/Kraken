@@ -208,6 +208,7 @@ export default function ContasMetaPage() {
             throw new Error(json.error ?? "Não foi possível desconectar a conta.");
           }
           await refetch();
+          setPagesReloadKey((k) => k + 1);
           showSuccess("Conta desconectada com sucesso.");
         }}
       />

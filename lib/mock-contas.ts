@@ -35,6 +35,9 @@ export interface ContaMeta {
   adsRejected: number;
   uploadsInPeriod: number;
   uploadsWithError: number;
+  /** Facebook Page ID stored for this ad account (wizard / Contas Meta). */
+  linkedFacebookPageId?: string;
+  linkedFacebookPageName?: string;
 }
 
 /** Dados reais vêm da API (`/api/contas-meta`). */

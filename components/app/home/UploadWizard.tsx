@@ -45,6 +45,8 @@ export function UploadWizard() {
   const [savedPublicos, setSavedPublicos] = useState<Publico[]>([]);
   const [wizardDataLoading, setWizardDataLoading] = useState(true);
   const [wizardDataError, setWizardDataError] = useState<string | null>(null);
+  const [step1AdvanceError, setStep1AdvanceError] = useState<string | null>(null);
+  const [step1AdvanceBusy, setStep1AdvanceBusy] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -73,6 +75,10 @@ export function UploadWizard() {
     }
     void loadData();
   }, [selectedAccountIdsKey]);
+
+  useEffect(() => {
+    setStep1AdvanceError(null);
+  }, [selectedAccountIdsKey, wizard.pageId]);
 
   const filteredAccounts = useMemo(() => {
     const query = accountQuery.trim().toLowerCase();
@@ -222,6 +228,33 @@ export function UploadWizard() {
     })();
   };
 
+  const handleStep1Next = async () => {
+    setStep1AdvanceError(null);
+    const pageId = wizard.pageId?.trim();
+    if (!pageId || wizard.selectedAccountIds.length === 0) {
+      wizard.setStep(2);
+      return;
+    }
+    setStep1AdvanceBusy(true);
+    try {
+      const res = await fetch("/api/contas-meta/link-facebook-page", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pageId, metaAccountIds: wizard.selectedAccountIds }),
+      });
+      const raw = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) {
+        throw new Error(typeof raw.error === "string" ? raw.error : `Pedido falhou (${res.status})`);
+      }
+      wizard.setStep(2);
+    } catch (e) {
+      setStep1AdvanceError(e instanceof Error ? e.message : "Não foi possível guardar a página nas contas.");
+    } finally {
+      setStep1AdvanceBusy(false);
+    }
+  };
+
   return (
     <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
       <WizardStepIndicator currentStep={wizard.step} />
@@ -248,7 +281,9 @@ export function UploadWizard() {
               onRemoveCreative={wizard.removeCreative}
               onUpdateCreative={wizard.updateCreative}
               onSelectAllAccounts={() => wizard.setSelectedAccountIds(accounts.map((account) => account.id))}
-              onNext={() => wizard.setStep(2)}
+              onNext={handleStep1Next}
+              advanceError={step1AdvanceError}
+              advanceBusy={step1AdvanceBusy}
             />
           </motion.div>
         ) : null}
