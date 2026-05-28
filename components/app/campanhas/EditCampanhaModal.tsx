@@ -19,6 +19,7 @@ const objectives = ["Conversões", "Tráfego", "Vendas", "Leads", "Engajamento",
 
 const structures: { value: CampanhaStructure; label: string }[] = [
   { value: "1-50-1", label: "1-50-1" },
+  { value: "1-250-1", label: "1-250-1" },
   { value: "1-3-5", label: "1-3-5" },
   { value: "1-1-5", label: "1-1-5" },
 ];

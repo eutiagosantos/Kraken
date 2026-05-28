@@ -9,7 +9,7 @@ import { CurrencyInputBrl } from "@/components/ui/CurrencyInputBrl";
 import { Input } from "@/components/ui/Input";
 import type { ContaMeta } from "@/lib/mock-contas";
 
-const structures = ["1-50-1", "1-3-5", "1-1-5", "Nenhuma"] as const;
+const structures = ["1-50-1", "1-250-1", "1-3-5", "1-1-5", "Nenhuma"] as const;
 
 const notifOptions = [
   "Alertar quando token estiver próximo de expirar",

@@ -368,6 +368,9 @@ describe("resolveStructureCounts", () => {
 
     const p2 = wizardPublishPayloadSchema.parse({ ...basePayload, structure: "1-3-5" });
     expect(resolveStructureCounts(p2)).toEqual({ metaCampaigns: 1, adsets: 3, adsPerAdset: 5 });
+
+    const p250 = wizardPublishPayloadSchema.parse({ ...basePayload, structure: "1-250-1" });
+    expect(resolveStructureCounts(p250)).toEqual({ metaCampaigns: 1, adsets: 250, adsPerAdset: 1 });
   });
 
   it("uses customStructure for custom", () => {

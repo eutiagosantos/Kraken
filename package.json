@@ -13,13 +13,15 @@
     "lint": "eslint . --cache --cache-location .next/cache/eslint --ext .js,.jsx,.ts,.tsx",
     "lint:ci": "eslint . --max-warnings=0 --ext .js,.jsx,.ts,.tsx",
     "test": "vitest",
-    "test:run": "vitest run"
+    "test:run": "vitest run",
+    "generate-test-creatives": "node scripts/generate-test-creatives.mjs"
   },
   "dependencies": {
     "@radix-ui/react-tooltip": "^1.2.8",
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.105.4",
     "@upstash/redis": "^1.38.0",
+    "@vercel/functions": "^2.2.13",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "facebook-nodejs-business-sdk": "^24.0.1",

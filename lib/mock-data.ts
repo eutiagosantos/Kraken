@@ -126,7 +126,7 @@ export type WizardConfig = {
 
 export const campaignObjectives = ["Conversões", "Tráfego", "Alcance", "Reconhecimento"] as const;
 
-export const structureOptions = ["1-50-1", "1-3-5", "1-1-5", "Personalizada"] as const;
+export const structureOptions = ["1-50-1", "1-250-1", "1-3-5", "1-1-5", "Personalizada"] as const;
 
 export const initialWizardState = {
   step: 1,

@@ -471,8 +471,8 @@ export function Step2Config(props: Step2ConfigProps) {
           ) : null}
           <div>
             <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-500">Estrutura</h4>
-            <div className="mt-2 grid grid-cols-4 gap-2">
-              {(["1-1-1", "1-3-5", "1-50-1", "custom"] as Structure[]).map((item) => (
+            <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+              {(["1-1-1", "1-3-5", "1-50-1", "1-250-1", "custom"] as Structure[]).map((item) => (
                 <button
                   key={item}
                   type="button"

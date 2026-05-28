@@ -69,7 +69,7 @@ export const wizardPublishPayloadSchema = z
     objective: z.string().min(1),
     pixelId: z.string(),
     status: z.enum(["ACTIVE", "PAUSED"]),
-    structure: z.enum(["1-1-1", "1-3-5", "1-50-1", "custom"]),
+    structure: z.enum(["1-1-1", "1-3-5", "1-50-1", "1-250-1", "custom"]),
     customStructure: z.object({
       campaigns: z.number().int().positive(),
       adsets: z.number().int().positive(),
@@ -297,6 +297,7 @@ const PRESET_COUNTS: Record<Exclude<Structure, "custom">, Pick<StructureCounts, 
   "1-1-1": { adsets: 1, adsPerAdset: 1 },
   "1-3-5": { adsets: 3, adsPerAdset: 5 },
   "1-50-1": { adsets: 50, adsPerAdset: 1 },
+  "1-250-1": { adsets: 250, adsPerAdset: 1 },
 };
 
 export function resolveStructureCounts(payload: WizardPublishPayload): StructureCounts {

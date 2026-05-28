@@ -1,6 +1,6 @@
 export type CampanhaStatus = "ativa" | "processando" | "concluida" | "pausada" | "erro";
 
-export type CampanhaStructure = "1-50-1" | "1-3-5" | "1-1-5";
+export type CampanhaStructure = "1-50-1" | "1-250-1" | "1-3-5" | "1-1-5";
 
 export interface CampanhaCreative {
   id: string;

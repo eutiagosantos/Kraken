@@ -89,6 +89,7 @@ export function FilterBar({
           >
             <option value="all">Todas</option>
             <option value="1-50-1">1-50-1</option>
+            <option value="1-250-1">1-250-1</option>
             <option value="1-3-5">1-3-5</option>
             <option value="1-1-5">1-1-5</option>
           </select>
@@ -176,6 +177,7 @@ export function FilterBar({
                 >
                   <option value="all">Todas</option>
                   <option value="1-50-1">1-50-1</option>
+            <option value="1-250-1">1-250-1</option>
                   <option value="1-3-5">1-3-5</option>
                   <option value="1-1-5">1-1-5</option>
                 </select>

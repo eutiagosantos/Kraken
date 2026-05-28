@@ -21,6 +21,9 @@ import {
   humanizeMetaObjectNotFoundError,
   isMetaObjectNotFoundError,
 } from "@/lib/meta/humanize-graph-publish-error";
+import { scheduleBackgroundWork } from "@/lib/api/schedule-background-work";
+import { shouldDeferWizardPublish } from "@/lib/meta/publish-concurrency";
+import { adsetAndAdsCountsForWizardShape } from "@/lib/meta/map-wizard-to-graph";
 import { runWizardPublish } from "@/lib/meta/publish-campaigns";
 import type { Database } from "@/lib/supabase/types";
 import {
@@ -205,7 +208,11 @@ export async function POST(request: Request) {
       });
     }
 
-    const out = await runWizardPublish({
+    const { adsets } = adsetAndAdsCountsForWizardShape(
+      parsed.data.structure,
+      parsed.data.customStructure
+    );
+    const publishCtx = {
       supabase,
       userId: user.id,
       accessToken: tokenRes.accessToken,
@@ -215,8 +222,61 @@ export async function POST(request: Request) {
       adLinkUrl,
       accounts: accountsOrdered,
       existingPublishJobId: parsed.data.publishOperationId,
-    });
-    invalidateUserDataShortCache(user.id);
+    };
+
+    let out: Awaited<ReturnType<typeof runWizardPublish>> | null = null;
+
+    const executePublish = async () => {
+      out = await runWizardPublish(publishCtx);
+      invalidateUserDataShortCache(user.id);
+    };
+
+    const runPublishWithJobError = async () => {
+      try {
+        await executePublish();
+      } catch (e) {
+        const message = e instanceof Error ? e.message : "publish_failed";
+        await supabase
+          .from("upload_jobs")
+          .update({
+            status: "error",
+            finished_at: new Date().toISOString(),
+            error_details: { v: 1, message } as never,
+          })
+          .eq("id", parsed.data.publishOperationId)
+          .eq("user_id", user.id);
+      }
+    };
+
+    if (shouldDeferWizardPublish(adsets)) {
+      const deferred = await scheduleBackgroundWork(runPublishWithJobError);
+      if (deferred) {
+        return NextResponse.json(
+          {
+            publishId: parsed.data.publishOperationId,
+            deferred: true,
+            message:
+              "Publicação em curso em segundo plano. Acompanha o progresso na fila de processamento.",
+          },
+          { status: 202 }
+        );
+      }
+    } else {
+      await runPublishWithJobError();
+    }
+
+    if (!out) {
+      const { data: job } = await supabase
+        .from("upload_jobs")
+        .select("status, error_details")
+        .eq("id", parsed.data.publishOperationId)
+        .single();
+      const errMsg =
+        job?.status === "error" && job.error_details && typeof job.error_details === "object"
+          ? String((job.error_details as { message?: string }).message ?? "publish_failed")
+          : "Publicação não devolveu resultado.";
+      return NextResponse.json({ error: errMsg }, { status: 500 });
+    }
     const okCount = out.results.filter((r) => r.ok).length;
     const body = {
       publishId: out.publishId,

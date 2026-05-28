@@ -22,6 +22,8 @@ export interface PublishPayload {
 
 export type PublishResult = {
   publishId: string;
+  /** HTTP 202 — Meta publish continues server-side; poll upload_jobs on the fila page. */
+  deferred?: boolean;
   warnings?: string[];
   results?: Array<{
     ok: boolean;
@@ -331,6 +333,14 @@ export function createFetchWizardDataAdapter(): WizardDataAdapter {
               `${r.accountName ?? "Conta"} — ${r.creativeName ?? "Criativo"}: ${r.error ?? "Erro desconhecido."}`
           )
           .join("\n");
+
+      if (res.status === 202) {
+        const publishId = json?.publishId ?? operationId;
+        return {
+          publishId,
+          deferred: true,
+        };
+      }
 
       if (!res.ok) {
         if (process.env.NODE_ENV === "development") {

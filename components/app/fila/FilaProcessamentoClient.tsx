@@ -8,7 +8,12 @@ import { ProgressBar } from "@/components/app/ui/ProgressBar";
 import { mockWizardDataAdapter } from "@/lib/wizard/data-adapter";
 import { buildWizardPublishPayload } from "@/lib/wizard/build-wizard-publish-payload";
 import { getWizardPublishSliceFromStore } from "@/lib/wizard/get-wizard-publish-slice";
-import { partitionUploadJobsByActive, uploadJobShouldPollForUpdates } from "@/lib/wizard/upload-jobs-in-flight";
+import {
+  partitionUploadJobsByActive,
+  UPLOAD_JOB_POLL_MAX_AGE_MS,
+  uploadJobShouldPollForUpdates,
+} from "@/lib/wizard/upload-jobs-in-flight";
+import { parseUploadJobErrorDetails } from "@/lib/api/upload-job-summary-schema";
 import { useWizardStore } from "@/lib/stores/wizardStore";
 
 type UploadJobsApiResponse = {
@@ -18,6 +23,31 @@ type UploadJobsApiResponse = {
 
 function inFlightJob(jobs: UploadJobListRow[]) {
   return jobs.find((j) => j.status === "awaiting_creatives" || j.status === "processing");
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function waitForDeferredPublishJob(publishId: string): Promise<void> {
+  const deadline = Date.now() + UPLOAD_JOB_POLL_MAX_AGE_MS;
+  while (Date.now() < deadline) {
+    const res = await fetch("/api/upload-jobs?limit=50", { credentials: "include" });
+    const body = (await res.json()) as UploadJobsApiResponse;
+    const job = (body.data?.jobs ?? []).find((j) => j.id === publishId);
+    if (!job) {
+      throw new Error("Operação de publicação não encontrada na fila.");
+    }
+    if (job.status === "completed") return;
+    if (job.status === "error") {
+      const details = parseUploadJobErrorDetails(job.error_details);
+      throw new Error(details?.message ?? "Publicação falhou.");
+    }
+    await sleep(5000);
+  }
+  throw new Error(
+    "A publicação em segundo plano demorou demasiado. Verifica a fila de processamento e o Meta Ads Manager."
+  );
 }
 
 function progressFromJob(j: UploadJobListRow | undefined): number {
@@ -39,6 +69,7 @@ export function FilaProcessamentoClient() {
   const [jobsError, setJobsError] = useState<string | null>(null);
   const [smoothProgress, setSmoothProgress] = useState(0);
   const loadJobsInFlight = useRef(false);
+  const mountedRef = useRef(true);
 
   const loadJobs = useCallback(async () => {
     if (loadJobsInFlight.current) return;
@@ -58,6 +89,13 @@ export function FilaProcessamentoClient() {
       loadJobsInFlight.current = false;
       setJobsLoading(false);
     }
+  }, []);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -103,13 +141,20 @@ export function FilaProcessamentoClient() {
     void (async () => {
       try {
         const { snapshot, creativeFiles } = buildWizardPublishPayload(getWizardPublishSliceFromStore());
-        await mockWizardDataAdapter.publishCampaigns({ snapshot, creativeFiles });
+        const result = await mockWizardDataAdapter.publishCampaigns({ snapshot, creativeFiles });
+        if (result.deferred) {
+          await waitForDeferredPublishJob(result.publishId);
+        }
+        if (!mountedRef.current) return;
         useWizardStore.getState().patchQueuePublish({ progress: 100, success: true, active: false });
         await loadJobs();
+        if (!mountedRef.current) return;
         setTimeout(() => {
+          if (!mountedRef.current) return;
           useWizardStore.getState().reset();
         }, 750);
       } catch (e) {
+        if (!mountedRef.current) return;
         useWizardStore.getState().patchQueuePublish({
           active: false,
           error: e instanceof Error ? e.message : "Falha na publicação.",
@@ -123,7 +168,7 @@ export function FilaProcessamentoClient() {
 
   const isProcessing =
     (queuePublish.active && !queuePublish.success && !queuePublish.error) ||
-    (jobs.some((j) => j.status === "processing" || j.status === "awaiting_creatives") && !queuePublish.error);
+    (jobs.some((j) => uploadJobShouldPollForUpdates(j)) && !queuePublish.error);
 
   useEffect(() => {
     if (!isProcessing) {
@@ -131,7 +176,7 @@ export function FilaProcessamentoClient() {
       return;
     }
     const t = setInterval(() => {
-      setSmoothProgress((prev) => (prev >= 90 ? 90 : prev + 0.4));
+      setSmoothProgress((prev) => (prev >= 90 ? 90 : prev + 1));
     }, 1000);
     return () => clearInterval(t);
   }, [isProcessing]);
@@ -163,10 +208,11 @@ export function FilaProcessamentoClient() {
         : serverOnlyActive
           ? progressFromJob(activeJobs[0])
           : queuePublish.progress;
+  const hasServerProgress = embeddedRecentJob != null && embeddedRecentJob.total > 0;
   const publishCardProgress =
     queuePublish.error || queuePublish.success
       ? rawPublishProgress
-      : embeddedRecentJob
+      : hasServerProgress
         ? rawPublishProgress
         : Math.max(rawPublishProgress, Math.round(smoothProgress));
 

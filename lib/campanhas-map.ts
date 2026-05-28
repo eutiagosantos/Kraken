@@ -4,7 +4,7 @@ import type { Database, Json } from "@/lib/supabase/types";
 type CampanhaRow = Database["public"]["Tables"]["campanhas"]["Row"];
 
 function coerceStructure(s: string): CampanhaStructure {
-  if (s === "1-50-1" || s === "1-3-5" || s === "1-1-5") return s;
+  if (s === "1-50-1" || s === "1-250-1" || s === "1-3-5" || s === "1-1-5") return s;
   return "1-50-1";
 }
 

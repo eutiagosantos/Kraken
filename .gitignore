@@ -16,6 +16,9 @@
 # production
 /build
 
+# capacity test fixtures (npm run generate-test-creatives)
+/test-creatives-250/
+
 # misc
 .DS_Store
 *.pem

@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { uploadAdImageToAccount } from "@/lib/meta/graph-ad-images";
@@ -58,8 +59,29 @@ import {
   resolveDailyAdsetFlightForPublish,
   resolveLifetimeScheduleForPublish,
 } from "@/lib/meta/campaign-schedule";
+import { metaPublishConcurrency, runWithConcurrency } from "@/lib/meta/publish-concurrency";
 import { buildUploadJobSummary } from "@/lib/meta/upload-job-summary";
 import type { Database, Json } from "@/lib/supabase/types";
+
+function bufferFingerprint(buffer: Buffer): string {
+  return createHash("sha256").update(buffer).digest("hex").slice(0, 32);
+}
+
+async function patchUploadJobProgress(
+  ctx: WizardPublishContext,
+  publishId: string,
+  summary: Record<string, unknown>,
+  done: number,
+  phase: string
+): Promise<void> {
+  await ctx.supabase
+    .from("upload_jobs")
+    .update({
+      done,
+      summary: { ...summary, v: 1, publishPhase: phase, publishDone: done } as unknown as Json,
+    })
+    .eq("id", publishId);
+}
 
 export type WizardPublishContext = {
   supabase: SupabaseClient<Database>;
@@ -320,12 +342,14 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
         });
         createdCampaignId = campaign.id;
 
-        adSetIds = [];
-        for (let si = 0; si < counts.adsets; si++) {
+        const adsetIndices = Array.from({ length: counts.adsets }, (_, i) => i);
+        const concurrency = metaPublishConcurrency();
+        adSetIds = await runWithConcurrency(adsetIndices, concurrency, async (si) => {
           metaPublishDebugLog("META ADSET PAYLOAD:", {
             optimization_goal: effectiveOptimizationGoal,
             billing_event: effectiveBillingEvent,
             objective: ctx.payload.objective,
+            adsetIndex: si,
           });
           const adsetNameRaw = ctx.payload.adSetNames?.[si]?.trim();
           const adset = await graphCreateAdSet({
@@ -350,8 +374,8 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
             frequencyControlSpecs,
             fetchImpl,
           });
-          adSetIds.push(adset.id);
-        }
+          return adset.id;
+        });
         break;
       } catch (e) {
         metaPublishDebugLog(
@@ -463,16 +487,18 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
     throw new Error("Nenhuma conta válida para publicar.");
   }
 
-  const summary = buildUploadJobSummary(ctx.payload, ctx.accounts);
+  const summary = buildUploadJobSummary(ctx.payload, ctx.accounts) as Record<string, unknown>;
+  const jobProgressTotal =
+    fuseCreativesPerAdset && counts.adsets > 1 ? counts.adsets : units.length;
 
   const { data: jobRow, error: jobErr } = await ctx.supabase
     .from("upload_jobs")
     .update({
       account_name: units.length === 1 ? units[0].accountName : `${units.length} contas`,
-      total: units.length,
+      total: jobProgressTotal,
       done: 0,
       status: "processing",
-      summary,
+      summary: summary as unknown as Json,
     })
     .eq("id", ctx.existingPublishJobId)
     .eq("user_id", ctx.userId)
@@ -532,77 +558,106 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
         const { campaign, adSetIds } = await createCampaignAndAdSetsWithRetry(unit.actId, unit.accountName);
         createdCampaignId = campaign.id;
 
-        const adCreativeIds: string[] = [];
-        const adIds: string[] = [];
-        const creativesForRow: Array<{ id: string; name: string; type: "image" | "video"; thumb: string }> = [];
+        const adsetIndices = Array.from({ length: counts.adsets }, (_, i) => i);
+        const mediaByFingerprint = new Map<string, AdCreativeMedia>();
+        const thumbByFingerprint = new Map<string, string>();
+        const adCreativeIdByKey = new Map<string, string>();
+        const concurrency = metaPublishConcurrency();
 
-        for (let si = 0; si < counts.adsets; si++) {
+        const fusedRows = await runWithConcurrency(adsetIndices, concurrency, async (si) => {
           const creative = ctx.payload.creatives[si]!;
           const file = ctx.creativeFilesByIndex.get(si)!;
-          let media: AdCreativeMedia;
-          if (creative.type === "video") {
-            const { videoId } = await uploadAdVideoChunked({
-              actId: unit.actId,
-              accessToken: ctx.accessToken,
-              fileName: creative.name,
-              buffer: file.buffer,
-              mimeType: file.mimeType || "video/mp4",
-              fetchImpl,
-            });
-            await waitForAdVideoReady({
-              videoId,
-              accessToken: ctx.accessToken,
-              fetchImpl,
-            });
-            const { imageUrl } = await fetchPreferredAdVideoThumbnail({
-              videoId,
-              accessToken: ctx.accessToken,
-              fetchImpl,
-            });
-            creativeThumbForRow = imageUrl;
-            media = { kind: "video", videoId, thumbnailImageUrl: imageUrl };
-          } else {
-            const { hash, url: imagePreviewUrl } = await uploadAdImageToAccount({
-              actId: unit.actId,
-              accessToken: ctx.accessToken,
-              fileName: creative.name,
-              buffer: file.buffer,
-              mimeType: file.mimeType || "image/jpeg",
-              fetchImpl,
-            });
-            if (imagePreviewUrl) creativeThumbForRow = imagePreviewUrl;
-            media = { kind: "image", imageHash: hash };
-          }
-          creativesForRow.push({
-            id: creative.id,
-            name: creative.name,
-            type: creative.type,
-            thumb: creativeThumbForRow,
-          });
+          const fingerprint = bufferFingerprint(file.buffer);
+          const message = creative.primaryText?.trim() || creative.name;
+          const adCreativeKey = `${fingerprint}:${message}`;
 
-          const creativeNameMeta = `${creative.name} · ${unit.accountName}`.slice(0, 240);
-          const adCreative = await graphCreateAdCreative({
-            actId: unit.actId,
-            accessToken: ctx.accessToken,
-            name: creativeNameMeta,
-            pageId: ctx.pageId,
-            media,
-            linkUrl: ctx.adLinkUrl,
-            message: (creative.primaryText?.trim() || creative.name),
-            fetchImpl,
-          });
-          adCreativeIds.push(adCreative.id);
+          let media = mediaByFingerprint.get(fingerprint);
+          let thumb = thumbByFingerprint.get(fingerprint) ?? "";
+
+          if (!media) {
+            if (creative.type === "video") {
+              const { videoId } = await uploadAdVideoChunked({
+                actId: unit.actId,
+                accessToken: ctx.accessToken,
+                fileName: creative.name,
+                buffer: file.buffer,
+                mimeType: file.mimeType || "video/mp4",
+                fetchImpl,
+              });
+              await waitForAdVideoReady({
+                videoId,
+                accessToken: ctx.accessToken,
+                fetchImpl,
+              });
+              const { imageUrl } = await fetchPreferredAdVideoThumbnail({
+                videoId,
+                accessToken: ctx.accessToken,
+                fetchImpl,
+              });
+              thumb = imageUrl;
+              media = { kind: "video", videoId, thumbnailImageUrl: imageUrl };
+            } else {
+              const { hash, url: imagePreviewUrl } = await uploadAdImageToAccount({
+                actId: unit.actId,
+                accessToken: ctx.accessToken,
+                fileName: creative.name,
+                buffer: file.buffer,
+                mimeType: file.mimeType || "image/jpeg",
+                fetchImpl,
+              });
+              if (imagePreviewUrl) thumb = imagePreviewUrl;
+              media = { kind: "image", imageHash: hash };
+            }
+            mediaByFingerprint.set(fingerprint, media);
+            thumbByFingerprint.set(fingerprint, thumb);
+          }
+
+          let adCreativeId = adCreativeIdByKey.get(adCreativeKey);
+          if (!adCreativeId) {
+            const creativeNameMeta = `${creative.name} · ${unit.accountName}`.slice(0, 240);
+            const adCreative = await graphCreateAdCreative({
+              actId: unit.actId,
+              accessToken: ctx.accessToken,
+              name: creativeNameMeta,
+              pageId: ctx.pageId,
+              media,
+              linkUrl: ctx.adLinkUrl,
+              message,
+              fetchImpl,
+            });
+            adCreativeId = adCreative.id;
+            adCreativeIdByKey.set(adCreativeKey, adCreativeId);
+          }
+
           const ad = await graphCreateAd({
             actId: unit.actId,
             accessToken: ctx.accessToken,
             name: resolveMetaAdName(creative, si, 0, counts.adsPerAdset),
             adSetId: adSetIds[si]!,
-            creativeId: adCreative.id,
+            creativeId: adCreativeId,
             status: ctx.payload.status,
             fetchImpl,
           });
-          adIds.push(ad.id);
-        }
+
+          return {
+            creative,
+            thumb,
+            adCreativeId,
+            adId: ad.id,
+          };
+        });
+
+        const adCreativeIds = fusedRows.map((r) => r.adCreativeId);
+        const adIds = fusedRows.map((r) => r.adId);
+        const creativesForRow = fusedRows.map((r) => ({
+          id: r.creative.id,
+          name: r.creative.name,
+          type: r.creative.type,
+          thumb: r.thumb,
+        }));
+        if (creativesForRow[0]?.thumb) creativeThumbForRow = creativesForRow[0].thumb;
+
+        await patchUploadJobProgress(ctx, publishId, summary, counts.adsets, "ads");
 
         const adsTotal = counts.adsets;
         const metaIds: Json = {
@@ -678,7 +733,7 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
         });
       }
 
-      done += 1;
+      done = fuseCreativesPerAdset && counts.adsets > 1 ? counts.adsets : done + 1;
       await ctx.supabase.from("upload_jobs").update({ done }).eq("id", publishId);
       continue;
     }

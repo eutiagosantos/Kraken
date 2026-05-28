@@ -65,7 +65,7 @@ export type CampaignType = "CBO" | "ABO" | "DPA";
 export type BidStrategy = "LOWEST_COST" | "BID_CAP" | "COST_CAP" | "ROAS";
 export type BudgetPeriod = "daily" | "lifetime";
 export type WizardStatus = "ACTIVE" | "PAUSED";
-export type Structure = "1-1-1" | "1-3-5" | "1-50-1" | "custom";
+export type Structure = "1-1-1" | "1-3-5" | "1-50-1" | "1-250-1" | "custom";
 
 export type CatalogCustomEventChoice = "PURCHASE" | "ADD_TO_CART" | "CONTENT_VIEW";
 
@@ -73,6 +73,7 @@ const PRESET_ADSET_COUNT: Record<Exclude<Structure, "custom">, number> = {
   "1-1-1": 1,
   "1-3-5": 3,
   "1-50-1": 50,
+  "1-250-1": 250,
 };
 
 function adsetCountForStructure(structure: Structure, customStructure: { adsets: number }): number {

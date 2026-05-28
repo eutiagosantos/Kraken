@@ -11,6 +11,8 @@ Com a app Facebook em **Development**, a Marketing API só aceita fluxos válido
 
 ## 2. Kraken (assistente de publicação)
 
+Teste de capacidade **1-250-1** (250 criativos): ver [teste-capacidade-1-250-1.md](./teste-capacidade-1-250-1.md).
+
 1. **Reconecta** o Meta se mudaste permissões ou papéis na app.
 2. No assistente, escolhe **apenas** contas de anúncios compatíveis com o modo Dev (em geral a test ad account).
 3. Escolhe uma **Página** que:
