@@ -24,7 +24,7 @@ import {
 import { scheduleBackgroundWork } from "@/lib/api/schedule-background-work";
 import { shouldDeferWizardPublish } from "@/lib/meta/publish-concurrency";
 import { adsetAndAdsCountsForWizardShape } from "@/lib/meta/map-wizard-to-graph";
-import { runWizardPublish } from "@/lib/meta/publish-campaigns";
+import { runWizardPublish, type PublishUnitResult } from "@/lib/meta/publish-campaigns";
 import type { Database } from "@/lib/supabase/types";
 import {
   humanizeWizardCreativeStorageDownloadError,
@@ -277,11 +277,12 @@ export async function POST(request: Request) {
           : "Publicação não devolveu resultado.";
       return NextResponse.json({ error: errMsg }, { status: 500 });
     }
-    const okCount = out.results.filter((r) => r.ok).length;
+    const resolved = out as { publishId: string; results: PublishUnitResult[]; warnings: string[] };
+    const okCount = resolved.results.filter((r) => r.ok).length;
     const body = {
-      publishId: out.publishId,
-      results: out.results,
-      warnings: out.warnings,
+      publishId: resolved.publishId,
+      results: resolved.results,
+      warnings: resolved.warnings,
       ...(okCount === 0
         ? { error: "Nenhuma publicação concluiu com sucesso no Meta." as const }
         : {}),
