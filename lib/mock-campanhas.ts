@@ -1,6 +1,11 @@
 export type CampanhaStatus = "ativa" | "processando" | "concluida" | "pausada" | "erro";
 
-export type CampanhaStructure = "1-50-1" | "1-250-1" | "1-3-5" | "1-1-5";
+import type { CampanhaStructurePreset } from "@/lib/campanhas-structure";
+
+export type { CampanhaStructurePreset };
+
+/** Display label shown in table/detail (preset or custom counts). */
+export type CampanhaStructure = CampanhaStructurePreset | (string & {});
 
 export interface CampanhaCreative {
   id: string;

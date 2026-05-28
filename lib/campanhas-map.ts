@@ -1,12 +1,8 @@
-import type { Campanha, CampanhaCreative, CampanhaError, CampanhaStructure, CampanhaStatus } from "@/lib/mock-campanhas";
+import { campanhaStructureDisplay } from "@/lib/campanhas-structure";
+import type { Campanha, CampanhaCreative, CampanhaError, CampanhaStatus } from "@/lib/mock-campanhas";
 import type { Database, Json } from "@/lib/supabase/types";
 
 type CampanhaRow = Database["public"]["Tables"]["campanhas"]["Row"];
-
-function coerceStructure(s: string): CampanhaStructure {
-  if (s === "1-50-1" || s === "1-250-1" || s === "1-3-5" || s === "1-1-5") return s;
-  return "1-50-1";
-}
 
 function coerceStatus(s: string): CampanhaStatus {
   if (s === "ativa" || s === "processando" || s === "concluida" || s === "pausada" || s === "erro") return s;
@@ -55,7 +51,7 @@ export function rowToCampanha(row: CampanhaRow): Campanha {
     name: row.name,
     account: row.account_name,
     accountId: row.account_meta_id,
-    structure: coerceStructure(row.structure),
+    structure: campanhaStructureDisplay(row.structure),
     objective: row.objective,
     dailyBudget: Number(row.daily_budget) || 0,
     antiSpy: row.anti_spy,

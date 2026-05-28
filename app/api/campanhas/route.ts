@@ -4,7 +4,10 @@ import { z } from "zod";
 import { campanhaToInsert, rowToCampanha } from "@/lib/campanhas-map";
 import { getSessionUser } from "@/lib/api/session";
 
-const structureEnum = z.enum(["1-50-1", "1-250-1", "1-3-5", "1-1-5"]);
+const structureEnum = z.union([
+  z.enum(["1-50-1", "1-250-1", "1-3-5", "1-1-5"]),
+  z.string().regex(/^custom:\d+-\d+-\d+$/),
+]);
 const statusEnum = z.enum(["ativa", "processando", "concluida", "pausada", "erro"]);
 
 const creativeSchema = z.object({

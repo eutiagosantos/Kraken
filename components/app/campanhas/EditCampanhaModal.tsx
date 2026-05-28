@@ -7,22 +7,18 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { CurrencyInputBrl } from "@/components/ui/CurrencyInputBrl";
 import { Input } from "@/components/ui/Input";
-import type {
-  Campanha,
-  CampanhaCreative,
-  CampanhaError,
-  CampanhaStatus,
-  CampanhaStructure,
-} from "@/lib/mock-campanhas";
+import {
+  CAMPANHA_STRUCTURE_PRESETS,
+  isCampanhaStructurePreset,
+  type CampanhaStructurePreset,
+} from "@/lib/campanhas-structure";
+import type { Campanha, CampanhaCreative, CampanhaError, CampanhaStatus, CampanhaStructure } from "@/lib/mock-campanhas";
 
 const objectives = ["Conversões", "Tráfego", "Vendas", "Leads", "Engajamento", "Instalações", "Visualizações"];
 
-const structures: { value: CampanhaStructure; label: string }[] = [
-  { value: "1-50-1", label: "1-50-1" },
-  { value: "1-250-1", label: "1-250-1" },
-  { value: "1-3-5", label: "1-3-5" },
-  { value: "1-1-5", label: "1-1-5" },
-];
+const structurePresets: { value: CampanhaStructurePreset; label: string }[] = CAMPANHA_STRUCTURE_PRESETS.map(
+  (value) => ({ value, label: value })
+);
 
 const statuses: { value: CampanhaStatus; label: string }[] = [
   { value: "ativa", label: "Ativa" },
@@ -78,6 +74,7 @@ export function EditCampanhaModal({
   const [account, setAccount] = useState("");
   const [accountId, setAccountId] = useState("");
   const [structure, setStructure] = useState<CampanhaStructure>("1-50-1");
+  const structureEditable = isCampanhaStructurePreset(structure);
   const [dailyBudget, setDailyBudget] = useState(0);
   const [objective, setObjective] = useState("");
   const [antiSpy, setAntiSpy] = useState(false);
@@ -145,12 +142,10 @@ export function EditCampanhaModal({
       setSaveError(null);
       setSubmitting(true);
       try {
-        await Promise.resolve(
-          onSave(campanha.id, {
+        const patch: CampanhaEditPatch = {
             name: name.trim() || campanha.name,
             account: account.trim() || campanha.account,
             accountId: accountId.trim() || campanha.accountId,
-            structure,
             objective,
             dailyBudget: Number.isFinite(n) && n >= 0 ? n : campanha.dailyBudget,
             antiSpy,
@@ -160,8 +155,11 @@ export function EditCampanhaModal({
             trend,
             creatives: creativesPayload,
             errors: errorsPayload,
-          })
-        );
+          };
+        if (isCampanhaStructurePreset(structure)) {
+          patch.structure = structure;
+        }
+        await Promise.resolve(onSave(campanha.id, patch));
         onClose();
       } catch (e) {
         setSaveError(e instanceof Error ? e.message : "Não foi possível salvar.");
@@ -218,16 +216,30 @@ export function EditCampanhaModal({
                       value={accountId}
                       onChange={(e) => setAccountId(e.target.value)}
                     />
-                    <label className="flex flex-col gap-1.5">
-                      <span className="text-sm font-semibold text-neutral-black">Estrutura</span>
-                      <select value={structure} onChange={(e) => setStructure(e.target.value as CampanhaStructure)} className={selectClass}>
-                        {structures.map((s) => (
-                          <option key={s.value} value={s.value}>
-                            {s.label}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
+                    {structureEditable ? (
+                      <label className="flex flex-col gap-1.5">
+                        <span className="text-sm font-semibold text-neutral-black">Estrutura</span>
+                        <select
+                          value={structure}
+                          onChange={(e) => setStructure(e.target.value as CampanhaStructurePreset)}
+                          className={selectClass}
+                        >
+                          {structurePresets.map((s) => (
+                            <option key={s.value} value={s.value}>
+                              {s.label}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    ) : (
+                      <div className="flex flex-col gap-1.5">
+                        <span className="text-sm font-semibold text-neutral-black">Estrutura</span>
+                        <p className="rounded-lg border border-neutral-border bg-neutral-white/60 px-3 py-2.5 font-ui text-base text-neutral-black">
+                          {structure}
+                        </p>
+                        <p className="text-xs text-neutral-gray">Estrutura personalizada definida na publicação; não editável.</p>
+                      </div>
+                    )}
                     <label className="flex flex-col gap-1.5">
                       <span className="text-sm font-semibold text-neutral-black">Estado</span>
                       <select value={status} onChange={(e) => setStatus(e.target.value as CampanhaStatus)} className={selectClass}>

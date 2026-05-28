@@ -12,7 +12,9 @@ const patchSchema = z
     name: z.string().min(1).optional(),
     account: z.string().min(1).optional(),
     accountId: z.string().min(1).optional(),
-    structure: z.enum(["1-50-1", "1-250-1", "1-3-5", "1-1-5"]).optional(),
+    structure: z
+      .union([z.enum(["1-50-1", "1-250-1", "1-3-5", "1-1-5"]), z.string().regex(/^custom:\d+-\d+-\d+$/)])
+      .optional(),
     objective: z.string().min(1).optional(),
     dailyBudget: z.number().nonnegative().optional(),
     antiSpy: z.boolean().optional(),
