@@ -1,15 +1,12 @@
 "use client";
 
 import { Eye, EyeOff } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { Input } from "@/components/ui/Input";
 import { messageForSignUpAuthError } from "@/lib/auth/supabase-auth-error-message";
-import { buildOAuthReturnRedirectTo } from "@/lib/auth/supabase-oauth-redirects";
 import { useSupabase } from "@/lib/hooks/useSupabase";
-import { META_FACEBOOK_OAUTH_SCOPES } from "@/lib/meta/facebook-oauth-scopes";
 import { cn } from "@/lib/utils";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -76,22 +73,6 @@ export function RegisterForm() {
       text: "Verifique o seu e-mail para confirmar a conta antes de entrar.",
       tone: "success",
     });
-  }
-
-  async function handleMetaSignup() {
-    setErrors({});
-    setNotice(null);
-    const redirectTo = buildOAuthReturnRedirectTo(window.location.origin, "/home");
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "facebook",
-      options: {
-        redirectTo,
-        scopes: META_FACEBOOK_OAUTH_SCOPES,
-      },
-    });
-    if (error) {
-      setNotice({ text: error.message, tone: "error" });
-    }
   }
 
   const inputClass =
@@ -237,22 +218,6 @@ export function RegisterForm() {
         className="w-full rounded-[10px] bg-[#6B46E5] py-2.5 text-[15px] font-semibold text-white shadow-none transition-colors hover:bg-[#5b21e6] disabled:opacity-60"
       >
         {submitting ? "A criar…" : "Criar conta"}
-      </button>
-
-      <div className="relative py-1">
-        <div className="section-divider absolute inset-x-0 top-1/2 -translate-y-1/2 opacity-70" />
-        <span className="relative mx-auto block w-fit bg-white px-3 text-center text-xs text-neutral-gray">
-          Ou
-        </span>
-      </div>
-
-      <button
-        type="button"
-        onClick={() => void handleMetaSignup()}
-        className="flex w-full items-center justify-center gap-2.5 rounded-[10px] border border-neutral-border bg-white py-2.5 text-[15px] font-semibold text-neutral-black shadow-subtle transition-colors hover:bg-neutral-white"
-      >
-        <Image src="/meta-symbol.svg" alt="" width={20} height={20} className="shrink-0" />
-        Continuar com Meta
       </button>
     </form>
   );

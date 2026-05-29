@@ -92,9 +92,8 @@ export function MetaAppPanel() {
           App Meta (Developer)
         </h2>
         <p className="mt-0.5 text-sm text-neutral-silver">
-          Use o seu App ID e App Secret do Meta for Developers para{" "}
-          <code className="text-xs">appsecret_proof</code> e validação de tokens. O login com Facebook
-          continua a usar o app configurado no Supabase.
+          Use o seu App ID e App Secret do Meta for Developers para autenticar chamadas à API (
+          <code className="text-xs">appsecret_proof</code> e validação de tokens).
         </p>
       </header>
 

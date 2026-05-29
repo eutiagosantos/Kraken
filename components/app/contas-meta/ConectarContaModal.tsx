@@ -2,7 +2,7 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { ModalPortal } from "@/components/app/ui/ModalPortal";
-import { AlertTriangle, Check, Eye, EyeOff, Key, Link2, Loader2 } from "lucide-react";
+import { AlertTriangle, Check, Eye, EyeOff, Loader2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { StepIndicator } from "@/components/app/ui/StepIndicator";
@@ -28,51 +28,6 @@ function InstructionBox({ children }: { children: React.ReactNode }) {
   );
 }
 
-function MethodCard({
-  selected,
-  disabled,
-  onClick,
-  icon,
-  label,
-  description,
-  badge,
-}: {
-  selected: boolean;
-  disabled?: boolean;
-  onClick: () => void;
-  icon: React.ReactNode;
-  label: string;
-  description: string;
-  badge: string;
-}) {
-  return (
-    <button
-      type="button"
-      disabled={disabled}
-      onClick={onClick}
-      className={cn(
-        "flex w-full items-start gap-3 rounded-xl border px-4 py-4 text-left transition-colors",
-        disabled && "cursor-not-allowed opacity-60",
-        selected && !disabled && "border-brand-purple bg-[rgba(113,50,245,0.06)] shadow-[0_0_0_1px_#7132f5]",
-        !selected && !disabled && "border-dashboard-border bg-neutral-white hover:border-dashboard-border-strong"
-      )}
-    >
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-dashboard-track text-brand-purple">
-        {icon}
-      </span>
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="font-semibold text-neutral-black">{label}</span>
-          <span className="rounded-full bg-brand-purple-subtle px-2 py-0.5 text-[11px] font-semibold text-brand-purple">
-            {badge}
-          </span>
-        </div>
-        <p className="mt-1 text-sm text-neutral-gray">{description}</p>
-      </div>
-    </button>
-  );
-}
-
 export function ConectarContaModal({
   open,
   onClose,
@@ -83,7 +38,6 @@ export function ConectarContaModal({
   onConnected: () => void | Promise<void>;
 }) {
   const [step, setStep] = useState(1);
-  const [method, setMethod] = useState<"token" | "oauth">("token");
   const [token, setToken] = useState("");
   const [showToken, setShowToken] = useState(false);
   const [validating, setValidating] = useState(false);
@@ -98,7 +52,6 @@ export function ConectarContaModal({
 
   const reset = useCallback(() => {
     setStep(1);
-    setMethod("token");
     setToken("");
     setShowToken(false);
     setValidating(false);
@@ -220,40 +173,6 @@ export function ConectarContaModal({
             <AnimatePresence mode="wait">
               {step === 1 ? (
                 <motion.div key="c1" {...slide}>
-                  <h2 className="font-display text-xl font-bold text-neutral-black">Como deseja conectar?</h2>
-                  <p className="mt-1 text-sm text-neutral-gray">Escolha o método de autenticação com o Meta Ads</p>
-                  <div className="mt-6 grid grid-cols-1 gap-3">
-                    <MethodCard
-                      selected={method === "token"}
-                      onClick={() => setMethod("token")}
-                      icon={<Key className="h-5 w-5" />}
-                      label="Token de Acesso"
-                      description="Insira manualmente o token gerado no Meta Business Suite"
-                      badge="Recomendado"
-                    />
-                    <MethodCard
-                      selected={false}
-                      disabled
-                      onClick={() => {}}
-                      icon={<Link2 className="h-5 w-5" />}
-                      label="Login com Facebook"
-                      description="Autorize diretamente via conta do Facebook"
-                      badge="Em breve"
-                    />
-                  </div>
-                  <div className="mt-8 flex flex-wrap justify-end gap-3 border-t border-dashboard-border pt-5">
-                    <Button type="button" variant="ghost" onClick={onClose}>
-                      Cancelar
-                    </Button>
-                    <Button type="button" variant="primary" onClick={() => setStep(2)}>
-                      Continuar →
-                    </Button>
-                  </div>
-                </motion.div>
-              ) : null}
-
-              {step === 2 ? (
-                <motion.div key="c2" {...slide}>
                   <h2 className="font-display text-xl font-bold text-neutral-black">Insira o Token de Acesso</h2>
                   <InstructionBox>
                     <p>
@@ -342,14 +261,14 @@ export function ConectarContaModal({
                     </p>
                   ) : null}
                   <div className="mt-8 flex flex-wrap justify-between gap-3 border-t border-dashboard-border pt-5">
-                    <Button type="button" variant="ghost" onClick={() => setStep(1)}>
-                      ← Voltar
+                    <Button type="button" variant="ghost" onClick={onClose}>
+                      Cancelar
                     </Button>
                     {tokenValid === true ? (
                       <Button
                         type="button"
                         variant="primary"
-                        onClick={() => setStep(3)}
+                        onClick={() => setStep(2)}
                         disabled={missingScopes.length > 0}
                         title={
                           missingScopes.length > 0
@@ -373,8 +292,8 @@ export function ConectarContaModal({
                 </motion.div>
               ) : null}
 
-              {step === 3 ? (
-                <motion.div key="c3" {...slide}>
+              {step === 2 ? (
+                <motion.div key="c2" {...slide}>
                   <h2 className="font-display text-xl font-bold text-neutral-black">Confirme a conta</h2>
                   {previewAccounts?.[0] ? (
                     <div className="mt-4 flex items-center gap-4 rounded-xl border border-dashboard-border bg-neutral-white p-4">
@@ -435,7 +354,7 @@ export function ConectarContaModal({
                     ) : null}
                   </div>
                   <div className="mt-8 flex flex-wrap justify-between gap-3 border-t border-dashboard-border pt-5">
-                    <Button type="button" variant="ghost" onClick={() => setStep(2)}>
+                    <Button type="button" variant="ghost" onClick={() => setStep(1)}>
                       ← Voltar
                     </Button>
                     <Button

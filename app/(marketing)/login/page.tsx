@@ -19,7 +19,7 @@ export default function LoginPage() {
           Entrar na Kraken
         </h1>
         <p className="mb-8 text-center text-sm leading-relaxed text-neutral-gray">
-          Autenticação da app e permissões para sincronizar contas de anúncio Meta no mesmo fluxo com Meta.
+          Inicie sessão com o seu e-mail e senha para aceder à plataforma.
         </p>
 
         <KrakenLoginForm />

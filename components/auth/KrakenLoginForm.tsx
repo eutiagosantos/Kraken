@@ -1,15 +1,12 @@
 "use client";
 
 import { Eye, EyeOff } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { buildOAuthReturnRedirectTo } from "@/lib/auth/supabase-oauth-redirects";
 import { useSupabase } from "@/lib/hooks/useSupabase";
-import { META_FACEBOOK_OAUTH_SCOPES } from "@/lib/meta/facebook-oauth-scopes";
 
 export function KrakenLoginForm() {
   const router = useRouter();
@@ -50,22 +47,6 @@ export function KrakenLoginForm() {
 
     router.push(safeNext);
     router.refresh();
-  }
-
-  async function handleMetaLogin() {
-    setErrors({});
-    setNotice(null);
-    const redirectTo = buildOAuthReturnRedirectTo(window.location.origin, "/home");
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "facebook",
-      options: {
-        redirectTo,
-        scopes: META_FACEBOOK_OAUTH_SCOPES,
-      },
-    });
-    if (error) {
-      setNotice(error.message);
-    }
   }
 
   return (
@@ -133,26 +114,6 @@ export function KrakenLoginForm() {
       >
         {submitting ? "A entrar…" : "Continuar"}
       </Button>
-
-      <div className="relative py-2">
-        <div className="section-divider absolute inset-x-0 top-1/2 -translate-y-1/2 opacity-70" />
-        <span className="relative mx-auto block w-fit bg-white px-3 text-center text-sm text-neutral-gray">
-          Ou
-        </span>
-      </div>
-
-      <button
-        type="button"
-        onClick={() => void handleMetaLogin()}
-        className="flex w-full items-center justify-center gap-2.5 rounded-[10px] border border-neutral-border bg-white py-3 text-base font-semibold text-neutral-black shadow-subtle transition-colors hover:bg-neutral-white"
-      >
-        <Image src="/meta-symbol.svg" alt="" width={24} height={24} className="shrink-0" />
-        Continuar com Meta
-      </button>
-
-      <p className="rounded-lg border border-dashboard-border bg-dashboard-base px-3 py-2 text-xs text-neutral-gray">
-        Ao continuar com Meta, entras na Kraken e autorizas o acesso às tuas contas de anúncio para sincronização.
-      </p>
 
       <p className="pt-4 text-center text-sm leading-relaxed text-neutral-gray">
         Ainda não consegue fazer login? Envie-nos um{" "}
