@@ -32,6 +32,21 @@ describe("messageForSignUpAuthError", () => {
     expect(msg).toContain("já está registado");
   });
 
+  it("maps invalid_credentials by code", () => {
+    const msg = messageForSignUpAuthError({
+      code: "invalid_credentials",
+      message: "Invalid login credentials",
+    });
+    expect(msg).toContain("E-mail ou senha incorretos");
+  });
+
+  it("maps invalid_credentials when message is raw JSON", () => {
+    const msg = messageForSignUpAuthError({
+      message: '{"code":"invalid_credentials","message":"Invalid login credentials"}',
+    });
+    expect(msg).toContain("E-mail ou senha incorretos");
+  });
+
   it("falls back to message for other errors", () => {
     expect(messageForSignUpAuthError({ message: "Something else" })).toBe("Something else");
   });

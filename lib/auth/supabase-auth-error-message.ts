@@ -38,6 +38,10 @@ export function messageForSignUpAuthError(error: AuthError): string {
     return "Este e-mail já está registado. Tenta entrar ou reenvia o e-mail de confirmação.";
   }
 
+  if (matches(error, "invalid_credentials", "invalid login credentials")) {
+    return "E-mail ou senha incorretos.";
+  }
+
   return msg || "Ocorreu um erro. Tenta novamente.";
 }
 

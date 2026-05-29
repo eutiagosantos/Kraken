@@ -5,7 +5,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { Input } from "@/components/ui/Input";
-import { messageForSignUpAuthError } from "@/lib/auth/supabase-auth-error-message";
+import {
+  messageForSignInAuthError,
+  messageForSignUpAuthError,
+} from "@/lib/auth/supabase-auth-error-message";
 import { useSupabase } from "@/lib/hooks/useSupabase";
 import { cn } from "@/lib/utils";
 
@@ -76,7 +79,7 @@ export function RegisterForm() {
     }
 
     setNotice({
-      text: messageForSignUpAuthError(signInError),
+      text: messageForSignInAuthError(signInError),
       tone: "error",
     });
   }
