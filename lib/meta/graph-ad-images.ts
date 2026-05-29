@@ -16,6 +16,7 @@ export async function uploadAdImageToAccount(options: {
   buffer: Buffer;
   mimeType: string;
   fetchImpl?: GraphFetch;
+  appSecret?: string;
 }): Promise<{ hash: string; url?: string }> {
   const form = new FormData();
   const bytes = new Uint8Array(options.buffer);
@@ -27,6 +28,7 @@ export async function uploadAdImageToAccount(options: {
     accessToken: options.accessToken,
     formData: form,
     fetchImpl: options.fetchImpl,
+    appSecret: options.appSecret,
   });
 
   const images = json.images;

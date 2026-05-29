@@ -1,5 +1,6 @@
 "use client";
 
+import { MetaAppPanel } from "./MetaAppPanel";
 import { PerfilSection } from "./PerfilSection";
 import { SegurancaSection } from "./SegurancaSection";
 
@@ -11,12 +12,13 @@ export function ConfiguracoesClient() {
           Configurações
         </h1>
         <p className="mt-1 text-sm text-neutral-gray">
-          Gerencie seu perfil e a segurança da sua conta
+          Gerencie seu perfil, app Meta e segurança da conta
         </p>
       </header>
 
       <div className="flex flex-col gap-6">
         <PerfilSection />
+        <MetaAppPanel />
         <SegurancaSection />
       </div>
     </div>

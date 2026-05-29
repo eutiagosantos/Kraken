@@ -26,6 +26,7 @@ export async function graphCreateCampaign(options: {
   /** CBO/DPA: Meta expects `bid_strategy` on the campaign when budget lives on the campaign. */
   bidStrategy?: string;
   fetchImpl?: GraphFetch;
+  appSecret?: string;
 }): Promise<{ id: string }> {
   const body: Record<string, unknown> = {
     name: options.name.slice(0, 256),
@@ -54,6 +55,7 @@ export async function graphCreateCampaign(options: {
     accessToken: options.accessToken,
     body,
     fetchImpl: options.fetchImpl,
+    appSecret: options.appSecret,
   });
 }
 
@@ -85,6 +87,7 @@ export async function graphCreateAdSet(options: {
   adsetSchedule?: Array<{ days: number[]; start_minute: number; end_minute: number }>;
   frequencyControlSpecs?: Array<{ event: string; interval_days: number; max_frequency: number }>;
   fetchImpl?: GraphFetch;
+  appSecret?: string;
 }): Promise<{ id: string }> {
   const body: Record<string, unknown> = {
     name: options.name.slice(0, 256),
@@ -135,6 +138,7 @@ export async function graphCreateAdSet(options: {
     accessToken: options.accessToken,
     body,
     fetchImpl: options.fetchImpl,
+    appSecret: options.appSecret,
   });
 }
 
@@ -168,7 +172,6 @@ export function buildAdCreativeObjectStorySpec(options: {
         video_data: {
           video_id: options.media.videoId,
           image_url: options.media.thumbnailImageUrl,
-          link: options.linkUrl,
           message,
           call_to_action: {
             type: "LEARN_MORE",
@@ -187,6 +190,7 @@ export async function graphCreateAdCreative(options: {
   linkUrl: string;
   message: string;
   fetchImpl?: GraphFetch;
+  appSecret?: string;
 }): Promise<{ id: string }> {
   const objectStorySpec = buildAdCreativeObjectStorySpec({
     pageId: options.pageId,
@@ -200,6 +204,7 @@ export async function graphCreateAdCreative(options: {
     name: options.name,
     body: { object_story_spec: objectStorySpec },
     fetchImpl: options.fetchImpl,
+    appSecret: options.appSecret,
   });
 }
 
@@ -210,6 +215,7 @@ export async function graphCreateAdCreativeFromBody(options: {
   name: string;
   body: Record<string, unknown>;
   fetchImpl?: GraphFetch;
+  appSecret?: string;
 }): Promise<{ id: string }> {
   const merged: Record<string, unknown> = {
     ...options.body,
@@ -220,6 +226,7 @@ export async function graphCreateAdCreativeFromBody(options: {
     accessToken: options.accessToken,
     body: merged,
     fetchImpl: options.fetchImpl,
+    appSecret: options.appSecret,
   });
 }
 
@@ -231,6 +238,7 @@ export async function graphCreateAd(options: {
   creativeId: string;
   status: "ACTIVE" | "PAUSED";
   fetchImpl?: GraphFetch;
+  appSecret?: string;
 }): Promise<{ id: string }> {
   return graphJsonPost<{ id: string }>({
     path: `${options.actId}/ads`,
@@ -242,6 +250,7 @@ export async function graphCreateAd(options: {
       status: options.status,
     },
     fetchImpl: options.fetchImpl,
+    appSecret: options.appSecret,
   });
 }
 
@@ -254,12 +263,14 @@ export async function graphDeleteCampaign(options: {
   campaignId: string;
   accessToken: string;
   fetchImpl?: GraphFetch;
+  appSecret?: string;
 }): Promise<void> {
   if (options.fetchImpl) {
     await graphDelete({
       path: options.campaignId,
       accessToken: options.accessToken,
       fetchImpl: options.fetchImpl,
+      appSecret: options.appSecret,
     });
     return;
   }

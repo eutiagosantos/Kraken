@@ -60,6 +60,8 @@ import {
   resolveLifetimeScheduleForPublish,
 } from "@/lib/meta/campaign-schedule";
 import { metaPublishConcurrency, runWithConcurrency } from "@/lib/meta/publish-concurrency";
+import type { MetaAppCredentials } from "@/lib/meta/resolve-app-credentials";
+import { resolveMetaAppSecret } from "@/lib/meta/resolve-app-credentials";
 import { buildUploadJobSummary } from "@/lib/meta/upload-job-summary";
 import type { Database, Json } from "@/lib/supabase/types";
 
@@ -99,7 +101,13 @@ export type WizardPublishContext = {
   /** Linha `upload_jobs` criada em POST /api/wizard/publish/init (status `awaiting_creatives`). */
   existingPublishJobId: string;
   fetchImpl?: GraphFetch;
+  /** Per-user Meta app for appsecret_proof on Graph calls; falls back to env when absent. */
+  metaAppCredentials?: MetaAppCredentials | null;
 };
+
+function publishAppSecret(ctx: WizardPublishContext): string | undefined {
+  return resolveMetaAppSecret(ctx.metaAppCredentials ?? null);
+}
 
 export type PublishUnitResult = {
   accountMetaId: string;
@@ -211,6 +219,7 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
   warnings: string[];
 }> {
   const fetchImpl = ctx.fetchImpl ?? fetch;
+  const appSecret = publishAppSecret(ctx);
   const warnings: string[] = [];
   const { targeting: initialTargeting, usedFallbackGeo, fallbackCountry } = buildTargetingFromPublico(
     ctx.payload.publico
@@ -339,6 +348,7 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
           endTime: isCbo && isLifetime && lifetimeSchedule ? lifetimeSchedule.endTime : undefined,
           bidStrategy: campaignBidStrategy,
           fetchImpl,
+          appSecret,
         });
         createdCampaignId = campaign.id;
 
@@ -373,6 +383,7 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
             adsetSchedule: adsetScheduleRows,
             frequencyControlSpecs,
             fetchImpl,
+            appSecret,
           });
           return adset.id;
         });
@@ -400,6 +411,7 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
               campaignId: createdCampaignId,
               accessToken: ctx.accessToken,
               fetchImpl,
+              appSecret,
             });
           } catch {
             /* rollback best-effort */
@@ -583,16 +595,19 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
                 buffer: file.buffer,
                 mimeType: file.mimeType || "video/mp4",
                 fetchImpl,
+                appSecret,
               });
               await waitForAdVideoReady({
                 videoId,
                 accessToken: ctx.accessToken,
                 fetchImpl,
+                appSecret,
               });
               const { imageUrl } = await fetchPreferredAdVideoThumbnail({
                 videoId,
                 accessToken: ctx.accessToken,
                 fetchImpl,
+                appSecret,
               });
               thumb = imageUrl;
               media = { kind: "video", videoId, thumbnailImageUrl: imageUrl };
@@ -604,6 +619,7 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
                 buffer: file.buffer,
                 mimeType: file.mimeType || "image/jpeg",
                 fetchImpl,
+                appSecret,
               });
               if (imagePreviewUrl) thumb = imagePreviewUrl;
               media = { kind: "image", imageHash: hash };
@@ -624,6 +640,7 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
               linkUrl: ctx.adLinkUrl,
               message,
               fetchImpl,
+              appSecret,
             });
             adCreativeId = adCreative.id;
             adCreativeIdByKey.set(adCreativeKey, adCreativeId);
@@ -637,6 +654,7 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
             creativeId: adCreativeId,
             status: ctx.payload.status,
             fetchImpl,
+            appSecret,
           });
 
           return {
@@ -711,6 +729,7 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
               campaignId: createdCampaignId,
               accessToken: ctx.accessToken,
               fetchImpl,
+              appSecret,
             });
           } catch {
             /* rollback best-effort */
@@ -778,16 +797,19 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
           buffer: file.buffer,
           mimeType: file.mimeType || "video/mp4",
           fetchImpl,
+          appSecret,
         });
         await waitForAdVideoReady({
           videoId,
           accessToken: ctx.accessToken,
           fetchImpl,
+          appSecret,
         });
         const { imageUrl } = await fetchPreferredAdVideoThumbnail({
           videoId,
           accessToken: ctx.accessToken,
           fetchImpl,
+          appSecret,
         });
         creativeThumbForRow = imageUrl;
         media = { kind: "video", videoId, thumbnailImageUrl: imageUrl };
@@ -799,6 +821,7 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
           buffer: file.buffer,
           mimeType: file.mimeType || "image/jpeg",
           fetchImpl,
+          appSecret,
         });
         if (imagePreviewUrl) creativeThumbForRow = imagePreviewUrl;
         media = { kind: "image", imageHash: hash };
@@ -814,6 +837,7 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
         linkUrl: ctx.adLinkUrl,
         message: (creative.primaryText?.trim() || creative.name),
         fetchImpl,
+        appSecret,
       });
 
       const adIds: string[] = [];
@@ -827,6 +851,7 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
             creativeId: adCreative.id,
             status: ctx.payload.status,
             fetchImpl,
+            appSecret,
           });
           adIds.push(ad.id);
         }
@@ -888,6 +913,7 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
             campaignId: createdCampaignId,
             accessToken: ctx.accessToken,
             fetchImpl,
+            appSecret,
           });
         } catch {
           /* rollback best-effort */

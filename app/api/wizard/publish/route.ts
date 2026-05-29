@@ -24,6 +24,7 @@ import {
 import { scheduleBackgroundWork } from "@/lib/api/schedule-background-work";
 import { shouldDeferWizardPublish } from "@/lib/meta/publish-concurrency";
 import { adsetAndAdsCountsForWizardShape } from "@/lib/meta/map-wizard-to-graph";
+import { resolveMetaAppCredentials } from "@/lib/meta/resolve-app-credentials";
 import { runWizardPublish, type PublishUnitResult } from "@/lib/meta/publish-campaigns";
 import type { Database } from "@/lib/supabase/types";
 import {
@@ -212,6 +213,8 @@ export async function POST(request: Request) {
       parsed.data.structure,
       parsed.data.customStructure
     );
+    const metaAppCredentials = await resolveMetaAppCredentials(supabase, user.id);
+
     const publishCtx = {
       supabase,
       userId: user.id,
@@ -222,6 +225,7 @@ export async function POST(request: Request) {
       adLinkUrl,
       accounts: accountsOrdered,
       existingPublishJobId: parsed.data.publishOperationId,
+      metaAppCredentials,
     };
 
     let out: Awaited<ReturnType<typeof runWizardPublish>> | null = null;

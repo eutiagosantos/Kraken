@@ -45,6 +45,7 @@ export async function uploadAdVideoChunked(options: {
   buffer: Buffer;
   mimeType: string;
   fetchImpl?: GraphFetch;
+  appSecret?: string;
 }): Promise<{ videoId: string }> {
   const fileSize = options.buffer.length;
   if (fileSize === 0) {
@@ -61,6 +62,7 @@ export async function uploadAdVideoChunked(options: {
     accessToken: options.accessToken,
     formData: startForm,
     fetchImpl: options.fetchImpl,
+    appSecret: options.appSecret,
   });
 
   const sessionId = start.upload_session_id;
@@ -87,6 +89,7 @@ export async function uploadAdVideoChunked(options: {
       accessToken: options.accessToken,
       formData: form,
       fetchImpl: options.fetchImpl,
+      appSecret: options.appSecret,
     });
 
     const nextStart = parseOffsetNumber(transfer.start_offset, "start_offset");
@@ -109,6 +112,7 @@ export async function uploadAdVideoChunked(options: {
     accessToken: options.accessToken,
     formData: finishForm,
     fetchImpl: options.fetchImpl,
+    appSecret: options.appSecret,
   });
 
   if (!finish.success) {
@@ -157,6 +161,7 @@ export async function waitForAdVideoReady(options: {
   intervalMs?: number;
   /** Injectável para testes; em produção, `setTimeout`. */
   sleep?: (ms: number) => Promise<void>;
+  appSecret?: string;
 }): Promise<void> {
   const timeoutMs = options.timeoutMs ?? 300_000;
   const intervalMs = options.intervalMs ?? 6_000;
@@ -170,6 +175,7 @@ export async function waitForAdVideoReady(options: {
       accessToken: options.accessToken,
       searchParams: { fields: "status" },
       fetchImpl: options.fetchImpl,
+      appSecret: options.appSecret,
     });
     const vs = json.status?.video_status;
     const phaseErr = extractVideoPhaseErrorMessage(json.status);
@@ -201,12 +207,14 @@ export async function fetchPreferredAdVideoThumbnail(options: {
   videoId: string;
   accessToken: string;
   fetchImpl?: GraphFetch;
+  appSecret?: string;
 }): Promise<{ imageUrl: string }> {
   const json = await graphJsonGet<{ data?: ThumbnailNode[] }>({
     path: `${options.videoId}/thumbnails`,
     accessToken: options.accessToken,
     searchParams: { fields: "id,uri,is_preferred" },
     fetchImpl: options.fetchImpl,
+    appSecret: options.appSecret,
   });
   const nodes = Array.isArray(json.data) ? json.data : [];
   const preferred = nodes.find((n) => n?.is_preferred && typeof n.uri === "string" && n.uri.trim());

@@ -69,6 +69,30 @@ export interface Database {
         };
         Relationships: [];
       };
+      user_meta_apps: {
+        Row: {
+          user_id: string;
+          meta_app_id: string;
+          meta_app_secret_encrypted: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          meta_app_id: string;
+          meta_app_secret_encrypted: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          meta_app_id?: string;
+          meta_app_secret_encrypted?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       meta_user_tokens: {
         Row: {
           user_id: string;

@@ -1,4 +1,6 @@
 import { META_GRAPH_ORIGIN } from "@/lib/meta/constants";
+import type { MetaAppCredentials } from "@/lib/meta/resolve-app-credentials";
+import { resolveMetaAppId, resolveMetaAppSecret } from "@/lib/meta/resolve-app-credentials";
 
 export const REQUIRED_TOKEN_SCOPES = [
   "ads_management",
@@ -67,12 +69,15 @@ export function parseDebugTokenPayload(data: Record<string, unknown> | null | un
   return { isValid, type, profileId, scopes, errorMessage };
 }
 
-async function fetchDebugTokenPayload(inputToken: string): Promise<
+async function fetchDebugTokenPayload(
+  inputToken: string,
+  credentials?: MetaAppCredentials | null
+): Promise<
   | { ok: false; error: string }
   | { ok: true; payload: Record<string, unknown> }
 > {
-  const appId = process.env.META_APP_ID;
-  const appSecret = process.env.META_APP_SECRET;
+  const appId = resolveMetaAppId(credentials ?? null);
+  const appSecret = resolveMetaAppSecret(credentials ?? null);
   if (!appId || !appSecret) {
     return { ok: false, error: "META_APP_ID e META_APP_SECRET em falta." };
   }
@@ -106,12 +111,13 @@ async function fetchDebugTokenPayload(inputToken: string): Promise<
  */
 export async function validatePastedPageAccessToken(
   pageAccessToken: string,
-  expectedPageId: string
+  expectedPageId: string,
+  credentials?: MetaAppCredentials | null
 ): Promise<
   | { ok: false; error: string; code: string }
   | { ok: true; scopes: string[]; missingBaseScopes: string[] }
 > {
-  const fetched = await fetchDebugTokenPayload(pageAccessToken);
+  const fetched = await fetchDebugTokenPayload(pageAccessToken, credentials);
   if (!fetched.ok) {
     if (fetched.error === "META_APP_ID e META_APP_SECRET em falta.") {
       return {
@@ -158,16 +164,16 @@ export async function validatePastedPageAccessToken(
 
 export async function inspectTokenScopes(
   inputToken: string,
-  options?: InspectTokenScopesOptions
+  options?: InspectTokenScopesOptions & { credentials?: MetaAppCredentials | null }
 ): Promise<InspectTokenResult> {
-  const appId = process.env.META_APP_ID;
-  const appSecret = process.env.META_APP_SECRET;
+  const appId = resolveMetaAppId(options?.credentials ?? null);
+  const appSecret = resolveMetaAppSecret(options?.credentials ?? null);
   if (!appId || !appSecret) {
     // Can't verify scopes without app credentials — skip gracefully
     return { valid: true, scopes: [], missingScopes: [] };
   }
 
-  const fetched = await fetchDebugTokenPayload(inputToken);
+  const fetched = await fetchDebugTokenPayload(inputToken, options?.credentials);
   if (!fetched.ok) {
     return { valid: false, error: fetched.error };
   }

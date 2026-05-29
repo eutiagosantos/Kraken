@@ -59,10 +59,14 @@ function parseGraphErrorJson(body: string): {
   return { message: body.slice(0, 400) };
 }
 
-/** Appends `access_token` and optional `appsecret_proof` when `META_APP_SECRET` is set (server). */
-export function attachGraphAccessTokenToUrl(url: URL, accessToken: string): void {
+/** Appends `access_token` and optional `appsecret_proof` when app secret is available. */
+export function attachGraphAccessTokenToUrl(
+  url: URL,
+  accessToken: string,
+  appSecret?: string
+): void {
   url.searchParams.set("access_token", accessToken);
-  const secret = metaAppSecretFromEnv();
+  const secret = appSecret?.trim() || metaAppSecretFromEnv();
   if (secret) {
     url.searchParams.set("appsecret_proof", computeMetaAppSecretProof(accessToken, secret));
   }
@@ -82,10 +86,11 @@ export async function graphJsonPost<T = unknown>(options: {
   accessToken: string;
   body: Record<string, unknown>;
   fetchImpl?: GraphFetch;
+  appSecret?: string;
 }): Promise<T> {
   const fetchFn = options.fetchImpl ?? fetch;
   const url = new URL(graphUrl(options.path));
-  attachGraphAccessTokenToUrl(url, options.accessToken);
+  attachGraphAccessTokenToUrl(url, options.accessToken, options.appSecret);
 
   let lastErr: GraphApiError | null = null;
   for (let attempt = 0; attempt < 3; attempt++) {
@@ -137,6 +142,7 @@ export async function graphJsonGet<T = unknown>(options: {
   accessToken: string;
   searchParams?: Record<string, string>;
   fetchImpl?: GraphFetch;
+  appSecret?: string;
 }): Promise<T> {
   const fetchFn = options.fetchImpl ?? fetch;
   const url = new URL(graphUrl(options.path));
@@ -145,7 +151,7 @@ export async function graphJsonGet<T = unknown>(options: {
       url.searchParams.set(k, v);
     }
   }
-  attachGraphAccessTokenToUrl(url, options.accessToken);
+  attachGraphAccessTokenToUrl(url, options.accessToken, options.appSecret);
   const res = await fetchFn(url.toString(), { method: "GET" });
   const raw = await res.text();
   if (!res.ok) {
@@ -177,10 +183,11 @@ export async function graphDelete(options: {
   path: string;
   accessToken: string;
   fetchImpl?: GraphFetch;
+  appSecret?: string;
 }): Promise<void> {
   const fetchFn = options.fetchImpl ?? fetch;
   const url = new URL(graphUrl(options.path));
-  attachGraphAccessTokenToUrl(url, options.accessToken);
+  attachGraphAccessTokenToUrl(url, options.accessToken, options.appSecret);
   const res = await fetchFn(url.toString(), { method: "DELETE" });
   const raw = await res.text();
   if (!res.ok) {
@@ -203,10 +210,11 @@ export async function graphFormPost<T = unknown>(options: {
   accessToken: string;
   formData: FormData;
   fetchImpl?: GraphFetch;
+  appSecret?: string;
 }): Promise<T> {
   const fetchFn = options.fetchImpl ?? fetch;
   const url = new URL(graphUrl(options.path));
-  attachGraphAccessTokenToUrl(url, options.accessToken);
+  attachGraphAccessTokenToUrl(url, options.accessToken, options.appSecret);
 
   const res = await fetchFn(url.toString(), { method: "POST", body: options.formData });
   const raw = await res.text();

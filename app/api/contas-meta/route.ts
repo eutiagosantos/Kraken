@@ -11,6 +11,7 @@ import {
 import { rowToContaMeta } from "@/lib/contas-meta-map";
 import { fetchGraphAdAccounts } from "@/lib/meta/graph-ad-accounts";
 import { inspectTokenScopes } from "@/lib/meta/graph-inspect-token";
+import { resolveMetaAppCredentials } from "@/lib/meta/resolve-app-credentials";
 import { invalidatePageCache } from "@/lib/meta/graph-user-pages";
 import { syncMetaAdAccountsForUser } from "@/lib/meta/sync-ad-accounts";
 
@@ -59,11 +60,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid payload." }, { status: 400 });
   }
 
+  const metaAppCredentials = await resolveMetaAppCredentials(supabase, user.id);
+
   if (parsed.data.action === "inspect_token") {
     try {
       const [accounts, scopeResult] = await Promise.all([
         fetchGraphAdAccounts(parsed.data.token),
-        inspectTokenScopes(parsed.data.token),
+        inspectTokenScopes(parsed.data.token, { credentials: metaAppCredentials }),
       ]);
       if (accounts.length === 0) {
         return NextResponse.json(
@@ -110,7 +113,7 @@ export async function POST(request: Request) {
 
   if (parsed.data.action === "sync_with_token") {
     const token = parsed.data.token;
-    const scopeResult = await inspectTokenScopes(token);
+    const scopeResult = await inspectTokenScopes(token, { credentials: metaAppCredentials });
     if (!scopeResult.valid) {
       return NextResponse.json({ error: scopeResult.error }, { status: 400 });
     }

@@ -78,6 +78,12 @@ Zustand store in `lib/stores/wizardStore.ts`. Structure: creatives, públicos (a
 ### Data fetching (client)
 SWR hooks in `lib/hooks/` (`useCampanhas`, `useContasMeta`, `useKrakenUser`, etc.) using `lib/hooks/swr-json-fetcher.ts`.
 
+### Per-user Meta Developer App (multi-tenant credentials)
+- Table `user_meta_apps`: `meta_app_id` + encrypted `meta_app_secret_encrypted`
+- Env: `KRAKEN_ENCRYPTION_KEY` (32 bytes, hex or UTF-8) — required to save secrets via `POST /api/user/meta-app`
+- UI: `/configuracoes` → **App Meta (Developer)**
+- `resolveMetaAppCredentials()` in `lib/meta/resolve-app-credentials.ts` — used by publish + `debug_token` / `appsecret_proof`; falls back to `META_APP_ID` / `META_APP_SECRET`
+
 ## Meta API notes
 - App may be in **Development** mode — see `docs/meta-publicacao-app-development.md` for sandbox setup
 - `geo_locations`: omit `countries` array when targeting cities or regions (Meta API constraint)
