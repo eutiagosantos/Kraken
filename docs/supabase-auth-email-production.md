@@ -1,8 +1,37 @@
-# E-mail de confirmação de cadastro (produção)
+# E-mail de confirmação de cadastro
 
-Configuração necessária no **Supabase Dashboard** do projeto ligado à Vercel para e-mails de confirmação chegarem e o link funcionar.
+**Estado atual:** confirmação por e-mail **desativada**. O cadastro cria a conta e entra direto em `/home`.
 
-## 1. URL Configuration
+Para reativar no futuro (mais segurança), siga os passos abaixo.
+
+## Desativar confirmação (configuração atual)
+
+### Supabase Dashboard (produção — obrigatório)
+
+**Authentication → Providers → Email** → desativar **Confirm email**.
+
+Sem isto, contas novas em produção continuam a exigir confirmação mesmo com o código atualizado.
+
+### Local (`supabase/config.toml`)
+
+```toml
+[auth.email]
+enable_confirmations = false
+```
+
+---
+
+## Reativar confirmação (futuro)
+
+### 1. Código
+
+- `RegisterForm`: usar `buildAuthCallbackUrl(origin, "/home")` em `emailRedirectTo` no `signUp` / `resend`
+- `KrakenLoginForm`: tratar `email_not_confirmed` + botão reenviar
+- `supabase/config.toml`: `enable_confirmations = true`
+
+Helpers já existem em `lib/auth/build-auth-callback-url.ts` e `lib/auth/supabase-auth-error-message.ts`.
+
+### 2. URL Configuration
 
 **Authentication → URL Configuration**
 
@@ -11,39 +40,19 @@ Configuração necessária no **Supabase Dashboard** do projeto ligado à Vercel
 | Site URL | `https://kraken-sigma-three.vercel.app` |
 | Redirect URLs | `https://kraken-sigma-three.vercel.app/api/auth/callback` |
 
-Confirme que **Enable email confirmations** está ativo em **Authentication → Providers → Email**.
+### 3. SMTP customizado
 
-## 2. SMTP customizado
-
-O mailer built-in do Supabase (free tier) tem quota baixa (~2 e-mails/hora) e entrega instável. Configure SMTP real:
-
-**Authentication → Emails → SMTP Settings**
-
-Exemplo com [Resend](https://resend.com):
+Configure SMTP real (**Authentication → Emails → SMTP Settings**). Exemplo Resend:
 
 | Campo | Valor |
 |-------|-------|
 | Host | `smtp.resend.com` |
-| Port | `465` (SSL) ou `587` (TLS) |
+| Port | `465` ou `587` |
 | User | `resend` |
 | Password | API key Resend |
-| Sender email | endereço de domínio verificado (ex. `noreply@seudominio.com`) |
-| Sender name | `Kraken` |
+| Sender | domínio verificado |
 
-## 3. Variáveis na Vercel
+### 4. Fluxo
 
-Confirme que apontam para o projeto **hosted**, não local:
-
-- `NEXT_PUBLIC_SUPABASE_URL` → `https://<project-ref>.supabase.co`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY` → anon key do mesmo projeto
-
-## 4. Debug
-
-**Authentication → Logs** — após um cadastro, verifique se há envio de e-mail ou erro (`rate_limit`, `smtp_error`).
-
-## 5. Fluxo na app
-
-1. Utilizador regista-se em `/cadastro`
-2. Supabase envia e-mail com link para `/api/auth/callback?next=/home`
-3. Callback troca o `code` por sessão e redireciona para `/home`
-4. Se o e-mail não chegar, usar **Reenviar e-mail de confirmação** no cadastro ou login
+1. `signUp` → e-mail com link para `/api/auth/callback?next=/home`
+2. Callback faz `exchangeCodeForSession` → `/home`

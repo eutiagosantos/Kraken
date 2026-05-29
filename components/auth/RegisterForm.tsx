@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { Input } from "@/components/ui/Input";
-import { buildAuthCallbackUrl } from "@/lib/auth/build-auth-callback-url";
 import { messageForSignUpAuthError } from "@/lib/auth/supabase-auth-error-message";
 import { useSupabase } from "@/lib/hooks/useSupabase";
 import { cn } from "@/lib/utils";
@@ -17,34 +16,9 @@ export function RegisterForm() {
   const supabase = useSupabase();
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [notice, setNotice] = useState<{ text: string; tone: "success" | "error" } | null>(null);
-  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [resending, setResending] = useState(false);
-
-  async function resendConfirmation(email: string) {
-    const origin = typeof window !== "undefined" ? window.location.origin : "";
-    if (!origin) return;
-
-    setResending(true);
-    const { error } = await supabase.auth.resend({
-      type: "signup",
-      email,
-      options: { emailRedirectTo: buildAuthCallbackUrl(origin, "/home") },
-    });
-    setResending(false);
-
-    if (error) {
-      setNotice({ text: messageForSignUpAuthError(error), tone: "error" });
-      return;
-    }
-
-    setNotice({
-      text: "E-mail de confirmação reenviado. Verifique a caixa de entrada e a pasta de spam.",
-      tone: "success",
-    });
-  }
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -69,38 +43,41 @@ export function RegisterForm() {
 
     setErrors(next);
     setNotice(null);
-    setPendingEmail(null);
 
     if (Object.keys(next).length > 0) return;
 
     setSubmitting(true);
-    const origin = typeof window !== "undefined" ? window.location.origin : "";
-    const emailRedirectTo = origin ? buildAuthCallbackUrl(origin, "/home") : undefined;
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: {
-        data: { full_name: name, name },
-        emailRedirectTo,
-      },
+      options: { data: { full_name: name, name } },
     });
-    setSubmitting(false);
 
     if (error) {
+      setSubmitting(false);
       setNotice({ text: messageForSignUpAuthError(error), tone: "error" });
       return;
     }
 
     if (data.session) {
+      setSubmitting(false);
       router.push("/home");
       router.refresh();
       return;
     }
 
-    setPendingEmail(email);
+    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+    setSubmitting(false);
+
+    if (!signInError) {
+      router.push("/home");
+      router.refresh();
+      return;
+    }
+
     setNotice({
-      text: "Verifique o seu e-mail para confirmar a conta antes de entrar. Se não receber, verifique a pasta de spam.",
-      tone: "success",
+      text: messageForSignUpAuthError(signInError),
+      tone: "error",
     });
   }
 
@@ -124,17 +101,6 @@ export function RegisterForm() {
         >
           {notice.text}
         </p>
-      ) : null}
-
-      {pendingEmail ? (
-        <button
-          type="button"
-          disabled={resending}
-          onClick={() => void resendConfirmation(pendingEmail)}
-          className="w-full rounded-[10px] border border-[#6B46E5] bg-white py-2 text-sm font-semibold text-[#6B46E5] transition-colors hover:bg-[#6B46E5]/5 disabled:opacity-60"
-        >
-          {resending ? "A reenviar…" : "Reenviar e-mail de confirmação"}
-        </button>
       ) : null}
 
       <Input

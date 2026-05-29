@@ -6,12 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { buildAuthCallbackUrl } from "@/lib/auth/build-auth-callback-url";
-import {
-  isEmailNotConfirmedError,
-  messageForSignInAuthError,
-  messageForSignUpAuthError,
-} from "@/lib/auth/supabase-auth-error-message";
+import { messageForSignInAuthError } from "@/lib/auth/supabase-auth-error-message";
 import { useSupabase } from "@/lib/hooks/useSupabase";
 
 export function KrakenLoginForm() {
@@ -22,31 +17,9 @@ export function KrakenLoginForm() {
   const [notice, setNotice] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [resending, setResending] = useState(false);
-  const [unconfirmedEmail, setUnconfirmedEmail] = useState<string | null>(null);
 
   const nextParam = searchParams.get("next") ?? "/home";
   const safeNext = nextParam.startsWith("/") && !nextParam.startsWith("//") ? nextParam : "/home";
-
-  async function resendConfirmation(email: string) {
-    const origin = typeof window !== "undefined" ? window.location.origin : "";
-    if (!origin) return;
-
-    setResending(true);
-    const { error } = await supabase.auth.resend({
-      type: "signup",
-      email,
-      options: { emailRedirectTo: buildAuthCallbackUrl(origin, safeNext) },
-    });
-    setResending(false);
-
-    if (error) {
-      setNotice(messageForSignUpAuthError(error));
-      return;
-    }
-
-    setNotice("E-mail de confirmação reenviado. Verifique a caixa de entrada e a pasta de spam.");
-  }
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -61,7 +34,6 @@ export function KrakenLoginForm() {
 
     setErrors(next);
     setNotice(null);
-    setUnconfirmedEmail(null);
 
     if (Object.keys(next).length > 0) return;
 
@@ -70,9 +42,6 @@ export function KrakenLoginForm() {
     setSubmitting(false);
 
     if (error) {
-      if (isEmailNotConfirmedError(error)) {
-        setUnconfirmedEmail(email);
-      }
       setNotice(messageForSignInAuthError(error));
       return;
     }
@@ -90,17 +59,6 @@ export function KrakenLoginForm() {
         >
           {notice}
         </p>
-      ) : null}
-
-      {unconfirmedEmail ? (
-        <button
-          type="button"
-          disabled={resending}
-          onClick={() => void resendConfirmation(unconfirmedEmail)}
-          className="w-full rounded-[10px] border border-[#6B46E5] bg-white py-2.5 text-sm font-semibold text-[#6B46E5] transition-colors hover:bg-[#6B46E5]/5 disabled:opacity-60"
-        >
-          {resending ? "A reenviar…" : "Reenviar e-mail de confirmação"}
-        </button>
       ) : null}
 
       <Input
