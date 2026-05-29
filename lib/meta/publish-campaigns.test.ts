@@ -685,6 +685,7 @@ describe("runWizardPublish", () => {
     const videoData = oss?.video_data as Record<string, unknown> | undefined;
     expect(videoData?.video_id).toBe("vid_777");
     expect(videoData?.image_url).toBe("https://thumb.example/p.jpg");
+    expect(videoData?.link).toBe("https://example.com");
     expect(videoData?.message).toBe("Copy da plataforma");
     const cta = videoData?.call_to_action as { type?: string; value?: { link?: string } } | undefined;
     expect(cta?.type).toBe("LEARN_MORE");

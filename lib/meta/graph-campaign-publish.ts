@@ -168,6 +168,7 @@ export function buildAdCreativeObjectStorySpec(options: {
         video_data: {
           video_id: options.media.videoId,
           image_url: options.media.thumbnailImageUrl,
+          link: options.linkUrl,
           message,
           call_to_action: {
             type: "LEARN_MORE",
