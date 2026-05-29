@@ -5,6 +5,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { Input } from "@/components/ui/Input";
+import {
+  DUPLICATE_SIGN_UP_MESSAGE,
+  isDuplicateSignUpResponse,
+} from "@/lib/auth/sign-up-response";
 import { messageForSignUpAuthError } from "@/lib/auth/supabase-auth-error-message";
 import { useSupabase } from "@/lib/hooks/useSupabase";
 import { cn } from "@/lib/utils";
@@ -56,6 +60,12 @@ export function RegisterForm() {
     if (error) {
       setSubmitting(false);
       setNotice({ text: messageForSignUpAuthError(error), tone: "error" });
+      return;
+    }
+
+    if (isDuplicateSignUpResponse(data.user)) {
+      setSubmitting(false);
+      setNotice({ text: DUPLICATE_SIGN_UP_MESSAGE, tone: "error" });
       return;
     }
 

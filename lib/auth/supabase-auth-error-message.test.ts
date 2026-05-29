@@ -30,6 +30,8 @@ describe("messageForSignUpAuthError", () => {
       message: "User already registered",
     });
     expect(msg).toContain("já está registado");
+    expect(msg).toContain("Tenta entrar com a sua senha");
+    expect(msg).not.toContain("confirmação");
   });
 
   it("maps invalid_credentials by code", () => {

@@ -35,7 +35,7 @@ export function messageForSignUpAuthError(error: AuthError): string {
   }
 
   if (matches(error, "user_already_registered", "user already registered", "already been registered")) {
-    return "Este e-mail já está registado. Tenta entrar ou reenvia o e-mail de confirmação.";
+    return "Este e-mail já está registado. Tenta entrar com a sua senha.";
   }
 
   if (matches(error, "invalid_credentials", "invalid login credentials")) {
