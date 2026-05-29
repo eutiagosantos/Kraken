@@ -81,6 +81,8 @@ SWR hooks in `lib/hooks/` (`useCampanhas`, `useContasMeta`, `useKrakenUser`, etc
 ### Per-user Meta Developer App (multi-tenant credentials)
 - Table `user_meta_apps`: `meta_app_id` + encrypted `meta_app_secret_encrypted`
 - Env: `KRAKEN_ENCRYPTION_KEY` (32 bytes, hex or UTF-8) — required to save secrets via `POST /api/user/meta-app`
+  - Generate: `openssl rand -hex 32` (64 hex chars)
+  - Vercel: set on **Production** (not `NEXT_PUBLIC_`); **redeploy** after add/change — env vars are not injected into existing deployments
 - UI: `/configuracoes` → **App Meta (Developer)**
 - `resolveMetaAppCredentials()` in `lib/meta/resolve-app-credentials.ts` — used by publish + `debug_token` / `appsecret_proof`; falls back to `META_APP_ID` / `META_APP_SECRET`
 

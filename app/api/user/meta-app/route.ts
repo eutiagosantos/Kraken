@@ -39,7 +39,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         error:
-          "O servidor não está configurado para guardar credenciais (KRAKEN_ENCRYPTION_KEY em falta). Contacte o administrador.",
+          "KRAKEN_ENCRYPTION_KEY em falta no servidor. Se já foi configurada na Vercel, faça redeploy de Production.",
       },
       { status: 503 }
     );
