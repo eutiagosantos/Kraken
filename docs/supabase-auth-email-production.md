@@ -1,6 +1,6 @@
 # E-mail de confirmação de cadastro
 
-**Estado atual:** confirmação por e-mail **desativada**. O cadastro cria a conta e entra direto em `/home`.
+**Estado atual:** confirmação por e-mail **desativada**. O cadastro cria a conta e redireciona para `/login`.
 
 Para reativar no futuro (mais segurança), siga os passos abaixo.
 

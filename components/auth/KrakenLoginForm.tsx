@@ -13,13 +13,18 @@ export function KrakenLoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const supabase = useSupabase();
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [notice, setNotice] = useState<string | null>(null);
-  const [showPassword, setShowPassword] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
 
   const nextParam = searchParams.get("next") ?? "/home";
   const safeNext = nextParam.startsWith("/") && !nextParam.startsWith("//") ? nextParam : "/home";
+  const registeredNotice =
+    searchParams.get("registered") === "1"
+      ? "Conta criada com sucesso. Entre com o seu e-mail e senha."
+      : null;
+
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [notice, setNotice] = useState<string | null>(registeredNotice);
+  const [showPassword, setShowPassword] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();

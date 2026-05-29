@@ -60,18 +60,11 @@ export function RegisterForm() {
     }
 
     if (data.session) {
-      setSubmitting(false);
-      router.push("/home");
-      router.refresh();
-      return;
+      await supabase.auth.signOut();
     }
 
     setSubmitting(false);
-    setNotice({
-      text:
-        "Conta criada com sucesso! Verifique a sua caixa de entrada e confirme o e-mail antes de entrar.",
-      tone: "success",
-    });
+    router.push("/login?registered=1");
   }
 
   const inputClass =
