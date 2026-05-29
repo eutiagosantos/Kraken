@@ -5,6 +5,9 @@ import { createCipheriv, createDecipheriv, randomBytes } from "crypto";
 const ALGORITHM = "aes-256-cbc";
 const IV_LENGTH = 16;
 
+const INVALID_KEY_MESSAGE =
+  "KRAKEN_ENCRYPTION_KEY inválida: use 64 caracteres hex (openssl rand -hex 32) ou base64 de 32 bytes (openssl rand -base64 32).";
+
 function encryptionKeyBytes(): Buffer {
   const raw = process.env.KRAKEN_ENCRYPTION_KEY?.trim();
   if (!raw) {
@@ -13,9 +16,15 @@ function encryptionKeyBytes(): Buffer {
   if (/^[0-9a-fA-F]{64}$/.test(raw)) {
     return Buffer.from(raw, "hex");
   }
+  if (/^[A-Za-z0-9+/]+=*$/.test(raw)) {
+    const fromBase64 = Buffer.from(raw, "base64");
+    if (fromBase64.length === 32) {
+      return fromBase64;
+    }
+  }
   const buf = Buffer.from(raw, "utf8");
   if (buf.length !== 32) {
-    throw new Error("KRAKEN_ENCRYPTION_KEY deve ter 32 bytes (64 hex ou string UTF-8 de 32 caracteres).");
+    throw new Error(INVALID_KEY_MESSAGE);
   }
   return buf;
 }
@@ -47,4 +56,17 @@ export function decryptAppSecret(stored: string): string {
 
 export function isEncryptionConfigured(): boolean {
   return Boolean(process.env.KRAKEN_ENCRYPTION_KEY?.trim());
+}
+
+/** Returns a user-facing error when the key is set but invalid; null when OK. */
+export function getEncryptionKeyError(): string | null {
+  if (!isEncryptionConfigured()) {
+    return "KRAKEN_ENCRYPTION_KEY em falta.";
+  }
+  try {
+    encryptionKeyBytes();
+    return null;
+  } catch (e) {
+    return e instanceof Error ? e.message : INVALID_KEY_MESSAGE;
+  }
 }

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { decryptAppSecret, encryptAppSecret } from "@/lib/meta/app-credentials-crypto";
+import { decryptAppSecret, encryptAppSecret, getEncryptionKeyError } from "@/lib/meta/app-credentials-crypto";
 
 describe("app-credentials-crypto", () => {
   const prev = process.env.KRAKEN_ENCRYPTION_KEY;
@@ -19,5 +19,22 @@ describe("app-credentials-crypto", () => {
     const stored = encryptAppSecret(plain);
     expect(stored).toContain(":");
     expect(decryptAppSecret(stored)).toBe(plain);
+  });
+
+  it("accepts 64-char hex key", () => {
+    process.env.KRAKEN_ENCRYPTION_KEY = "ab".repeat(32);
+    expect(getEncryptionKeyError()).toBeNull();
+    expect(encryptAppSecret("x")).toContain(":");
+  });
+
+  it("accepts base64 key from openssl rand -base64 32", () => {
+    process.env.KRAKEN_ENCRYPTION_KEY = Buffer.alloc(32, 7).toString("base64");
+    expect(getEncryptionKeyError()).toBeNull();
+    expect(encryptAppSecret("x")).toContain(":");
+  });
+
+  it("rejects invalid key length", () => {
+    process.env.KRAKEN_ENCRYPTION_KEY = "too-short";
+    expect(getEncryptionKeyError()).toContain("inválida");
   });
 });

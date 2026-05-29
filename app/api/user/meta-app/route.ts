@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { assertProtectedApiRoute } from "@/lib/api/route-protection";
-import { encryptAppSecret, isEncryptionConfigured } from "@/lib/meta/app-credentials-crypto";
+import { encryptAppSecret, getEncryptionKeyError, isEncryptionConfigured } from "@/lib/meta/app-credentials-crypto";
 
 const postBodySchema = z.object({
   appId: z.string().trim().min(1).max(64),
@@ -43,6 +43,11 @@ export async function POST(request: Request) {
       },
       { status: 503 }
     );
+  }
+
+  const keyError = getEncryptionKeyError();
+  if (keyError) {
+    return NextResponse.json({ error: keyError }, { status: 503 });
   }
 
   const raw = await request.json().catch(() => ({}));
