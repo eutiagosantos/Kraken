@@ -3,6 +3,7 @@
 import { MetaAppPanel } from "./MetaAppPanel";
 import { PerfilSection } from "./PerfilSection";
 import { SegurancaSection } from "./SegurancaSection";
+import { WorkspaceSection } from "./WorkspaceSection";
 
 export function ConfiguracoesClient() {
   return (
@@ -12,11 +13,12 @@ export function ConfiguracoesClient() {
           Configurações
         </h1>
         <p className="mt-1 text-sm text-neutral-gray">
-          Gerencie seu perfil, app Meta e segurança da conta
+          Gerencie seu workspace, perfil, app Meta e segurança da conta
         </p>
       </header>
 
       <div className="flex flex-col gap-6">
+        <WorkspaceSection />
         <PerfilSection />
         <MetaAppPanel />
         <SegurancaSection />
