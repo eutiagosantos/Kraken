@@ -5,10 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { Input } from "@/components/ui/Input";
-import {
-  messageForSignInAuthError,
-  messageForSignUpAuthError,
-} from "@/lib/auth/supabase-auth-error-message";
+import { messageForSignUpAuthError } from "@/lib/auth/supabase-auth-error-message";
 import { useSupabase } from "@/lib/hooks/useSupabase";
 import { cn } from "@/lib/utils";
 
@@ -69,18 +66,11 @@ export function RegisterForm() {
       return;
     }
 
-    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
     setSubmitting(false);
-
-    if (!signInError) {
-      router.push("/home");
-      router.refresh();
-      return;
-    }
-
     setNotice({
-      text: messageForSignInAuthError(signInError),
-      tone: "error",
+      text:
+        "Conta criada com sucesso! Verifique a sua caixa de entrada e confirme o e-mail antes de entrar.",
+      tone: "success",
     });
   }
 
