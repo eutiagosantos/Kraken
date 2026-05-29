@@ -87,6 +87,7 @@ export function Hero() {
               transition={{ duration: 0.6, ease: "easeOut" }}
             >
               <PublicationQueuePanel
+                variant="marketing"
                 summary={DEMO_PUBLICATION_QUEUE_SUMMARY}
                 animate
               />

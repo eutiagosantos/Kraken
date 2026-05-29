@@ -54,7 +54,7 @@ export function HomeDashboardClient() {
       ) : null}
       <div className="flex flex-col gap-6 xl:grid xl:grid-cols-[1fr_minmax(280px,360px)] xl:items-start xl:gap-8">
         <div className="flex min-w-0 flex-col gap-6">
-          <PublicationQueuePanelLive className="max-w-[440px] pb-6 sm:max-w-[480px]" />
+          <PublicationQueuePanelLive className="w-full max-w-none" />
           <div className="overflow-x-auto pb-1 md:overflow-visible">
             <div className="min-w-[min(100%,640px)]">
               <StatsRow stats={d.stats} />

@@ -347,7 +347,7 @@ export function FilaProcessamentoClient() {
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-10">
-      <section className="max-w-[480px] pb-2">
+      <section>
         <PublicationQueuePanelLive href={false} pollWhenActiveMs={2000} pollIdleMs={5000} />
       </section>
 

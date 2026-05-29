@@ -45,7 +45,7 @@ export function PublicationQueuePanelLive({
     return (
       <div
         className={cn(
-          "flex min-h-[320px] items-center justify-center rounded-[18px] border border-neutral-border bg-white p-8 text-sm text-neutral-silver shadow-subtle",
+          "flex min-h-[280px] items-center justify-center rounded-card border border-dashboard-border bg-dashboard-surface p-8 text-sm text-dashboard-muted shadow-subtle",
           className
         )}
       >
@@ -58,7 +58,7 @@ export function PublicationQueuePanelLive({
     return (
       <div
         className={cn(
-          "rounded-[18px] border border-semantic-red/20 bg-semantic-red-bg/40 p-6 text-sm text-neutral-black",
+          "rounded-card border border-semantic-red/20 bg-semantic-red-bg/40 p-6 text-sm text-neutral-black",
           className
         )}
       >
@@ -69,6 +69,7 @@ export function PublicationQueuePanelLive({
 
   return (
     <PublicationQueuePanel
+      variant="app"
       summary={data.data}
       href={href === false ? undefined : href}
       className={className}
