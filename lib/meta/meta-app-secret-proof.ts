@@ -1,4 +1,6 @@
-import { createHmac } from "node:crypto";
+import "server-only";
+
+import { createHmac } from "crypto";
 
 /**
  * Meta `appsecret_proof` — HMAC-SHA256(access_token, app_secret) as hex.

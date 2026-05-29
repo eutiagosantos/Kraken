@@ -2,29 +2,17 @@ import { META_GRAPH_ORIGIN } from "@/lib/meta/constants";
 import type { MetaAppCredentials } from "@/lib/meta/resolve-app-credentials";
 import { resolveMetaAppId, resolveMetaAppSecret } from "@/lib/meta/resolve-app-credentials";
 
-export const REQUIRED_TOKEN_SCOPES = [
-  "ads_management",
-  "ads_read",
-  "pages_show_list",
-  "pages_manage_ads",
-  "pages_read_engagement",
-  "pages_read_user_content",
-  "pages_manage_posts",
-] as const;
+import {
+  REQUIRED_PAGE_TOKEN_SCOPES_FOR_ENGAGEMENT_POSTS,
+  REQUIRED_TOKEN_SCOPES,
+  REQUIRED_TOKEN_SCOPES_FOR_CATALOG,
+} from "@/lib/meta/required-token-scopes";
 
-/** Scopes exigidos para rotas que criam/editam catálogos, feeds e product sets na Meta. */
-export const REQUIRED_TOKEN_SCOPES_FOR_CATALOG = [
-  ...REQUIRED_TOKEN_SCOPES,
-  "catalog_management",
-] as const;
-
-/** Page access tokens from `/me/accounts` often omit ad-account scopes; use this for Graph calls that only need Page permissions. */
-export const REQUIRED_PAGE_TOKEN_SCOPES_FOR_ENGAGEMENT_POSTS = [
-  "pages_show_list",
-  "pages_manage_ads",
-  "pages_read_engagement",
-  "pages_read_user_content",
-] as const;
+export {
+  REQUIRED_PAGE_TOKEN_SCOPES_FOR_ENGAGEMENT_POSTS,
+  REQUIRED_TOKEN_SCOPES,
+  REQUIRED_TOKEN_SCOPES_FOR_CATALOG,
+};
 
 export type InspectTokenScopesOptions = {
   requiredScopes?: readonly string[];

@@ -118,46 +118,34 @@ export function MetaAppPanel() {
           )}
 
           <form onSubmit={onSubmit} className="flex max-w-md flex-col gap-4">
-            <div>
-              <label htmlFor="meta-app-id" className="mb-1.5 block text-sm font-medium text-neutral-black">
-                App ID
-              </label>
-              <Input
-                id="meta-app-id"
-                value={formAppId}
-                onChange={(e) => setFormAppId(e.target.value)}
-                placeholder="123456789012345"
-                autoComplete="off"
-                required
-              />
-            </div>
-            <div>
-              <label
-                htmlFor="meta-app-secret"
-                className="mb-1.5 block text-sm font-medium text-neutral-black"
-              >
-                App Secret
-              </label>
-              <div className="relative">
-                <Input
-                  id="meta-app-secret"
-                  type={showSecret ? "text" : "password"}
-                  value={formAppSecret}
-                  onChange={(e) => setFormAppSecret(e.target.value)}
-                  placeholder={configured ? "Novo secret (substitui o anterior)" : "App Secret"}
-                  autoComplete="new-password"
-                  className="pr-10"
-                />
+            <Input
+              id="meta-app-id"
+              label="App ID"
+              value={formAppId}
+              onChange={(e) => setFormAppId(e.target.value)}
+              placeholder="123456789012345"
+              autoComplete="off"
+              required
+            />
+            <Input
+              id="meta-app-secret"
+              label="App Secret"
+              type={showSecret ? "text" : "password"}
+              value={formAppSecret}
+              onChange={(e) => setFormAppSecret(e.target.value)}
+              placeholder={configured ? "Novo secret (substitui o anterior)" : "App Secret"}
+              autoComplete="new-password"
+              suffix={
                 <button
                   type="button"
                   onClick={() => setShowSecret((v) => !v)}
                   aria-label={showSecret ? "Ocultar secret" : "Mostrar secret"}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-dashboard-muted hover:text-neutral-black"
+                  className="rounded-md p-1.5 text-dashboard-muted hover:text-neutral-black"
                 >
                   {showSecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
-              </div>
-            </div>
+              }
+            />
 
             {error ? (
               <p className="text-sm text-red-600" role="alert">

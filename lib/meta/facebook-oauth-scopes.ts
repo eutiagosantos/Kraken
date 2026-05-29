@@ -1,6 +1,6 @@
 /**
  * Scopes requested on `signInWithOAuth({ provider: "facebook" })`.
- * Keep in sync with Meta app permissions and `REQUIRED_TOKEN_SCOPES` in `graph-inspect-token.ts`.
+ * Keep in sync with Meta app permissions and `REQUIRED_TOKEN_SCOPES` in `required-token-scopes.ts`.
  */
 export const META_FACEBOOK_OAUTH_SCOPE_LIST = [
   "email",

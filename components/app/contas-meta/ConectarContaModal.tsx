@@ -6,7 +6,7 @@ import { AlertTriangle, Check, Eye, EyeOff, Key, Link2, Loader2 } from "lucide-r
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { StepIndicator } from "@/components/app/ui/StepIndicator";
-import { REQUIRED_TOKEN_SCOPES } from "@/lib/meta/graph-inspect-token";
+import { REQUIRED_TOKEN_SCOPES } from "@/lib/meta/required-token-scopes";
 import { mapAccountStatus } from "@/lib/meta/map-account-status";
 import { cn } from "@/lib/utils";
 import { AccountAvatar } from "./AccountAvatar";

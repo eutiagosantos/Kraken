@@ -1,4 +1,6 @@
-import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
+import "server-only";
+
+import { createCipheriv, createDecipheriv, randomBytes } from "crypto";
 
 const ALGORITHM = "aes-256-cbc";
 const IV_LENGTH = 16;
