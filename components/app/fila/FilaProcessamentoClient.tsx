@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { MetaAppDevModePublishHelp } from "@/components/app/fila/MetaAppDevModePublishHelp";
 import { UploadJobsList, type UploadJobListRow } from "@/components/app/fila/UploadJobsList";
+import { PublicationQueuePanelLive } from "@/components/publication-queue/PublicationQueuePanelLive";
 import { ProgressBar } from "@/components/app/ui/ProgressBar";
 import type { PublishProgressEvent } from "@/lib/wizard/data-adapter";
 import { mockWizardDataAdapter } from "@/lib/wizard/data-adapter";
@@ -346,6 +347,10 @@ export function FilaProcessamentoClient() {
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-10">
+      <section className="max-w-[480px] pb-2">
+        <PublicationQueuePanelLive href={false} pollWhenActiveMs={2000} pollIdleMs={5000} />
+      </section>
+
       {showRecentSection ? (
         <section className="space-y-4">
           <div>

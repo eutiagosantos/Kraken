@@ -29,11 +29,14 @@ const steps = [
 
 export function HowItWorks() {
   return (
-    <section id="como-funciona" className="relative bg-neutral-white py-24">
+    <section id="como-funciona" className="relative border-t border-neutral-border bg-white py-24">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-        <Reveal className="mx-auto max-w-3xl text-center">
-          <h2 className="text-neutral-black tracking-tight">Como funciona</h2>
-          <p className="mt-4 text-lg leading-[1.38] text-neutral-gray">
+        <Reveal className="max-w-2xl">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-silver">
+            Processo
+          </p>
+          <h2 className="mt-3 tracking-tight text-neutral-black">Como funciona</h2>
+          <p className="mt-4 text-lg leading-relaxed text-neutral-gray">
             Um fluxo linear pensado para times que publicam em volume todos os
             dias — sem fricção e sem surpresas.
           </p>
@@ -52,17 +55,25 @@ export function HowItWorks() {
                 className="relative flex gap-8"
               >
                 <div className="relative flex shrink-0 flex-col items-center">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-brand-purple text-neutral-white shadow-micro ring-4 ring-brand-purple/12">
-                    <span className="font-display text-sm font-bold text-white tabular-nums">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-brand-purple text-neutral-white shadow-micro ring-2 ring-brand-purple/20 ring-offset-2 ring-offset-neutral-white">
+                    <span className="font-display text-sm font-bold tabular-nums text-white">
                       {s.n}
                     </span>
                   </div>
                 </div>
-                <div className="flex-1 rounded-[16px] border border-neutral-border bg-neutral-white px-6 py-5 shadow-subtle">
-                  <h3 className="font-ui text-[22px] font-semibold leading-[1.2] text-neutral-black">
+                <div className="relative flex-1 overflow-hidden rounded-[16px] border border-neutral-border border-b-brand-purple/20 bg-neutral-white px-6 py-5 shadow-subtle">
+                  <span
+                    className="pointer-events-none absolute -right-4 -top-6 select-none font-display text-[120px] font-bold leading-none text-neutral-black opacity-[0.04]"
+                    aria-hidden
+                  >
+                    {s.n}
+                  </span>
+                  <h3 className="relative font-ui text-[22px] font-semibold leading-[1.2] text-neutral-black">
                     {s.title}
                   </h3>
-                  <p className="mt-2 leading-[1.38] text-neutral-gray">{s.desc}</p>
+                  <p className="relative mt-2 leading-[1.38] text-neutral-gray">
+                    {s.desc}
+                  </p>
                 </div>
               </motion.div>
             ))}

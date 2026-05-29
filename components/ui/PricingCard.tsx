@@ -16,26 +16,34 @@ export interface PricingCardProps {
 export function PricingCard({ plan, billing }: PricingCardProps) {
   const price =
     billing === "monthly" ? plan.monthlyPrice : plan.annualPricePerMonth;
+  const highlighted = plan.highlighted;
 
   return (
     <motion.div
       layout
       whileHover={{
-        y: plan.highlighted ? -2 : -4,
-        boxShadow: plan.highlighted
-          ? "0px 8px 32px rgba(113, 50, 245, 0.12)"
+        y: highlighted ? -2 : -4,
+        boxShadow: highlighted
+          ? "0px 12px 40px rgba(113, 50, 245, 0.14)"
           : "0px 4px 24px rgba(0, 0, 0, 0.05)",
       }}
       transition={{ duration: 0.25 }}
       className={cn(
-        "relative flex h-full flex-col rounded-card border bg-neutral-white p-8 max-sm:p-6",
-        plan.highlighted
-          ? "z-[1] border border-brand-purple shadow-card"
+        "relative flex h-full flex-col overflow-hidden rounded-card border bg-white p-8 max-sm:p-6",
+        highlighted
+          ? "z-[1] border-brand-purple shadow-card ring-1 ring-brand-purple/20"
           : "border-neutral-border shadow-subtle"
       )}
     >
+      {highlighted && (
+        <div
+          className="absolute inset-x-0 top-0 h-1 bg-brand-purple"
+          aria-hidden
+        />
+      )}
+
       <div className="mb-6 flex flex-wrap items-center gap-2">
-        <Badge variant={plan.highlighted ? "purple" : "neutral"}>
+        <Badge variant={highlighted ? "purple" : "neutral"}>
           {plan.badge}
         </Badge>
       </div>
@@ -82,7 +90,7 @@ export function PricingCard({ plan, billing }: PricingCardProps) {
       </ul>
 
       <Button
-        variant={plan.highlighted ? "primary" : "outlined"}
+        variant={highlighted ? "primary" : "outlined"}
         className="mt-10 w-full"
       >
         {plan.cta}

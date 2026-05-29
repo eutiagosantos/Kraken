@@ -20,7 +20,7 @@ export function Header() {
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 12);
+    const onScroll = () => setScrolled(window.scrollY > 8);
     onScroll();
     window.addEventListener("scroll", onScroll);
     return () => window.removeEventListener("scroll", onScroll);
@@ -37,11 +37,11 @@ export function Header() {
     <>
       <header
         className={cn(
-          "sticky top-0 z-50 border-b border-neutral-border bg-neutral-white/95 backdrop-blur-md transition-shadow duration-300",
+          "sticky top-0 z-50 border-b border-neutral-border/60 bg-[#FAFAF7]/90 backdrop-blur-md transition-shadow duration-300",
           scrolled && "shadow-micro"
         )}
       >
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3.5 sm:px-6 lg:px-8">
           <Link
             href="#inicio"
             aria-label="Kraken"
@@ -56,7 +56,7 @@ export function Header() {
               <Link
                 key={item.href}
                 href={item.href}
-                className="text-sm font-semibold text-neutral-gray transition-colors hover:text-brand-purple"
+                className="text-sm font-semibold text-neutral-gray transition-colors hover:text-neutral-black"
               >
                 {item.label}
               </Link>
@@ -121,7 +121,7 @@ export function Header() {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 26, stiffness: 260 }}
-              className="fixed inset-y-0 right-0 z-50 flex w-[min(100%,320px)] flex-col border-l border-neutral-border bg-neutral-white shadow-subtle md:hidden"
+              className="fixed inset-y-0 right-0 z-50 flex w-[min(100%,320px)] flex-col border-l border-neutral-border bg-[#FAFAF7] shadow-subtle md:hidden"
             >
               <div className="flex items-center justify-between border-b border-neutral-border px-4 py-4">
                 <span className="font-display font-bold text-brand-purple">

@@ -1,60 +1,54 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { Headphones, Rocket, ThumbsUp } from "lucide-react";
 import { Reveal } from "@/components/motion/Reveal";
 import { RevealStagger, staggerItemVariants } from "@/components/motion/RevealStagger";
+import { motion } from "framer-motion";
 
 const items = [
   {
+    metric: "10×",
     title: "Escala Sem Limites",
     desc: "Distribua volume entre contas e estruturas sem engessar sua operação.",
-    icon: Rocket,
   },
   {
-    title: "2x Mais Anúncios Aprovados",
+    metric: "2×",
+    title: "Mais Anúncios Aprovados",
     desc: "Checklists e padronização que reduzem inconsistências antes do envio.",
-    icon: ThumbsUp,
   },
   {
+    metric: "24/7",
     title: "Suporte Dedicado",
     desc: "Especialistas que entendem Meta Ads em escala — quando você precisar.",
-    icon: Headphones,
   },
 ];
 
 export function Features() {
   return (
-    <section id="recursos-adicionais" className="bg-neutral-white py-24">
+    <section id="recursos-adicionais" className="border-y border-neutral-border bg-white py-20">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-        <Reveal className="mx-auto max-w-3xl text-center">
-          <h2 className="text-neutral-black tracking-tight">
+        <Reveal className="mb-12 max-w-xl">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-silver">
+            Resultados
+          </p>
+          <h2 className="mt-3 tracking-tight text-neutral-black">
             Benefícios adicionais
           </h2>
-          <p className="mt-4 text-lg leading-[1.38] text-neutral-gray">
-            O pacote completo para times que tratam campanha como produto —
-            previsível, mensurável e reproduzível.
-          </p>
         </Reveal>
 
-        <RevealStagger className="mt-14 flex flex-col gap-5 lg:flex-row">
+        <RevealStagger className="grid divide-y divide-neutral-border lg:grid-cols-3 lg:divide-x lg:divide-y-0">
           {items.map((item) => (
             <motion.div
               key={item.title}
               variants={staggerItemVariants}
-              whileHover={{
-                y: -4,
-                boxShadow: "0px 4px 24px rgba(0, 0, 0, 0.06)",
-              }}
-              className="flex flex-1 flex-col rounded-card border border-neutral-border bg-neutral-white p-8 shadow-subtle transition-shadow"
+              className="flex flex-col px-0 py-8 first:pl-0 lg:px-10 lg:py-2 lg:first:pl-0 lg:last:pr-0"
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand-purple text-neutral-white shadow-micro">
-                <item.icon className="h-5 w-5 text-white" strokeWidth={1.75} />
-              </div>
-              <h3 className="mt-7 font-ui text-[22px] font-semibold leading-[1.2] text-neutral-black">
+              <p className="font-display text-[3.5rem] font-bold leading-none tracking-tighter text-brand-purple">
+                {item.metric}
+              </p>
+              <h3 className="mt-4 font-ui text-lg font-semibold text-neutral-black">
                 {item.title}
               </h3>
-              <p className="mt-4 flex-1 leading-[1.38] text-neutral-gray">
+              <p className="mt-2 max-w-xs text-sm leading-relaxed text-neutral-gray">
                 {item.desc}
               </p>
             </motion.div>

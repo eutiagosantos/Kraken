@@ -12,12 +12,14 @@ export function Pricing() {
   const [billing, setBilling] = useState<BillingCycle>("monthly");
 
   return (
-    <section id="planos" className="bg-neutral-white py-24 pb-28">
-      <div />
+    <section id="planos" className="bg-[#FAFAF7] py-24 pb-28">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-        <Reveal className="mx-auto max-w-3xl text-center">
-          <h2 className="text-neutral-black tracking-tight">Planos e preços</h2>
-          <p className="mt-4 text-lg leading-[1.38] text-neutral-gray">
+        <Reveal className="max-w-2xl">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-silver">
+            Preços
+          </p>
+          <h2 className="mt-3 tracking-tight text-neutral-black">Planos e preços</h2>
+          <p className="mt-4 text-lg leading-relaxed text-neutral-gray">
             Escolha o ritmo da sua operação. Todo plano inclui trial gratuito:{" "}
             <span className="font-semibold text-brand-purple-dark">
               14 dias ou 1.000 anúncios criados — o que vier primeiro

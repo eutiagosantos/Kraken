@@ -89,4 +89,47 @@
   .card-purple-glow {
     box-shadow: 0 8px 32px rgba(113, 50, 245, 0.15);
   }
+
+  .landing-grain {
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  }
+
+  .hero-editorial {
+    background:
+      radial-gradient(
+        ellipse 55% 45% at 100% 0%,
+        rgba(113, 50, 245, 0.07) 0%,
+        transparent 65%
+      ),
+      linear-gradient(180deg, #fafaf7 0%, #f5f4f0 100%);
+  }
+
+  .hero-accent-bar {
+    background: linear-gradient(
+      180deg,
+      #7132f5 0%,
+      #5741d8 55%,
+      transparent 100%
+    );
+  }
+
+  .section-band-lavender {
+    background: linear-gradient(
+      135deg,
+      #f3efff 0%,
+      #ece6ff 50%,
+      #f5f2fc 100%
+    );
+  }
+
+  .editorial-rule {
+    height: 2px;
+    background: linear-gradient(
+      90deg,
+      #7132f5 0%,
+      #7132f5 48px,
+      #dedee5 48px,
+      #dedee5 100%
+    );
+  }
 }
