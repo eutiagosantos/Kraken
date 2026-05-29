@@ -9,6 +9,7 @@ import {
 } from "@/lib/meta/billing-event";
 import { selectOptimizationForObjective } from "@/lib/meta/map-wizard-to-graph";
 import { defaultCampaignSchedule, type CampaignSchedule } from "@/lib/meta/campaign-schedule";
+import type { PublishQueuePhase } from "@/lib/wizard/unified-publish-progress";
 
 function initialAdSetBillingChoice(objective: string, pixelId: string): WizardAdSetBillingEvent | null {
   const g = selectOptimizationForObjective(objective, pixelId).optimization_goal;
@@ -138,6 +139,13 @@ const initialState = {
   queuePublish: {
     active: false,
     progress: 0,
+    phase: "idle" as PublishQueuePhase,
+    uploadBytesUploaded: 0,
+    uploadBytesTotal: 0,
+    uploadFileIndex: 0,
+    uploadFileCount: 0,
+    publishDone: 0,
+    publishTotal: 0,
     error: null as string | null,
     success: false,
   },
@@ -193,6 +201,13 @@ type WizardState = typeof initialState & {
 const initialQueuePublish: WizardQueuePublish = {
   active: false,
   progress: 0,
+  phase: "idle",
+  uploadBytesUploaded: 0,
+  uploadBytesTotal: 0,
+  uploadFileIndex: 0,
+  uploadFileCount: 0,
+  publishDone: 0,
+  publishTotal: 0,
   error: null,
   success: false,
 };

@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { MetaAppDevModePublishHelp } from "@/components/app/fila/MetaAppDevModePublishHelp";
 import { UploadJobsList, type UploadJobListRow } from "@/components/app/fila/UploadJobsList";
 import { ProgressBar } from "@/components/app/ui/ProgressBar";
+import type { PublishProgressEvent } from "@/lib/wizard/data-adapter";
 import { mockWizardDataAdapter } from "@/lib/wizard/data-adapter";
 import { buildWizardPublishPayload } from "@/lib/wizard/build-wizard-publish-payload";
 import { getWizardPublishSliceFromStore } from "@/lib/wizard/get-wizard-publish-slice";
@@ -14,12 +15,22 @@ import {
   uploadJobShouldPollForUpdates,
 } from "@/lib/wizard/upload-jobs-in-flight";
 import { parseUploadJobErrorDetails } from "@/lib/api/upload-job-summary-schema";
-import { useWizardStore } from "@/lib/stores/wizardStore";
+import { useWizardStore, type WizardQueuePublish } from "@/lib/stores/wizardStore";
+import {
+  computeUnifiedPublishProgress,
+  publishPhaseLabelPt,
+  queuePublishFieldsFromProgressEvent,
+  serverJobToPublishProgress,
+  type QueuePublishProgressFields,
+} from "@/lib/wizard/unified-publish-progress";
 
 type UploadJobsApiResponse = {
   data?: { jobs: UploadJobListRow[] };
   error?: string;
 };
+
+const POLL_ACTIVE_MS = 2000;
+const POLL_IDLE_MS = 5000;
 
 function inFlightJob(jobs: UploadJobListRow[]) {
   return jobs.find((j) => j.status === "awaiting_creatives" || j.status === "processing");
@@ -29,7 +40,32 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function waitForDeferredPublishJob(publishId: string): Promise<void> {
+function queueFieldsFromStore(q: WizardQueuePublish): QueuePublishProgressFields {
+  return {
+    phase: q.phase,
+    progress: q.progress,
+    uploadBytesUploaded: q.uploadBytesUploaded,
+    uploadBytesTotal: q.uploadBytesTotal,
+    uploadFileIndex: q.uploadFileIndex,
+    uploadFileCount: q.uploadFileCount,
+    publishDone: q.publishDone,
+    publishTotal: q.publishTotal,
+  };
+}
+
+function applyProgressEvent(
+  patchQueuePublish: (partial: Partial<WizardQueuePublish>) => void,
+  event: PublishProgressEvent
+) {
+  const prev = queueFieldsFromStore(useWizardStore.getState().queuePublish);
+  const next = queuePublishFieldsFromProgressEvent(event, prev);
+  patchQueuePublish(next);
+}
+
+async function waitForDeferredPublishJob(
+  publishId: string,
+  onJobUpdate: (job: UploadJobListRow) => void
+): Promise<void> {
   const deadline = Date.now() + UPLOAD_JOB_POLL_MAX_AGE_MS;
   while (Date.now() < deadline) {
     const res = await fetch("/api/upload-jobs?limit=50", { credentials: "include" });
@@ -38,26 +74,17 @@ async function waitForDeferredPublishJob(publishId: string): Promise<void> {
     if (!job) {
       throw new Error("Operação de publicação não encontrada na fila.");
     }
+    onJobUpdate(job);
     if (job.status === "completed") return;
     if (job.status === "error") {
       const details = parseUploadJobErrorDetails(job.error_details);
       throw new Error(details?.message ?? "Publicação falhou.");
     }
-    await sleep(5000);
+    await sleep(POLL_ACTIVE_MS);
   }
   throw new Error(
     "A publicação em segundo plano demorou demasiado. Verifica a fila de processamento e o Meta Ads Manager."
   );
-}
-
-function progressFromJob(j: UploadJobListRow | undefined): number {
-  if (!j) return 6;
-  if (j.status === "awaiting_creatives") return 8;
-  if (j.total > 0) {
-    const raw = (j.done / j.total) * 100;
-    return j.status === "processing" && j.done >= j.total ? 99 : Math.min(99, Math.round(raw));
-  }
-  return 10;
 }
 
 export function FilaProcessamentoClient() {
@@ -67,7 +94,6 @@ export function FilaProcessamentoClient() {
   const [jobs, setJobs] = useState<UploadJobListRow[]>([]);
   const [jobsLoading, setJobsLoading] = useState(true);
   const [jobsError, setJobsError] = useState<string | null>(null);
-  const [smoothProgress, setSmoothProgress] = useState(0);
   const loadJobsInFlight = useRef(false);
   const mountedRef = useRef(true);
 
@@ -91,6 +117,38 @@ export function FilaProcessamentoClient() {
     }
   }, []);
 
+  const syncPublishProgressFromJob = useCallback(
+    (job: UploadJobListRow) => {
+      if (!queuePublish.active || queuePublish.success || queuePublish.error) return;
+      const server = serverJobToPublishProgress(job);
+      const prev = queueFieldsFromStore(useWizardStore.getState().queuePublish);
+      const merged: QueuePublishProgressFields = {
+        ...prev,
+        phase: server.phase === "done" ? "publishing" : server.phase,
+        publishDone: server.publishDone,
+        publishTotal: server.publishTotal,
+      };
+      const progress = computeUnifiedPublishProgress({
+        phase: merged.phase,
+        uploadBytesUploaded: merged.uploadBytesUploaded,
+        uploadBytesTotal: merged.uploadBytesTotal,
+        publishDone: merged.publishDone,
+        publishTotal: merged.publishTotal,
+        uploadFileIndex: merged.uploadFileIndex > 0 ? merged.uploadFileIndex : undefined,
+        uploadFileCount: merged.uploadFileCount > 0 ? merged.uploadFileCount : undefined,
+      });
+      if (Math.abs(progress - prev.progress) >= 1 || server.publishTotal !== prev.publishTotal) {
+        patchQueuePublish({
+          phase: merged.phase,
+          publishDone: merged.publishDone,
+          publishTotal: merged.publishTotal,
+          progress,
+        });
+      }
+    },
+    [patchQueuePublish, queuePublish.active, queuePublish.error, queuePublish.success]
+  );
+
   useEffect(() => {
     mountedRef.current = true;
     return () => {
@@ -105,14 +163,19 @@ export function FilaProcessamentoClient() {
   const needsPolling =
     jobs.some((j) => uploadJobShouldPollForUpdates(j)) || queuePublish.active;
 
+  const pollIntervalMs =
+    queuePublish.active || jobs.some((j) => uploadJobShouldPollForUpdates(j))
+      ? POLL_ACTIVE_MS
+      : POLL_IDLE_MS;
+
   useEffect(() => {
     if (!needsPolling) return;
     const t = setInterval(() => {
       if (document.visibilityState !== "visible") return;
       void loadJobs();
-    }, 5000);
+    }, pollIntervalMs);
     return () => clearInterval(t);
-  }, [needsPolling, loadJobs]);
+  }, [needsPolling, loadJobs, pollIntervalMs]);
 
   useEffect(() => {
     if (!needsPolling) return;
@@ -126,27 +189,57 @@ export function FilaProcessamentoClient() {
   useEffect(() => {
     if (!queuePublish.active || queuePublish.success || queuePublish.error) return;
     const j = inFlightJob(jobs);
-    const next = progressFromJob(j);
-    if (Math.abs(next - queuePublish.progress) >= 1) {
-      patchQueuePublish({ progress: next });
+    if (j?.status === "processing" && j.total > 0) {
+      syncPublishProgressFromJob(j);
     }
-  }, [jobs, queuePublish.active, queuePublish.success, queuePublish.error, queuePublish.progress, patchQueuePublish]);
+  }, [jobs, queuePublish.active, queuePublish.success, queuePublish.error, syncPublishProgressFromJob]);
 
   useEffect(() => {
     const started = useWizardStore.getState().consumePublishJobTrigger() === "wizard";
     if (!started) return;
 
-    useWizardStore.getState().patchQueuePublish({ active: true, progress: 6, error: null, success: false });
+    patchQueuePublish({
+      active: true,
+      success: false,
+      error: null,
+      phase: "preparing",
+      progress: 5,
+      uploadBytesUploaded: 0,
+      uploadBytesTotal: 0,
+      uploadFileIndex: 0,
+      uploadFileCount: 0,
+      publishDone: 0,
+      publishTotal: 0,
+    });
 
     void (async () => {
       try {
         const { snapshot, creativeFiles } = buildWizardPublishPayload(getWizardPublishSliceFromStore());
-        const result = await mockWizardDataAdapter.publishCampaigns({ snapshot, creativeFiles });
+        const result = await mockWizardDataAdapter.publishCampaigns({
+          snapshot,
+          creativeFiles,
+          onProgress: (event) => applyProgressEvent(patchQueuePublish, event),
+        });
         if (result.deferred) {
-          await waitForDeferredPublishJob(result.publishId);
+          await waitForDeferredPublishJob(result.publishId, (job) => {
+            if (!mountedRef.current) return;
+            setJobs((prev) => {
+              const idx = prev.findIndex((j) => j.id === job.id);
+              if (idx < 0) return [job, ...prev];
+              const next = [...prev];
+              next[idx] = job;
+              return next;
+            });
+            syncPublishProgressFromJob(job);
+          });
         }
         if (!mountedRef.current) return;
-        useWizardStore.getState().patchQueuePublish({ progress: 100, success: true, active: false });
+        patchQueuePublish({
+          progress: 100,
+          phase: "done",
+          success: true,
+          active: false,
+        });
         await loadJobs();
         if (!mountedRef.current) return;
         setTimeout(() => {
@@ -155,36 +248,25 @@ export function FilaProcessamentoClient() {
         }, 750);
       } catch (e) {
         if (!mountedRef.current) return;
-        useWizardStore.getState().patchQueuePublish({
+        patchQueuePublish({
           active: false,
           error: e instanceof Error ? e.message : "Falha na publicação.",
           progress: 0,
+          phase: "error",
           success: false,
         });
         void loadJobs();
       }
     })();
-  }, [loadJobs]);
-
-  const isProcessing =
-    (queuePublish.active && !queuePublish.success && !queuePublish.error) ||
-    (jobs.some((j) => uploadJobShouldPollForUpdates(j)) && !queuePublish.error);
-
-  useEffect(() => {
-    if (!isProcessing) {
-      setSmoothProgress(0);
-      return;
-    }
-    const t = setInterval(() => {
-      setSmoothProgress((prev) => (prev >= 90 ? 90 : prev + 1));
-    }, 1000);
-    return () => clearInterval(t);
-  }, [isProcessing]);
+  }, [loadJobs, patchQueuePublish, syncPublishProgressFromJob]);
 
   const { activeJobs, historyJobs } = useMemo(() => partitionUploadJobsByActive(jobs), [jobs]);
 
   const queueIdle =
-    !queuePublish.active && !queuePublish.success && !queuePublish.error && queuePublish.progress === 0;
+    !queuePublish.active &&
+    !queuePublish.success &&
+    !queuePublish.error &&
+    queuePublish.phase === "idle";
 
   const liveJob =
     queuePublish.active && !queuePublish.success && !queuePublish.error ? inFlightJob(jobs) : undefined;
@@ -199,47 +281,68 @@ export function FilaProcessamentoClient() {
         ? activeJobs[0]
         : undefined;
 
-  const rawPublishProgress = queuePublish.error
-    ? 0
-    : queuePublish.success
-      ? 100
-      : liveJob
-        ? progressFromJob(liveJob)
-        : serverOnlyActive
-          ? progressFromJob(activeJobs[0])
-          : queuePublish.progress;
-  const hasServerProgress = embeddedRecentJob != null && embeddedRecentJob.total > 0;
-  const publishCardProgress =
-    queuePublish.error || queuePublish.success
-      ? rawPublishProgress
-      : hasServerProgress
-        ? rawPublishProgress
-        : Math.max(rawPublishProgress, Math.round(smoothProgress));
+  const progressInput = useMemo(
+    () => ({
+      phase: queuePublish.phase,
+      uploadBytesUploaded: queuePublish.uploadBytesUploaded,
+      uploadBytesTotal: queuePublish.uploadBytesTotal,
+      publishDone: queuePublish.publishDone,
+      publishTotal: queuePublish.publishTotal,
+      uploadFileIndex: queuePublish.uploadFileIndex > 0 ? queuePublish.uploadFileIndex : undefined,
+      uploadFileCount: queuePublish.uploadFileCount > 0 ? queuePublish.uploadFileCount : undefined,
+    }),
+    [queuePublish]
+  );
+
+  const unifiedProgress = useMemo(() => {
+    if (queuePublish.error) return 0;
+    if (queuePublish.success) return 100;
+    if (serverOnlyActive && embeddedRecentJob) {
+      const server = serverJobToPublishProgress(embeddedRecentJob);
+      return computeUnifiedPublishProgress({
+        phase: "publishing",
+        uploadBytesUploaded: queuePublish.uploadBytesTotal || 1,
+        uploadBytesTotal: queuePublish.uploadBytesTotal || 1,
+        publishDone: server.publishDone,
+        publishTotal: server.publishTotal,
+      });
+    }
+    return computeUnifiedPublishProgress(progressInput);
+  }, [queuePublish, serverOnlyActive, embeddedRecentJob, progressInput]);
 
   const recentTitle = queuePublish.error
     ? "Erro na publicação"
     : queuePublish.success
       ? "Publicação concluída"
-      : serverOnlyActive && queueIdle
-        ? "Envio em curso"
-        : "Publicando campanhas";
+      : "Envio em curso";
 
   const recentDescription = queuePublish.error ? null : queuePublish.success ? (
     <p className="mt-2 text-sm text-dashboard-muted">
       Concluído — o registo passa para o histórico abaixo.
     </p>
   ) : serverOnlyActive && queueIdle ? (
-    <p className="mt-2 text-sm text-dashboard-muted">Há um envio em curso na tua conta (por exemplo, outro separador ou sessão).</p>
-  ) : (
     <p className="mt-2 text-sm text-dashboard-muted">
-      {liveJob?.status === "awaiting_creatives"
-        ? "A enviar criativos e a preparar a publicação no Meta…"
-        : "A processar no Meta Ads…"}
+      Há um envio em curso na tua conta (por exemplo, outro separador ou sessão).
     </p>
+  ) : (
+    <p className="mt-2 text-sm text-dashboard-muted">{publishPhaseLabelPt(progressInput)}</p>
   );
+
+  const progressDetail = useMemo(() => {
+    if (queuePublish.success) return null;
+    if (progressInput.phase === "uploading" && progressInput.uploadBytesTotal > 0) {
+      const mb = (n: number) => (n / (1024 * 1024)).toFixed(1);
+      return `${mb(progressInput.uploadBytesUploaded)} / ${mb(progressInput.uploadBytesTotal)} MB`;
+    }
+    if (progressInput.phase === "publishing" && progressInput.publishTotal > 0) {
+      return `${progressInput.publishDone} de ${progressInput.publishTotal} unidades`;
+    }
+    return null;
+  }, [progressInput, queuePublish.success]);
 
   const showEmptyAll = jobs.length === 0 && queueIdle && !jobsLoading;
   const showHistoryBlock = !jobsLoading && !jobsError && (!showEmptyAll || showRecentSection);
+  const hideHistoryLoading = queuePublish.active && jobsLoading;
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-10">
@@ -264,7 +367,19 @@ export function FilaProcessamentoClient() {
                   type="button"
                   className="mt-5 w-full rounded-xl border border-dashboard-border bg-dashboard-base py-2.5 text-sm font-semibold text-neutral-black transition-colors hover:bg-neutral-white"
                   onClick={() => {
-                    patchQueuePublish({ error: null, progress: 0, success: false, active: false });
+                    patchQueuePublish({
+                      error: null,
+                      phase: "idle",
+                      progress: 0,
+                      success: false,
+                      active: false,
+                      uploadBytesUploaded: 0,
+                      uploadBytesTotal: 0,
+                      uploadFileIndex: 0,
+                      uploadFileCount: 0,
+                      publishDone: 0,
+                      publishTotal: 0,
+                    });
                     void loadJobs();
                   }}
                 >
@@ -278,18 +393,21 @@ export function FilaProcessamentoClient() {
                   {recentDescription}
                 </div>
                 <div className="px-6 py-5">
-                  <ProgressBar value={publishCardProgress} />
-                  <p className="mt-2 text-right text-xs font-semibold tabular-nums text-brand-purple">
-                    {Math.round(publishCardProgress)}%
-                  </p>
+                  <ProgressBar value={unifiedProgress} />
+                  <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+                    {progressDetail ? (
+                      <span className="text-xs text-dashboard-muted">{progressDetail}</span>
+                    ) : (
+                      <span />
+                    )}
+                    <span className="text-xs font-semibold tabular-nums text-brand-purple">
+                      {Math.round(unifiedProgress)}%
+                    </span>
+                  </div>
                 </div>
                 {embeddedRecentJob ? (
                   <div className="border-t border-dashboard-border/60 bg-dashboard-base/25 px-2 pb-2 pt-2 sm:px-3 sm:pb-3 sm:pt-3">
                     <UploadJobsList variant="recent" jobs={[embeddedRecentJob]} />
-                  </div>
-                ) : queuePublish.active && !queuePublish.success && !queuePublish.error ? (
-                  <div className="border-t border-dashboard-border/60 px-6 py-4">
-                    <p className="text-sm text-dashboard-muted">A preparar o registo do envio…</p>
                   </div>
                 ) : null}
               </>
@@ -314,7 +432,7 @@ export function FilaProcessamentoClient() {
           </Link>
         </div>
 
-        {jobsLoading ? (
+        {jobsLoading && !hideHistoryLoading ? (
           <p className="text-sm text-dashboard-muted">A carregar…</p>
         ) : jobsError ? (
           <div className="rounded-2xl border border-red-200 bg-red-50/80 p-4 text-sm text-red-800">

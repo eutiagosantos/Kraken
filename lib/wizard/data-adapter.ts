@@ -12,12 +12,16 @@ import {
 import type { Publico } from "@/lib/stores/wizardStore";
 import { tryBuildCatalogPublishPayload } from "@/lib/wizard/build-wizard-publish-payload";
 import { getWizardPublishSliceFromStore } from "@/lib/wizard/get-wizard-publish-slice";
+import type { PublishProgressEvent } from "@/lib/wizard/unified-publish-progress";
+
+export type { PublishProgressEvent };
 
 export interface PublishPayload {
   /** Validated server-side together with `creativeStoragePaths` after Supabase upload. */
   snapshot: WizardPublishPayloadInput;
   /** Same order as `snapshot.creatives` — uploaded to Storage before `POST /api/wizard/publish`. */
   creativeFiles: File[];
+  onProgress?: (event: PublishProgressEvent) => void;
 }
 
 export type PublishResult = {
@@ -84,7 +88,8 @@ function uploadFileTus(
   path: string,
   accessToken: string,
   supabaseUrl: string,
-  anonKey: string
+  anonKey: string,
+  onBytesProgress?: (bytesUploaded: number, bytesTotal: number) => void
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     const upload = new tus.Upload(file, {
@@ -102,6 +107,9 @@ function uploadFileTus(
         objectName: path,
         contentType: file.type || "application/octet-stream",
         cacheControl: "3600",
+      },
+      onProgress(bytesUploaded, bytesTotal) {
+        onBytesProgress?.(bytesUploaded, bytesTotal);
       },
       onError(error) {
         const msg = error.message ?? String(error);
@@ -129,7 +137,8 @@ function uploadFileTus(
 async function uploadCreativesToWizardBucket(
   files: File[],
   userId: string,
-  operationId: string
+  operationId: string,
+  onProgress?: (event: PublishProgressEvent) => void
 ): Promise<string[]> {
   for (const file of files) {
     if (file.size > MAX_FILE_BYTES) {
@@ -152,30 +161,54 @@ async function uploadCreativesToWizardBucket(
   const base = `${userId}/${operationId}`;
 
   const paths = files.map((f, i) => `${base}/creative_${i}${extensionFromFileName(f.name)}`);
+  const bytesTotal = files.reduce((sum, f) => sum + f.size, 0);
+  const fileCount = files.length;
+  let bytesBeforeCurrent = 0;
 
-  const results = await Promise.allSettled(
-    files.map((file, i) =>
-      uploadFileTus(file, paths[i], session.access_token, supabaseUrl, anonKey)
-    )
-  );
+  onProgress?.({
+    kind: "upload",
+    bytesUploaded: 0,
+    bytesTotal,
+    fileIndex: fileCount > 0 ? 1 : 0,
+    fileCount,
+  });
 
-  const failedIndexes = results
-    .map((r, i) => (r.status === "rejected" ? i : -1))
-    .filter((i) => i >= 0);
-
-  if (failedIndexes.length > 0) {
-    // Rollback successful uploads
-    const successPaths = results
-      .map((r, i) => (r.status === "fulfilled" ? paths[i] : null))
-      .filter(Boolean) as string[];
-    if (successPaths.length > 0) {
-      await supabase.storage.from(WIZARD_CREATIVES_BUCKET).remove(successPaths);
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i]!;
+    const path = paths[i]!;
+    try {
+      await uploadFileTus(
+        file,
+        path,
+        session.access_token,
+        supabaseUrl,
+        anonKey,
+        (fileUploaded) => {
+          const aggregate = bytesBeforeCurrent + fileUploaded;
+          onProgress?.({
+            kind: "upload",
+            bytesUploaded: aggregate,
+            bytesTotal,
+            fileIndex: i + 1,
+            fileCount,
+          });
+        }
+      );
+      bytesBeforeCurrent += file.size;
+      onProgress?.({
+        kind: "upload",
+        bytesUploaded: bytesBeforeCurrent,
+        bytesTotal,
+        fileIndex: i + 1,
+        fileCount,
+      });
+    } catch (e) {
+      const uploadedPaths = paths.slice(0, i);
+      if (uploadedPaths.length > 0) {
+        await supabase.storage.from(WIZARD_CREATIVES_BUCKET).remove(uploadedPaths);
+      }
+      throw e;
     }
-    const errors = failedIndexes
-      .map((i) => (results[i] as PromiseRejectedResult).reason as Error)
-      .map((e) => e.message)
-      .join("; ");
-    throw new Error(errors);
   }
 
   return paths;
@@ -221,6 +254,7 @@ export function createFetchWizardDataAdapter(): WizardDataAdapter {
       return parseJson<Publico>(res);
     },
     async publishCampaigns(payload) {
+      const emit = payload.onProgress;
       const supabase = createBrowserSupabaseClient();
       const {
         data: { user },
@@ -231,6 +265,8 @@ export function createFetchWizardDataAdapter(): WizardDataAdapter {
 
       const catalogBody = tryBuildCatalogPublishPayload(getWizardPublishSliceFromStore());
       if (catalogBody) {
+        emit?.({ kind: "preparing" });
+        emit?.({ kind: "catalog" });
         const res = await fetch("/api/meta/catalog-publish", {
           ...opts,
           method: "POST",
@@ -267,6 +303,7 @@ export function createFetchWizardDataAdapter(): WizardDataAdapter {
           const warnSuffix = w && w.length > 0 ? `\n\nAvisos:\n${w.join("\n")}` : "";
           throw new Error((failed.length === rows.length ? detail : `Algumas contas falharam:\n${detail}`) + warnSuffix);
         }
+        emit?.({ kind: "done" });
         return {
           publishId: `catalog-${Date.now()}`,
           warnings: json?.warnings,
@@ -274,6 +311,7 @@ export function createFetchWizardDataAdapter(): WizardDataAdapter {
         };
       }
 
+      emit?.({ kind: "preparing" });
       const initRes = await fetch("/api/wizard/publish/init", { ...opts, method: "POST" });
       if (initRes.status === 409) {
         const body = (await initRes.json()) as { error?: string };
@@ -284,10 +322,12 @@ export function createFetchWizardDataAdapter(): WizardDataAdapter {
       const creativeStoragePaths = await uploadCreativesToWizardBucket(
         payload.creativeFiles,
         user.id,
-        operationId
+        operationId,
+        emit
       );
       const body = { ...payload.snapshot, publishOperationId: operationId, creativeStoragePaths };
 
+      emit?.({ kind: "publishing", done: 0, total: 0 });
       const res = await fetch("/api/wizard/publish", {
         ...opts,
         method: "POST",
@@ -382,6 +422,7 @@ export function createFetchWizardDataAdapter(): WizardDataAdapter {
         );
       }
 
+      emit?.({ kind: "done" });
       return {
         publishId: json.publishId,
         warnings: json.warnings,
