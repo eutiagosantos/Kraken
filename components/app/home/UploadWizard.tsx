@@ -87,11 +87,20 @@ export function UploadWizard() {
       setWizardDataError(null);
       try {
         const accountIds = selectedAccountIds;
-        const [nextAccounts, nextPixels, nextPublicos] = await Promise.all([
+        const [nextAccounts, nextPublicos] = await Promise.all([
           mockWizardDataAdapter.listAccounts(),
-          mockWizardDataAdapter.listPixels(accountIds.length > 0 ? accountIds : undefined),
           mockWizardDataAdapter.listSavedPublicos(),
         ]);
+
+        let nextPixels: Awaited<ReturnType<typeof mockWizardDataAdapter.listPixels>> = [];
+        if (accountIds.length > 0) {
+          try {
+            nextPixels = await mockWizardDataAdapter.listPixels(accountIds);
+          } catch {
+            // Pixel loading is optional — missing token or Graph error should not block the wizard
+          }
+        }
+
         setAccounts(nextAccounts);
         setPixelOptions(nextPixels);
         setSavedPublicos(nextPublicos);
