@@ -10,6 +10,7 @@ import {
 } from "@/lib/contas-meta-filters";
 import { hasTokenExpiringSoonBanner, tabCounts, type ContaMeta, type ContaTabId } from "@/lib/mock-contas";
 import { ConectarContaModal } from "@/components/app/contas-meta/ConectarContaModal";
+import { MetaSetupChecklist } from "@/components/app/meta/MetaSetupChecklist";
 import { ContasGrid } from "@/components/app/contas-meta/ContasGrid";
 import { ContasHeader } from "@/components/app/contas-meta/ContasHeader";
 import { FacebookPagesPanel } from "@/components/app/contas-meta/FacebookPagesPanel";
@@ -111,6 +112,9 @@ export default function ContasMetaPage() {
             />
 
             <StatusFilterTabs activeTab={activeTab} onChange={setActiveTab} counts={counts}>
+              {contas.length === 0 ? (
+                <MetaSetupChecklist variant="contas" onConnect={() => openModalFor("conectar", null)} />
+              ) : null}
               <ContasGrid
                 contas={filtered}
                 onOpenMetrics={openMetrics}

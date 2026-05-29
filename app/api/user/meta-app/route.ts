@@ -14,19 +14,31 @@ export async function GET() {
   if (!protection.ok) return protection.response;
   const { supabase, user } = protection;
 
-  const { data, error } = await supabase
-    .from("user_meta_apps")
-    .select("meta_app_id")
-    .eq("user_id", user.id)
-    .maybeSingle();
+  const [appResult, tokenResult, accountsResult] = await Promise.all([
+    supabase.from("user_meta_apps").select("meta_app_id").eq("user_id", user.id).maybeSingle(),
+    supabase
+      .from("meta_user_tokens")
+      .select("access_token")
+      .eq("user_id", user.id)
+      .maybeSingle(),
+    supabase.from("meta_ad_accounts").select("id", { count: "exact", head: true }).eq("user_id", user.id),
+  ]);
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  if (appResult.error) {
+    return NextResponse.json({ error: appResult.error.message }, { status: 500 });
+  }
+  if (tokenResult.error) {
+    return NextResponse.json({ error: tokenResult.error.message }, { status: 500 });
+  }
+  if (accountsResult.error) {
+    return NextResponse.json({ error: accountsResult.error.message }, { status: 500 });
   }
 
   return NextResponse.json({
-    configured: Boolean(data?.meta_app_id),
-    appId: data?.meta_app_id ?? null,
+    configured: Boolean(appResult.data?.meta_app_id),
+    appId: appResult.data?.meta_app_id ?? null,
+    hasAccessToken: Boolean(tokenResult.data?.access_token),
+    connectedAccounts: accountsResult.count ?? 0,
   });
 }
 

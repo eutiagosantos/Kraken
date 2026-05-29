@@ -1,6 +1,6 @@
 import { Loader2, UploadCloud } from "lucide-react";
-import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { MetaSetupChecklist } from "@/components/app/meta/MetaSetupChecklist";
 import { Button } from "@/components/ui/Button";
 import type { MockAccount } from "@/lib/mock-data";
 import type { Creative } from "@/lib/stores/wizardStore";
@@ -173,12 +173,7 @@ export function Step1Creatives({
             ) : accountsLoadError ? (
               <p className="py-4 text-sm text-red-600">{accountsLoadError}</p>
             ) : hasNoAccountsAfterLoad ? (
-              <p className="py-4 text-sm text-gray-600">
-                Nenhuma conta Meta ligada.{" "}
-                <Link href="/contas-meta" className="font-medium text-[#7132f5] underline-offset-2 hover:underline">
-                  Gerir contas Meta
-                </Link>
-              </p>
+              <MetaSetupChecklist variant="upload" />
             ) : accounts.length === 0 ? (
               <p className="py-4 text-sm text-gray-500">Nenhuma conta corresponde à pesquisa.</p>
             ) : (

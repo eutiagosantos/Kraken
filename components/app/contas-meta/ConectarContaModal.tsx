@@ -174,6 +174,10 @@ export function ConectarContaModal({
               {step === 1 ? (
                 <motion.div key="c1" {...slide}>
                   <h2 className="font-display text-xl font-bold text-neutral-black">Insira o Token de Acesso</h2>
+                  <p className="mt-2 text-sm text-neutral-gray">
+                    Este token é do seu utilizador Facebook — não confundir com o App Secret. Gere-o no Graph API
+                    Explorer usando o mesmo App ID que configurou em Configurações.
+                  </p>
                   <InstructionBox>
                     <p>
                       Acesse o{" "}

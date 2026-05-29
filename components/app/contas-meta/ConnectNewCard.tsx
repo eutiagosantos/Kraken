@@ -36,7 +36,9 @@ export function ConnectNewCard({
         </div>
         <div>
           <p className="font-semibold text-neutral-black">Conectar Nova Conta</p>
-          <p className="mt-1 text-sm text-neutral-gray">Adicione uma conta do Meta Ads</p>
+          <p className="mt-1 text-sm text-neutral-gray">
+            Cole um token de acesso do Graph API Explorer
+          </p>
         </div>
         <span className="rounded-btn bg-brand-purple-subtle px-4 py-2 text-sm font-semibold text-brand-purple">
           Conectar agora

@@ -4,6 +4,7 @@ import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { useSuccessFeedback } from "@/components/app/ui/SuccessFeedback";
+import { MetaSetupChecklist } from "@/components/app/meta/MetaSetupChecklist";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { useUserMetaApp } from "@/lib/hooks/useUserMetaApp";
@@ -92,8 +93,10 @@ export function MetaAppPanel() {
           App Meta (Developer)
         </h2>
         <p className="mt-0.5 text-sm text-neutral-silver">
-          Use o seu App ID e App Secret do Meta for Developers para autenticar chamadas à API (
-          <code className="text-xs">appsecret_proof</code> e validação de tokens).
+          App ID e App Secret autenticam chamadas à API (
+          <code className="text-xs">appsecret_proof</code> e validação de tokens). Isto{" "}
+          <strong className="font-medium text-neutral-black">não importa contas</strong> — para isso é
+          necessário um token de acesso em Contas Meta.
         </p>
       </header>
 
@@ -116,7 +119,9 @@ export function MetaAppPanel() {
             </p>
           )}
 
-          <form onSubmit={onSubmit} className="flex max-w-md flex-col gap-4">
+          <MetaSetupChecklist variant="settings" />
+
+          <form onSubmit={onSubmit} className="mt-4 flex max-w-md flex-col gap-4">
             <Input
               id="meta-app-id"
               label="App ID"
