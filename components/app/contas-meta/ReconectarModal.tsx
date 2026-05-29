@@ -5,28 +5,23 @@ import { ModalPortal } from "@/components/app/ui/ModalPortal";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { AlertTriangle } from "lucide-react";
-import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/Button";
+import Link from "next/link";
+import { useEffect } from "react";
+
+import { META_ACCESS_TOKEN_SETTINGS_HREF } from "@/components/app/meta/MetaAccessTokenSection";
+import { Button, buttonVariantClasses } from "@/components/ui/Button";
 import type { ContaMeta } from "@/lib/mock-contas";
+import { cn } from "@/lib/utils";
 
 export function ReconectarModal({
   conta,
   open,
   onClose,
-  onReconnected,
 }: {
   conta: ContaMeta | null;
   open: boolean;
   onClose: () => void;
-  onReconnected: () => void | Promise<void>;
 }) {
-  const [newToken, setNewToken] = useState("");
-  const [reconnecting, setReconnecting] = useState(false);
-
-  useEffect(() => {
-    if (open) setNewToken("");
-  }, [open, conta]);
-
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -67,66 +62,25 @@ export function ReconectarModal({
             <div className="mt-4 flex gap-3 rounded-lg border border-semantic-yellow/30 bg-semantic-yellow-bg px-3 py-3 text-sm text-neutral-black">
               <AlertTriangle className="h-5 w-5 shrink-0 text-semantic-yellow" aria-hidden />
               <p>
-                O token desta conta expirou em {format(conta.tokenExpiresAt, "dd/MM/yyyy", { locale: ptBR })}. Reconecte para
-                continuar criando anúncios.
+                O token desta conta expirou em {format(conta.tokenExpiresAt, "dd/MM/yyyy", { locale: ptBR })}. Atualize
+                o token em Configurações para continuar a publicar.
               </p>
             </div>
-            <div className="mt-4">
-              <label htmlFor="recon-token" className="mb-1.5 block text-sm font-semibold text-neutral-black">
-                Novo Token de Acesso
-              </label>
-              <input
-                id="recon-token"
-                type="password"
-                placeholder="EAAxxxxxxxxxxxxxxxxx..."
-                value={newToken}
-                onChange={(e) => setNewToken(e.target.value)}
-                className="w-full rounded-lg border border-neutral-border bg-neutral-white px-3 py-2.5 text-base outline-none focus:border-brand-purple focus:ring-2 focus:ring-brand-purple/25"
-              />
-            </div>
-            <div className="mt-3 rounded-lg border border-dashboard-border bg-dashboard-base px-4 py-3 text-sm text-neutral-black">
-              <p>
-                Gere um novo token no{" "}
-                <a
-                  href="https://developers.facebook.com/tools/explorer"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="font-semibold text-brand-purple underline"
-                >
-                  Meta Graph API Explorer
-                </a>
-              </p>
-            </div>
+            <p className="mt-4 text-sm text-neutral-gray">
+              Vá a <strong className="font-medium text-neutral-black">Configurações → App Meta (Developer)</strong> e
+              cole um novo token de acesso do Graph API Explorer.
+            </p>
             <div className="mt-8 flex flex-wrap justify-end gap-3 border-t border-dashboard-border pt-5">
               <Button type="button" variant="ghost" onClick={onClose}>
-                Cancelar
+                Fechar
               </Button>
-              <Button
-                type="button"
-                variant="primary"
-                disabled={!newToken.trim() || reconnecting}
-                onClick={() => {
-                  void (async () => {
-                    setReconnecting(true);
-                    try {
-                      const res = await fetch("/api/contas-meta", {
-                        method: "POST",
-                        credentials: "include",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ action: "sync_with_token", token: newToken.trim() }),
-                      });
-                      if (res.ok) {
-                        await Promise.resolve(onReconnected());
-                        onClose();
-                      }
-                    } finally {
-                      setReconnecting(false);
-                    }
-                  })();
-                }}
+              <Link
+                href={META_ACCESS_TOKEN_SETTINGS_HREF}
+                className={cn(buttonVariantClasses.primary, "inline-flex px-4 py-[13px] text-base")}
+                onClick={onClose}
               >
-                {reconnecting ? "Reconectando..." : "Reconectar"}
-              </Button>
+                Atualizar token
+              </Link>
             </div>
             </motion.div>
           </div>

@@ -21,14 +21,12 @@ export function ContasGrid({
   onEdit,
   onReconnect,
   onDisconnect,
-  onConnectNew,
 }: {
   contas: ContaMeta[];
   onOpenMetrics: (c: ContaMeta) => void;
   onEdit: (c: ContaMeta) => void;
   onReconnect: (c: ContaMeta) => void;
   onDisconnect: (c: ContaMeta) => void;
-  onConnectNew: () => void;
 }) {
   return (
     <motion.div
@@ -48,7 +46,7 @@ export function ContasGrid({
           onDisconnect={() => onDisconnect(c)}
         />
       ))}
-      <ConnectNewCard onClick={onConnectNew} cardVariants={cardVariants} />
+      <ConnectNewCard cardVariants={cardVariants} />
     </motion.div>
   );
 }

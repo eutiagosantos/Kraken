@@ -3,8 +3,8 @@
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import { MetaAccessTokenSection } from "@/components/app/meta/MetaAccessTokenSection";
 import { useSuccessFeedback } from "@/components/app/ui/SuccessFeedback";
-import { MetaSetupChecklist } from "@/components/app/meta/MetaSetupChecklist";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { useUserMetaApp } from "@/lib/hooks/useUserMetaApp";
@@ -93,10 +93,8 @@ export function MetaAppPanel() {
           App Meta (Developer)
         </h2>
         <p className="mt-0.5 text-sm text-neutral-silver">
-          App ID e App Secret autenticam chamadas à API (
-          <code className="text-xs">appsecret_proof</code> e validação de tokens). Isto{" "}
-          <strong className="font-medium text-neutral-black">não importa contas</strong> — para isso é
-          necessário um token de acesso em Contas Meta.
+          Configure aqui o app Meta (App ID + App Secret) e o token de acesso para sincronizar contas de anúncios,
+          páginas e publicação.
         </p>
       </header>
 
@@ -109,7 +107,7 @@ export function MetaAppPanel() {
         <>
           {configured && appId ? (
             <p className="mb-4 rounded-lg border border-dashboard-border bg-dashboard-surface px-3 py-2 text-sm text-neutral-black">
-              Configurado: <span className="font-mono font-medium">{appId}</span>
+              App configurado: <span className="font-mono font-medium">{appId}</span>
             </p>
           ) : (
             <p className="mb-4 text-sm text-neutral-gray">
@@ -119,7 +117,13 @@ export function MetaAppPanel() {
             </p>
           )}
 
-          <MetaSetupChecklist variant="settings" />
+          <div>
+            <h3 className="font-display text-base font-bold text-neutral-black">Credenciais do app</h3>
+            <p className="mt-1 text-sm text-neutral-gray">
+              App ID e App Secret autenticam chamadas à API (
+              <code className="text-xs">appsecret_proof</code> e validação de tokens).
+            </p>
+          </div>
 
           <form onSubmit={onSubmit} className="mt-4 flex max-w-md flex-col gap-4">
             <Input
@@ -175,11 +179,13 @@ export function MetaAppPanel() {
                   disabled={removing}
                   onClick={() => void onRemove()}
                 >
-                  {removing ? "A remover…" : "Remover"}
+                  {removing ? "A remover…" : "Remover app"}
                 </Button>
               ) : null}
             </div>
           </form>
+
+          <MetaAccessTokenSection onSynced={() => showSuccess("Contas Meta sincronizadas com sucesso.")} />
         </>
       )}
     </section>

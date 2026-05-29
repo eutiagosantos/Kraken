@@ -1,8 +1,59 @@
 "use client";
 
 import { Plus } from "lucide-react";
-import { Button } from "@/components/ui/Button";
+import Link from "next/link";
+
+import { META_ACCESS_TOKEN_SETTINGS_HREF } from "@/components/app/meta/MetaAccessTokenSection";
+import { buttonVariantClasses } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
+
+export function ContasHeader({
+  total,
+  ativas,
+  comProblema,
+  desconectadas,
+  connectHref = META_ACCESS_TOKEN_SETTINGS_HREF,
+  showStats = true,
+  description,
+}: {
+  total: number;
+  ativas: number;
+  comProblema: number;
+  desconectadas: number;
+  connectHref?: string;
+  showStats?: boolean;
+  description?: string;
+}) {
+  return (
+    <header className="mb-2">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="font-display text-2xl font-bold tracking-tight text-neutral-black md:text-display-md">
+            Contas Meta
+          </h1>
+          <p className="mt-1 text-sm text-neutral-gray">
+            {description ?? "Gerencie suas contas do Meta Ads conectadas à plataforma"}
+          </p>
+        </div>
+        <Link
+          href={connectHref}
+          className={cn(buttonVariantClasses.primary, "inline-flex shrink-0 self-start gap-2 px-4 py-[13px] text-base")}
+        >
+          <Plus className="h-4 w-4" aria-hidden />
+          Configurar Meta
+        </Link>
+      </div>
+      {showStats ? (
+        <div className="mt-4 flex flex-wrap gap-3">
+          <StatPill label="Total" value={total} variant="neutral" />
+          <StatPill label="Ativas" value={ativas} variant="purple" />
+          <StatPill label="Com Problema" value={comProblema} variant="yellow" />
+          <StatPill label="Desconectadas" value={desconectadas} variant="red" />
+        </div>
+      ) : null}
+    </header>
+  );
+}
 
 function StatPill({
   label,
@@ -29,50 +80,5 @@ function StatPill({
       <span className="text-neutral-silver">{label}</span>
       {value}
     </span>
-  );
-}
-
-export function ContasHeader({
-  total,
-  ativas,
-  comProblema,
-  desconectadas,
-  onConnect,
-  showStats = true,
-  description,
-}: {
-  total: number;
-  ativas: number;
-  comProblema: number;
-  desconectadas: number;
-  onConnect: () => void;
-  showStats?: boolean;
-  description?: string;
-}) {
-  return (
-    <header className="mb-2">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h1 className="font-display text-2xl font-bold tracking-tight text-neutral-black md:text-display-md">
-            Contas Meta
-          </h1>
-          <p className="mt-1 text-sm text-neutral-gray">
-            {description ?? "Gerencie suas contas do Meta Ads conectadas à plataforma"}
-          </p>
-        </div>
-        <Button type="button" variant="primary" className="shrink-0 self-start" onClick={onConnect}>
-          <Plus className="h-4 w-4" aria-hidden />
-          Conectar Nova Conta
-        </Button>
-      </div>
-      {showStats ? (
-        <div className="mt-4 flex flex-wrap gap-3">
-          <StatPill label="Total" value={total} variant="neutral" />
-          <StatPill label="Ativas" value={ativas} variant="purple" />
-          <StatPill label="Com Problema" value={comProblema} variant="yellow" />
-          <StatPill label="Desconectadas" value={desconectadas} variant="red" />
-        </div>
-      ) : null}
-    </header>
   );
 }

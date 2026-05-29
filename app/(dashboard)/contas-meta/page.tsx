@@ -1,6 +1,7 @@
 "use client";
 
 import { AlertTriangle, Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import {
   defaultContasFilters,
@@ -9,7 +10,7 @@ import {
   type ContasPageFiltersState,
 } from "@/lib/contas-meta-filters";
 import { hasTokenExpiringSoonBanner, tabCounts, type ContaMeta, type ContaTabId } from "@/lib/mock-contas";
-import { ConectarContaModal } from "@/components/app/contas-meta/ConectarContaModal";
+import { META_ACCESS_TOKEN_SETTINGS_HREF } from "@/components/app/meta/MetaAccessTokenSection";
 import { MetaSetupChecklist } from "@/components/app/meta/MetaSetupChecklist";
 import { ContasGrid } from "@/components/app/contas-meta/ContasGrid";
 import { ContasHeader } from "@/components/app/contas-meta/ContasHeader";
@@ -25,9 +26,10 @@ import { Button } from "@/components/ui/Button";
 import { useSuccessFeedback } from "@/components/app/ui/SuccessFeedback";
 import { useContasMeta } from "@/lib/hooks/useContasMeta";
 
-type OpenModal = "conectar" | "editar" | "reconectar" | "desconectar" | null;
+type OpenModal = "editar" | "reconectar" | "desconectar" | null;
 
 export default function ContasMetaPage() {
+  const router = useRouter();
   const { showSuccess } = useSuccessFeedback();
   const { contas, loading, error, refetch } = useContasMeta();
   const [activeTab, setActiveTab] = useState<ContaTabId>("todas");
@@ -46,6 +48,10 @@ export default function ContasMetaPage() {
   );
   const showTokenBanner = useMemo(() => hasTokenExpiringSoonBanner(contas), [contas]);
 
+  const goToMetaSettings = () => {
+    router.push(META_ACCESS_TOKEN_SETTINGS_HREF);
+  };
+
   const openMetrics = (c: ContaMeta) => {
     setSelectedConta(c);
     setPanelOpen(true);
@@ -63,7 +69,7 @@ export default function ContasMetaPage() {
           <AlertTriangle className="h-5 w-5 shrink-0 text-semantic-yellow" aria-hidden />
           <p>
             <span className="font-semibold">Atenção:</span> pelo menos uma conta tem token expirando em breve (menos de
-            7 dias). Renove o token para evitar interrupções.
+            7 dias). Renove o token em Configurações para evitar interrupções.
           </p>
         </div>
       ) : null}
@@ -73,7 +79,6 @@ export default function ContasMetaPage() {
         ativas={counts.ativas}
         comProblema={counts.problema}
         desconectadas={counts.desconectadas}
-        onConnect={() => openModalFor("conectar", null)}
         showStats={hubView === "contas"}
         description={
           hubView === "paginas"
@@ -112,16 +117,13 @@ export default function ContasMetaPage() {
             />
 
             <StatusFilterTabs activeTab={activeTab} onChange={setActiveTab} counts={counts}>
-              {contas.length === 0 ? (
-                <MetaSetupChecklist variant="contas" onConnect={() => openModalFor("conectar", null)} />
-              ) : null}
+              {contas.length === 0 ? <MetaSetupChecklist variant="contas" /> : null}
               <ContasGrid
                 contas={filtered}
                 onOpenMetrics={openMetrics}
                 onEdit={(c) => openModalFor("editar", c)}
                 onReconnect={(c) => openModalFor("reconectar", c)}
                 onDisconnect={(c) => openModalFor("desconectar", c)}
-                onConnectNew={() => openModalFor("conectar", null)}
               />
             </StatusFilterTabs>
           </>
@@ -137,7 +139,7 @@ export default function ContasMetaPage() {
         <FacebookPagesPanel
           active={hubView === "paginas"}
           reloadKey={pagesReloadKey}
-          onConnect={() => openModalFor("conectar", null)}
+          onConnect={goToMetaSettings}
         />
       </div>
 
@@ -152,16 +154,6 @@ export default function ContasMetaPage() {
         onReconnect={(c) => {
           setPanelOpen(false);
           openModalFor("reconectar", c);
-        }}
-      />
-
-      <ConectarContaModal
-        open={openModal === "conectar"}
-        onClose={() => setOpenModal(null)}
-        onConnected={async () => {
-          await refetch();
-          setPagesReloadKey((k) => k + 1);
-          showSuccess("Conta sincronizada com sucesso.");
         }}
       />
 
@@ -194,11 +186,6 @@ export default function ContasMetaPage() {
         conta={openModal === "reconectar" ? modalConta : null}
         open={openModal === "reconectar"}
         onClose={() => setOpenModal(null)}
-        onReconnected={async () => {
-          await refetch();
-          setPagesReloadKey((k) => k + 1);
-          showSuccess("Conta reconectada com sucesso.");
-        }}
       />
 
       <DesconectarConfirmModal
