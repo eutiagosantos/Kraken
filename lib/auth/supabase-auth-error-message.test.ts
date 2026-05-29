@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { messageForSignUpAuthError } from "@/lib/auth/supabase-auth-error-message";
+import {
+  isEmailNotConfirmedError,
+  messageForSignInAuthError,
+  messageForSignUpAuthError,
+} from "@/lib/auth/supabase-auth-error-message";
 
 describe("messageForSignUpAuthError", () => {
   it("maps over_email_send_rate_limit by code", () => {
@@ -9,8 +13,8 @@ describe("messageForSignUpAuthError", () => {
       message: "email rate limit exceeded",
     });
     expect(msg).toContain("limite de envio de e-mails");
-    expect(msg).toContain("Meta");
     expect(msg).toContain("SMTP");
+    expect(msg).not.toContain("Meta");
   });
 
   it("maps by message substring when code missing", () => {
@@ -20,9 +24,41 @@ describe("messageForSignUpAuthError", () => {
     expect(msg).toContain("limite de envio de e-mails");
   });
 
+  it("maps user_already_registered", () => {
+    const msg = messageForSignUpAuthError({
+      code: "user_already_registered",
+      message: "User already registered",
+    });
+    expect(msg).toContain("já está registado");
+  });
+
   it("falls back to message for other errors", () => {
-    expect(messageForSignUpAuthError({ message: "User already registered" })).toBe(
-      "User already registered"
-    );
+    expect(messageForSignUpAuthError({ message: "Something else" })).toBe("Something else");
+  });
+});
+
+describe("messageForSignInAuthError", () => {
+  it("maps email_not_confirmed", () => {
+    const msg = messageForSignInAuthError({
+      code: "email_not_confirmed",
+      message: "Email not confirmed",
+    });
+    expect(msg).toContain("Confirme o seu e-mail");
+  });
+
+  it("maps invalid_credentials", () => {
+    const msg = messageForSignInAuthError({
+      code: "invalid_credentials",
+      message: "Invalid login credentials",
+    });
+    expect(msg).toContain("E-mail ou senha incorretos");
+  });
+});
+
+describe("isEmailNotConfirmedError", () => {
+  it("detects by code and message", () => {
+    expect(isEmailNotConfirmedError({ code: "email_not_confirmed" })).toBe(true);
+    expect(isEmailNotConfirmedError({ message: "Email not confirmed" })).toBe(true);
+    expect(isEmailNotConfirmedError({ code: "invalid_credentials" })).toBe(false);
   });
 });
