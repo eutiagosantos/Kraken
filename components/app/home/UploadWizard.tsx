@@ -116,6 +116,8 @@ export function UploadWizard() {
       }
     }
     void loadData();
+    // selectedAccountIdsKey is the stable serialized trigger; selectedAccountIds is read inside loadData.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional key-based dependency
   }, [selectedAccountIdsKey]);
 
   useEffect(() => {

@@ -564,7 +564,6 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
         continue;
       }
 
-      let creativeThumbForRow = "";
       let createdCampaignId: string | undefined;
       try {
         const { campaign, adSetIds } = await createCampaignAndAdSetsWithRetry(unit.actId, unit.accountName);
@@ -673,8 +672,6 @@ export async function runWizardPublish(ctx: WizardPublishContext): Promise<{
           type: r.creative.type,
           thumb: r.thumb,
         }));
-        if (creativesForRow[0]?.thumb) creativeThumbForRow = creativesForRow[0].thumb;
-
         await patchUploadJobProgress(ctx, publishId, summary, counts.adsets, "ads");
 
         const adsTotal = counts.adsets;

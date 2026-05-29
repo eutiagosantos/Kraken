@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -19,13 +20,15 @@ function CreativeSquare({ cr }: { cr: Campanha["creatives"][number] }) {
   const showImg = Boolean(thumb) && !broken;
 
   return (
-    <div className="aspect-square overflow-hidden rounded-lg bg-dashboard-track">
+    <div className="relative aspect-square overflow-hidden rounded-lg bg-dashboard-track">
       {showImg ? (
-        <img
+        <Image
           src={thumb}
           alt=""
-          className="h-full w-full object-cover"
-          loading="lazy"
+          fill
+          unoptimized
+          className="object-cover"
+          sizes="(max-width: 768px) 50vw, 200px"
           onError={() => setBroken(true)}
         />
       ) : (
