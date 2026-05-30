@@ -15,23 +15,22 @@ export type NotificationItem = {
   createdAt: string;
 };
 
+type NotificationApiRow = {
+  id: string;
+  type: string;
+  message: string;
+  account: string;
+  created_at: string;
+};
+
 export function useNotifications() {
-  const { data, error, isLoading } = useSWR<{ data?: NotificationItem[] }>(
+  const { data, error, isLoading } = useSWR<{ data?: NotificationApiRow[] }>(
     "/api/notifications",
     swrJsonFetcher,
     { dedupingInterval: SWR_DEDUP_MS }
   );
 
-  type ApiRow = {
-    id: string;
-    type: string;
-    message: string;
-    account: string;
-    created_at: string;
-  };
-
-  const raw = (data?.data ?? []) as ApiRow[];
-  const notifications: NotificationItem[] = raw.map((n) => ({
+  const notifications: NotificationItem[] = (data?.data ?? []).map((n) => ({
     id: n.id,
     type: n.type as ActivityType,
     message: n.message,
