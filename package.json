@@ -17,6 +17,7 @@
     "generate-test-creatives": "node scripts/generate-test-creatives.mjs"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.26.0",
     "@radix-ui/react-tooltip": "^1.2.8",
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.105.4",
@@ -27,6 +28,7 @@
     "facebook-nodejs-business-sdk": "^24.0.1",
     "framer-motion": "^12.38.0",
     "lucide-react": "^0.469.0",
+    "mcp-handler": "^1.1.0",
     "next": "14.2.35",
     "react": "^18",
     "react-dom": "^18",

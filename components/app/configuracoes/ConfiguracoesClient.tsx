@@ -1,5 +1,6 @@
 "use client";
 
+import { McpKeysPanel } from "./McpKeysPanel";
 import { MetaAppPanel } from "./MetaAppPanel";
 import { PerfilSection } from "./PerfilSection";
 import { SegurancaSection } from "./SegurancaSection";
@@ -21,6 +22,7 @@ export function ConfiguracoesClient() {
         <WorkspaceSection />
         <PerfilSection />
         <MetaAppPanel />
+        <McpKeysPanel />
         <SegurancaSection />
       </div>
     </div>
