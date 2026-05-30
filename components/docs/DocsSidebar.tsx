@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Menu, X } from "lucide-react";
+import { ArrowRight, Menu, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { KrakenMarkTile } from "@/components/branding/KrakenMarkTile";
 import { MCP_DOCS_SECTIONS } from "@/lib/docs/mcp-tools-data";
@@ -59,16 +59,43 @@ export function DocsSidebar({ className }: DocsSidebarProps) {
           href={`#${section.id}`}
           onClick={() => onNavClick(section.id)}
           className={cn(
-            "rounded-btn px-3 py-2 text-sm font-medium transition-colors",
+            "relative rounded-btn px-3 py-2.5 pl-4 text-sm font-medium transition-colors",
             activeId === section.id
               ? "bg-brand-purple-subtle text-brand-purple"
               : "text-neutral-gray hover:bg-black/[0.04] hover:text-neutral-black"
           )}
         >
+          {activeId === section.id ? (
+            <span
+              className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-brand-purple"
+              aria-hidden
+            />
+          ) : null}
           {section.label}
         </a>
       ))}
     </nav>
+  );
+
+  const sidebarFooter = (
+    <div className="mt-auto space-y-4 border-t border-neutral-border/80 pt-6">
+      <Link
+        href="/configuracoes"
+        className="group flex items-center justify-between rounded-card border border-brand-purple/20 bg-brand-purple-subtle/60 px-3.5 py-3 text-sm font-semibold text-brand-purple transition hover:border-brand-purple/40 hover:bg-brand-purple-subtle"
+      >
+        <span>Criar chave API</span>
+        <ArrowRight
+          className="h-4 w-4 transition-transform group-hover:translate-x-0.5"
+          aria-hidden
+        />
+      </Link>
+      <Link
+        href="/login"
+        className="block text-sm font-medium text-neutral-gray transition hover:text-brand-purple"
+      >
+        Entrar no Kraken
+      </Link>
+    </div>
   );
 
   return (
@@ -108,19 +135,18 @@ export function DocsSidebar({ className }: DocsSidebarProps) {
             <KrakenMarkTile size="sm" />
             <span className="font-display text-sm font-semibold text-neutral-black">Kraken</span>
           </Link>
-          <p className="text-xs font-medium uppercase tracking-wider text-brand-purple/70">
-            MCP Server
-          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-xs font-medium uppercase tracking-wider text-brand-purple/70">
+              MCP Server
+            </p>
+            <span className="rounded-full border border-neutral-border bg-white px-2 py-0.5 font-mono text-[10px] font-medium uppercase tracking-wide text-neutral-gray">
+              v1
+            </span>
+          </div>
         </div>
         {navLinks}
-        <div className="mt-auto hidden pt-8 lg:block">
-          <Link
-            href="/login"
-            className="text-sm font-medium text-brand-purple hover:underline"
-          >
-            Entrar no Kraken
-          </Link>
-        </div>
+        <div className="hidden lg:block">{sidebarFooter}</div>
+        <div className="mt-8 lg:hidden">{sidebarFooter}</div>
       </aside>
     </>
   );

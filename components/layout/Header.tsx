@@ -13,6 +13,7 @@ const nav = [
   { label: "Como Funciona", href: "#como-funciona" },
   { label: "Benefícios", href: "#beneficios" },
   { label: "Planos", href: "#planos" },
+  { label: "Docs", href: "/docs/mcp" },
 ];
 
 export function Header() {

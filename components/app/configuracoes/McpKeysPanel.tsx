@@ -1,6 +1,7 @@
 "use client";
 
-import { Check, Copy, Loader2, Trash2 } from "lucide-react";
+import { Check, Copy, ExternalLink, Loader2, Trash2 } from "lucide-react";
+import Link from "next/link";
 import { useCallback, useState } from "react";
 
 import { useSuccessFeedback } from "@/components/app/ui/SuccessFeedback";
@@ -124,7 +125,14 @@ export function McpKeysPanel() {
         </h2>
         <p className="mt-0.5 text-sm text-neutral-silver">
           Gere chaves API para conectar Claude, ChatGPT ou outros clientes MCP ao Kraken e publicar
-          campanhas Meta por conversa.
+          campanhas Meta por conversa.{" "}
+          <Link
+            href="/docs/mcp"
+            className="inline-flex items-center gap-1 font-medium text-brand-purple transition hover:underline"
+          >
+            Ver documentação MCP
+            <ExternalLink className="h-3.5 w-3.5" aria-hidden />
+          </Link>
         </p>
       </header>
 
