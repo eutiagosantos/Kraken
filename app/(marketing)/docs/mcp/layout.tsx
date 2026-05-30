@@ -10,9 +10,9 @@ export const metadata: Metadata = {
 
 export default function McpDocsLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="flex min-h-[100dvh] flex-col bg-[#FAFAF7] landing-grain lg:flex-row">
+    <div className="flex h-[100dvh] flex-col overflow-hidden bg-[#FAFAF7] landing-grain lg:flex-row">
       <DocsSidebar />
-      <main className="min-w-0 flex-1 overflow-y-auto">{children}</main>
+      <main className="min-h-0 min-w-0 flex-1 overflow-y-auto">{children}</main>
     </div>
   );
 }

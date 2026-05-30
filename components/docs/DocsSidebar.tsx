@@ -125,7 +125,7 @@ export function DocsSidebar({ className }: DocsSidebarProps) {
 
       <aside
         className={cn(
-          "fixed left-0 top-[57px] z-30 flex h-[calc(100dvh-57px)] w-64 flex-col border-r border-neutral-border bg-[#FAFAF7] px-4 py-6 transition-transform lg:static lg:top-0 lg:z-auto lg:h-auto lg:min-h-[calc(100dvh-0px)] lg:translate-x-0 lg:shrink-0",
+          "fixed left-0 top-[57px] z-30 flex h-[calc(100dvh-57px)] w-64 flex-col overflow-y-auto border-r border-neutral-border bg-[#FAFAF7] px-4 py-6 transition-transform lg:sticky lg:top-0 lg:z-auto lg:h-[100dvh] lg:overflow-hidden lg:translate-x-0 lg:shrink-0",
           mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
           className
         )}
