@@ -402,11 +402,11 @@ export const MCP_DOCS_TOOLS: McpToolDoc[] = [
 
 export const MCP_ENDPOINT_SNIPPETS = {
   local: "http://127.0.0.1:3000/api/mcp",
-  production: "https://SEU_DOMINIO/api/mcp",
+  production: "https://kraken-sigma-three.vercel.app/api/mcp",
   claudeDesktop: `{
   "mcpServers": {
     "kraken": {
-      "url": "https://SEU_DOMINIO/api/mcp",
+      "url": "https://kraken-sigma-three.vercel.app/api/mcp",
       "headers": {
         "Authorization": "Bearer kr_mcp_SUA_CHAVE"
       }

@@ -25,7 +25,7 @@ Redeploy after changing env vars.
 | Environment | URL |
 |-------------|-----|
 | Local | `http://127.0.0.1:3000/api/mcp` |
-| Production | `https://<your-domain>/api/mcp` |
+| Production | `https://kraken-sigma-three.vercel.app/api/mcp` |
 
 Auth header on every request:
 
@@ -41,7 +41,7 @@ Authorization: Bearer kr_mcp_<secret>
 {
   "mcpServers": {
     "kraken": {
-      "url": "https://YOUR_DOMAIN/api/mcp",
+      "url": "https://kraken-sigma-three.vercel.app/api/mcp",
       "headers": {
         "Authorization": "Bearer kr_mcp_YOUR_KEY"
       }

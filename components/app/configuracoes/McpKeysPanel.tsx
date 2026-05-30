@@ -49,7 +49,7 @@ export function McpKeysPanel() {
   const mcpBaseUrl =
     typeof window !== "undefined"
       ? `${window.location.origin}/api/mcp`
-      : "https://your-kraken-domain.com/api/mcp";
+      : "https://kraken-sigma-three.vercel.app/api/mcp";
 
   const copyText = useCallback(async (text: string, kind: "key" | "snippet") => {
     try {

@@ -58,7 +58,11 @@ describe("MCP docs data", () => {
 
   it("exposes endpoint snippets for installation", () => {
     expect(MCP_ENDPOINT_SNIPPETS.local).toContain("/api/mcp");
+    expect(MCP_ENDPOINT_SNIPPETS.production).toBe(
+      "https://kraken-sigma-three.vercel.app/api/mcp"
+    );
     expect(MCP_ENDPOINT_SNIPPETS.claudeDesktop).toContain("mcpServers");
+    expect(MCP_ENDPOINT_SNIPPETS.claudeDesktop).toContain("kraken-sigma-three.vercel.app");
     expect(MCP_ENDPOINT_SNIPPETS.authHeader).toContain("Bearer");
   });
 });
