@@ -59,10 +59,10 @@ export function DocsSidebar({ className }: DocsSidebarProps) {
           href={`#${section.id}`}
           onClick={() => onNavClick(section.id)}
           className={cn(
-            "relative rounded-btn px-3 py-2.5 pl-4 text-sm font-medium transition-colors",
+            "relative rounded-btn px-3 py-2 pl-4 text-[13px] font-normal transition-colors",
             activeId === section.id
-              ? "bg-brand-purple-subtle text-brand-purple"
-              : "text-neutral-gray hover:bg-black/[0.04] hover:text-neutral-black"
+              ? "font-medium text-brand-purple"
+              : "text-neutral-gray hover:text-neutral-black"
           )}
         >
           {activeId === section.id ? (
@@ -81,7 +81,7 @@ export function DocsSidebar({ className }: DocsSidebarProps) {
     <div className="mt-auto space-y-4 border-t border-neutral-border/80 pt-6">
       <Link
         href="/configuracoes"
-        className="group flex items-center justify-between rounded-card border border-brand-purple/20 bg-brand-purple-subtle/60 px-3.5 py-3 text-sm font-semibold text-brand-purple transition hover:border-brand-purple/40 hover:bg-brand-purple-subtle"
+        className="group flex items-center justify-between rounded-lg border border-neutral-border px-3.5 py-2.5 text-[13px] font-medium text-neutral-black transition hover:border-brand-purple/30 hover:text-brand-purple"
       >
         <span>Criar chave API</span>
         <ArrowRight
@@ -100,7 +100,7 @@ export function DocsSidebar({ className }: DocsSidebarProps) {
 
   return (
     <>
-      <div className="sticky top-0 z-40 flex items-center justify-between border-b border-neutral-border bg-[#FAFAF7]/95 px-4 py-3 backdrop-blur-md lg:hidden">
+      <div className="sticky top-0 z-40 flex items-center justify-between border-b border-neutral-border bg-white/95 px-4 py-3 backdrop-blur-md lg:hidden">
         <Link href="/" className="flex items-center gap-2">
           <KrakenMarkTile size="sm" />
           <span className="font-display text-sm font-semibold text-neutral-black">Kraken Docs</span>
@@ -125,7 +125,7 @@ export function DocsSidebar({ className }: DocsSidebarProps) {
 
       <aside
         className={cn(
-          "fixed left-0 top-[57px] z-30 flex h-[calc(100dvh-57px)] w-64 flex-col overflow-y-auto border-r border-neutral-border bg-[#FAFAF7] px-4 py-6 transition-transform lg:sticky lg:top-0 lg:z-auto lg:h-[100dvh] lg:overflow-hidden lg:translate-x-0 lg:shrink-0",
+          "fixed left-0 top-[57px] z-30 flex h-[calc(100dvh-57px)] w-64 flex-col overflow-y-auto border-r border-neutral-border bg-white px-4 py-6 transition-transform lg:sticky lg:top-0 lg:z-auto lg:h-[100dvh] lg:overflow-hidden lg:translate-x-0 lg:shrink-0",
           mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
           className
         )}

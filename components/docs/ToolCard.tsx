@@ -2,7 +2,6 @@ import { ChevronDown } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { CodeBlock } from "@/components/docs/CodeBlock";
 import type { McpToolDoc } from "@/lib/docs/mcp-tools-data";
-import { cn } from "@/lib/utils";
 
 const categoryVariant = {
   Leitura: "neutral",
@@ -19,10 +18,7 @@ export function ToolCard({ tool }: ToolCardProps) {
   return (
     <article
       id={`tool-${tool.name}`}
-      className={cn(
-        "group scroll-mt-24 rounded-card border border-neutral-border bg-white p-5 shadow-subtle",
-        "transition duration-200 hover:-translate-y-0.5 hover:border-brand-purple/20 hover:shadow-md"
-      )}
+      className="scroll-mt-24 rounded-xl border border-neutral-border bg-white p-5"
     >
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <h3 className="font-mono text-base font-semibold text-neutral-black">{tool.name}</h3>
@@ -31,7 +27,7 @@ export function ToolCard({ tool }: ToolCardProps) {
       <p className="mb-4 text-sm leading-relaxed text-neutral-gray">{tool.description}</p>
 
       {tool.params.length > 0 ? (
-        <details className="group/details mb-4 overflow-hidden rounded-lg border border-neutral-border/80 bg-[#FAFAF7]/80">
+        <details className="group/details mb-4 overflow-hidden rounded-lg border border-neutral-border bg-[#FAFAF7]/80">
           <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-3 text-sm font-medium text-neutral-black marker:content-none [&::-webkit-details-marker]:hidden">
             <span>
               Parâmetros{" "}
@@ -42,7 +38,7 @@ export function ToolCard({ tool }: ToolCardProps) {
               aria-hidden
             />
           </summary>
-          <div className="overflow-x-auto border-t border-neutral-border/80 bg-white">
+          <div className="overflow-x-auto border-t border-neutral-border bg-white">
             <table className="w-full min-w-[320px] text-left text-sm">
               <thead>
                 <tr className="border-b border-neutral-border text-xs uppercase tracking-wide text-neutral-gray">
@@ -66,7 +62,7 @@ export function ToolCard({ tool }: ToolCardProps) {
           </div>
         </details>
       ) : (
-        <p className="mb-4 rounded-lg border border-dashed border-neutral-border/80 bg-[#FAFAF7]/50 px-3 py-2 text-xs text-neutral-gray">
+        <p className="mb-4 rounded-lg border border-dashed border-neutral-border px-3 py-2 text-xs text-neutral-gray">
           Sem parâmetros de entrada.
         </p>
       )}

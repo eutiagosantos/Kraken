@@ -12,7 +12,9 @@ export default function McpDocsLayout({ children }: { children: ReactNode }) {
   return (
     <div className="flex h-[100dvh] flex-col overflow-hidden bg-[#FAFAF7] landing-grain lg:flex-row">
       <DocsSidebar />
-      <main className="min-h-0 min-w-0 flex-1 overflow-y-auto">{children}</main>
+      <main className="min-h-0 min-w-0 flex-1 overflow-y-auto bg-white lg:border-l lg:border-neutral-border">
+        {children}
+      </main>
     </div>
   );
 }
