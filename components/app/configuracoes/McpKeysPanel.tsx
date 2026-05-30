@@ -40,6 +40,7 @@ export function McpKeysPanel() {
   const { showSuccess } = useSuccessFeedback();
 
   const [keyName, setKeyName] = useState("");
+  const [mcpUrlOverride, setMcpUrlOverride] = useState("");
   const [minting, setMinting] = useState(false);
   const [revokingId, setRevokingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -114,8 +115,9 @@ export function McpKeysPanel() {
     }
   };
 
+  const effectiveMcpUrl = mcpUrlOverride.trim() || mcpBaseUrl;
   const snippet =
-    mintedPlaintext != null ? buildConnectorSnippet(mcpBaseUrl, mintedPlaintext) : null;
+    mintedPlaintext != null ? buildConnectorSnippet(effectiveMcpUrl, mintedPlaintext) : null;
 
   return (
     <section className="rounded-card border border-neutral-border bg-neutral-white p-6 shadow-subtle">
@@ -178,6 +180,13 @@ export function McpKeysPanel() {
           )}
 
           <div className="flex max-w-md flex-col gap-3">
+            <Input
+              id="mcp-server-url"
+              label="URL do servidor MCP (opcional)"
+              value={mcpUrlOverride}
+              onChange={(e) => setMcpUrlOverride(e.target.value)}
+              placeholder={mcpBaseUrl}
+            />
             <Input
               id="mcp-key-name"
               label="Nome da chave (opcional)"
