@@ -1,15 +1,13 @@
 "use client";
 
 import { motion } from "framer-motion";
-import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import {
   DEMO_PUBLICATION_QUEUE_SUMMARY,
   PublicationQueuePanel,
 } from "@/components/publication-queue/PublicationQueuePanel";
 import { Stats } from "@/components/sections/Stats";
-import { buttonVariantClasses } from "@/components/ui/Button";
-import { cn } from "@/lib/utils";
+import { MarketingButton } from "@/components/ui/MarketingButton";
 
 export function Hero() {
   return (
@@ -49,25 +47,16 @@ export function Hero() {
             </p>
 
             <div className="mt-10 flex flex-wrap items-center gap-4">
-              <Link
-                href="/cadastro"
-                className={cn(
-                  "inline-flex items-center justify-center gap-2",
-                  buttonVariantClasses.primary
-                )}
-              >
+              <MarketingButton href="/cadastro" variant="primary" className="gap-2">
                 Começar grátis
-                <ArrowRight className="h-4 w-4" aria-hidden />
-              </Link>
-              <Link
-                href="#como-funciona"
-                className={cn(
-                  "inline-flex items-center justify-center",
-                  buttonVariantClasses.outlined
-                )}
-              >
+                <ArrowRight
+                  className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5"
+                  aria-hidden
+                />
+              </MarketingButton>
+              <MarketingButton href="#como-funciona" variant="outlined">
                 Ver como funciona
-              </Link>
+              </MarketingButton>
             </div>
 
             <Stats />

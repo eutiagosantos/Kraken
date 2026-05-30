@@ -4,6 +4,7 @@ import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
+import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import {
   DUPLICATE_SIGN_UP_MESSAGE,
@@ -77,9 +78,6 @@ export function RegisterForm() {
     router.push("/login?registered=1");
   }
 
-  const inputClass =
-    "border-[#d4d4e8] bg-white py-2 text-[15px] focus:border-[#6B46E5] focus:ring-[#6B46E5]/25";
-
   const eyeButtonClass =
     "rounded-md p-1.5 text-neutral-gray transition-colors hover:bg-black/[0.06] hover:text-neutral-black";
 
@@ -88,9 +86,9 @@ export function RegisterForm() {
       {notice ? (
         <p
           className={cn(
-            "rounded-lg border px-3 py-2 text-xs",
+            "rounded-lg border px-3 py-2.5 text-sm",
             notice.tone === "success" &&
-              "border-[rgba(20,158,97,0.24)] bg-[rgba(20,158,97,0.10)] text-[#026b3f]",
+              "border-neutral-border bg-brand-purple-subtle text-brand-purple-deep",
             notice.tone === "error" && "border-red-200 bg-red-50 text-red-900"
           )}
           role={notice.tone === "error" ? "alert" : "status"}
@@ -105,10 +103,8 @@ export function RegisterForm() {
         type="text"
         autoComplete="name"
         label="Nome completo"
-        labelSrOnly
-        placeholder="Nome completo"
+        placeholder="Seu nome"
         error={errors.name}
-        className={inputClass}
       />
 
       <Input
@@ -117,10 +113,8 @@ export function RegisterForm() {
         type="email"
         autoComplete="email"
         label="E-mail"
-        labelSrOnly
-        placeholder="Email"
+        placeholder="voce@empresa.com"
         error={errors.email}
-        className={inputClass}
       />
 
       <Input
@@ -129,10 +123,8 @@ export function RegisterForm() {
         type={showPassword ? "text" : "password"}
         autoComplete="new-password"
         label="Senha"
-        labelSrOnly
-        placeholder="Senha (mínimo 8 caracteres)"
+        placeholder="Mínimo 8 caracteres"
         error={errors.password}
-        className={inputClass}
         suffix={
           <button
             type="button"
@@ -155,10 +147,8 @@ export function RegisterForm() {
         type={showConfirm ? "text" : "password"}
         autoComplete="new-password"
         label="Confirmar senha"
-        labelSrOnly
-        placeholder="Confirmar senha"
+        placeholder="Repita a senha"
         error={errors.confirm}
-        className={inputClass}
         suffix={
           <button
             type="button"
@@ -181,7 +171,7 @@ export function RegisterForm() {
             type="checkbox"
             name="terms"
             className={cn(
-              "mt-0.5 h-4 w-4 shrink-0 rounded border-[#d4d4e8] text-[#6B46E5] focus:ring-2 focus:ring-[#6B46E5]/25",
+              "mt-0.5 h-4 w-4 shrink-0 rounded border-neutral-border text-brand-purple focus:ring-2 focus:ring-brand-purple/25",
               errors.terms && "border-red-500"
             )}
             aria-invalid={errors.terms ? "true" : undefined}
@@ -191,7 +181,7 @@ export function RegisterForm() {
             Li e aceito os{" "}
             <Link
               href="#"
-              className="font-semibold text-[#6B46E5] underline-offset-2 hover:underline"
+              className="font-semibold text-brand-purple underline-offset-2 hover:underline"
               onClick={(ev) => ev.preventDefault()}
             >
               termos de uso
@@ -199,7 +189,7 @@ export function RegisterForm() {
             e a{" "}
             <Link
               href="#"
-              className="font-semibold text-[#6B46E5] underline-offset-2 hover:underline"
+              className="font-semibold text-brand-purple underline-offset-2 hover:underline"
               onClick={(ev) => ev.preventDefault()}
             >
               política de privacidade
@@ -214,13 +204,9 @@ export function RegisterForm() {
         ) : null}
       </div>
 
-      <button
-        type="submit"
-        disabled={submitting}
-        className="w-full rounded-[10px] bg-[#6B46E5] py-2.5 text-[15px] font-semibold text-white shadow-none transition-colors hover:bg-[#5b21e6] disabled:opacity-60"
-      >
-        {submitting ? "A criar…" : "Criar conta"}
-      </button>
+      <Button type="submit" variant="primary" className="w-full" disabled={submitting}>
+        {submitting ? "Criando…" : "Criar conta"}
+      </Button>
     </form>
   );
 }

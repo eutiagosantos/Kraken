@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CheckCircle2 } from "lucide-react";
 import { KrakenMarkTile } from "@/components/branding/KrakenMarkTile";
 import { RegisterForm } from "@/components/auth/RegisterForm";
 
@@ -17,37 +16,42 @@ const trustPoints = [
 
 export default function CadastroPage() {
   return (
-    <div className="mx-auto flex w-full max-w-6xl min-h-0 flex-1 items-center px-4 pt-0 pb-2 sm:px-6 sm:pt-1 sm:pb-4 lg:px-8">
+    <div className="mx-auto flex min-h-0 w-full max-w-6xl flex-1 items-center px-4 pb-2 pt-0 sm:px-6 sm:pb-4 sm:pt-1 lg:px-8">
       <div className="grid w-full gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,460px)] lg:gap-12">
         <aside className="hidden flex-col justify-center lg:flex">
-          <div className="mb-1">
+          <div className="mb-4">
             <KrakenMarkTile size="md" />
           </div>
-          <h1 className="font-display text-[40px] font-bold leading-[1.1] tracking-tight text-neutral-black">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-silver">
+            Cadastro
+          </p>
+          <h1 className="mt-3 font-display text-[40px] font-bold leading-[1.1] tracking-tight text-neutral-black">
             Crie sua conta Kraken
           </h1>
-          <p className="mt-3 max-w-md text-base leading-relaxed text-neutral-gray">
+          <div className="editorial-rule mt-6 max-w-xs" />
+          <p className="mt-6 max-w-md text-base leading-relaxed text-neutral-gray">
             Em menos de um minuto você começa a operar com segurança.
           </p>
-          <ul className="mt-6 space-y-2.5">
-            {trustPoints.map((point) => (
-              <li
-                key={point}
-                className="flex items-center gap-2.5 text-sm font-medium text-neutral-black"
-              >
-                <CheckCircle2
-                  className="h-4 w-4 shrink-0 text-[#6B46E5]"
+          <ul className="mt-8 space-y-4">
+            {trustPoints.map((point, index) => (
+              <li key={point} className="flex items-start gap-4">
+                <span
+                  className="font-display text-2xl font-bold tabular-nums leading-none text-brand-purple/20"
                   aria-hidden
-                />
-                {point}
+                >
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+                <span className="pt-1 text-sm font-medium text-neutral-black">
+                  {point}
+                </span>
               </li>
             ))}
           </ul>
-          <p className="mt-8 text-sm text-neutral-gray">
+          <p className="mt-10 text-sm text-neutral-gray">
             Já tem conta?{" "}
             <Link
               href="/login"
-              className="font-semibold text-[#6B46E5] underline-offset-2 hover:underline"
+              className="font-semibold text-brand-purple-dark underline-offset-2 hover:underline"
             >
               Entrar
             </Link>
@@ -55,11 +59,14 @@ export default function CadastroPage() {
         </aside>
 
         <div className="flex w-full flex-col items-center lg:items-stretch">
-          <div className="w-full max-w-[440px] rounded-xl border border-neutral-border/80 bg-white px-6 pt-5 pb-8 shadow-[0_8px_40px_rgba(0,0,0,0.06)] sm:px-10 sm:pt-6 sm:pb-10">
+          <div className="w-full max-w-[440px] rounded-card border border-neutral-border bg-white px-6 pb-8 pt-5 shadow-subtle sm:px-10 sm:pb-10 sm:pt-6">
             <div className="mb-2 flex items-start gap-2 lg:hidden">
               <KrakenMarkTile size="landing" className="shrink-0" />
               <div>
-                <h1 className="font-display text-xl font-bold tracking-tight text-neutral-black">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-silver">
+                  Cadastro
+                </p>
+                <h1 className="mt-1 font-display text-xl font-bold tracking-tight text-neutral-black">
                   Crie sua conta Kraken
                 </h1>
                 <p className="text-xs leading-snug text-neutral-gray">
@@ -79,6 +86,16 @@ export default function CadastroPage() {
               <RegisterForm />
             </div>
           </div>
+
+          <p className="mt-6 text-center text-sm text-neutral-gray lg:hidden">
+            Já tem conta?{" "}
+            <Link
+              href="/login"
+              className="font-semibold text-brand-purple-dark underline-offset-2 hover:underline"
+            >
+              Entrar
+            </Link>
+          </p>
         </div>
       </div>
     </div>

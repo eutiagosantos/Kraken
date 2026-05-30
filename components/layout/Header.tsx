@@ -5,8 +5,8 @@ import { Menu, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { KrakenMarkTile } from "@/components/branding/KrakenMarkTile";
+import { MarketingButton } from "@/components/ui/MarketingButton";
 import { cn } from "@/lib/utils";
-import { buttonVariantClasses } from "@/components/ui/Button";
 
 const nav = [
   { label: "Home", href: "#inicio" },
@@ -64,33 +64,27 @@ export function Header() {
           </nav>
 
           <div className="hidden items-center gap-3 md:flex">
-            <Link
+            <MarketingButton
               href="/login"
-              className={cn(
-                "inline-flex items-center justify-center px-4 py-2.5 text-sm",
-                buttonVariantClasses.outlined
-              )}
+              variant="outlined"
+              className="px-4 py-2.5 text-sm"
             >
               Login
-            </Link>
-            <Link
+            </MarketingButton>
+            <MarketingButton
               href="/cadastro"
-              className={cn(
-                "inline-flex items-center justify-center px-4 py-2.5 text-sm",
-                buttonVariantClasses.subtle
-              )}
+              variant="subtle"
+              className="px-4 py-2.5 text-sm"
             >
               Cadastrar
-            </Link>
-            <Link
+            </MarketingButton>
+            <MarketingButton
               href="#planos"
-              className={cn(
-                "inline-flex items-center justify-center px-4 py-2.5 text-sm",
-                buttonVariantClasses.primary
-              )}
+              variant="primary"
+              className="px-4 py-2.5 text-sm"
             >
               Ver Planos
-            </Link>
+            </MarketingButton>
           </div>
 
           <button
@@ -149,36 +143,30 @@ export function Header() {
                 ))}
               </nav>
               <div className="flex flex-col gap-3 border-t border-neutral-border p-4">
-                <Link
+                <MarketingButton
                   href="/login"
+                  variant="outlined"
+                  className="w-full"
                   onClick={() => setOpen(false)}
-                  className={cn(
-                    "inline-flex w-full items-center justify-center",
-                    buttonVariantClasses.outlined
-                  )}
                 >
                   Login
-                </Link>
-                <Link
+                </MarketingButton>
+                <MarketingButton
                   href="/cadastro"
+                  variant="subtle"
+                  className="w-full"
                   onClick={() => setOpen(false)}
-                  className={cn(
-                    "inline-flex w-full items-center justify-center",
-                    buttonVariantClasses.subtle
-                  )}
                 >
                   Cadastrar
-                </Link>
-                <Link
+                </MarketingButton>
+                <MarketingButton
                   href="#planos"
+                  variant="primary"
+                  className="w-full"
                   onClick={() => setOpen(false)}
-                  className={cn(
-                    "inline-flex w-full items-center justify-center",
-                    buttonVariantClasses.primary
-                  )}
                 >
                   Ver Planos
-                </Link>
+                </MarketingButton>
               </div>
             </motion.div>
           </>

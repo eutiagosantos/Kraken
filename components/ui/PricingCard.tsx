@@ -6,7 +6,7 @@ import type { BillingCycle, PricingPlan } from "@/lib/pricing";
 import { formatBRL } from "@/lib/pricing";
 import { cn } from "@/lib/utils";
 import { Badge } from "./Badge";
-import { Button } from "./Button";
+import { MarketingButton } from "./MarketingButton";
 
 export interface PricingCardProps {
   plan: PricingPlan;
@@ -89,12 +89,13 @@ export function PricingCard({ plan, billing }: PricingCardProps) {
         ))}
       </ul>
 
-      <Button
+      <MarketingButton
+        href={plan.id === "enterprise" ? undefined : "/cadastro"}
         variant={highlighted ? "primary" : "outlined"}
         className="mt-10 w-full"
       >
         {plan.cta}
-      </Button>
+      </MarketingButton>
     </motion.div>
   );
 }

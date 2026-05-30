@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { messageForSignInAuthError } from "@/lib/auth/supabase-auth-error-message";
 import { useSupabase } from "@/lib/hooks/useSupabase";
+import { cn } from "@/lib/utils";
 
 export function KrakenLoginForm() {
   const router = useRouter();
@@ -22,7 +23,9 @@ export function KrakenLoginForm() {
       : null;
 
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [notice, setNotice] = useState<string | null>(registeredNotice);
+  const [notice, setNotice] = useState<{ text: string; tone: "success" | "error" } | null>(
+    registeredNotice ? { text: registeredNotice, tone: "success" } : null
+  );
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -47,7 +50,7 @@ export function KrakenLoginForm() {
     setSubmitting(false);
 
     if (error) {
-      setNotice(messageForSignInAuthError(error));
+      setNotice({ text: messageForSignInAuthError(error), tone: "error" });
       return;
     }
 
@@ -55,14 +58,22 @@ export function KrakenLoginForm() {
     router.refresh();
   }
 
+  const eyeButtonClass =
+    "rounded-md p-1.5 text-neutral-gray transition-colors hover:bg-black/[0.06] hover:text-neutral-black";
+
   return (
     <form className="space-y-4" onSubmit={handleSubmit} noValidate>
       {notice ? (
         <p
-          className="rounded-lg border border-neutral-border bg-brand-purple-subtle px-3 py-2.5 text-sm text-brand-purple-deep"
-          role="status"
+          className={cn(
+            "rounded-lg border px-3 py-2.5 text-sm",
+            notice.tone === "success" &&
+              "border-neutral-border bg-brand-purple-subtle text-brand-purple-deep",
+            notice.tone === "error" && "border-red-200 bg-red-50 text-red-900"
+          )}
+          role={notice.tone === "error" ? "alert" : "status"}
         >
-          {notice}
+          {notice.text}
         </p>
       ) : null}
 
@@ -72,10 +83,8 @@ export function KrakenLoginForm() {
         type="email"
         autoComplete="email"
         label="E-mail"
-        labelSrOnly
-        placeholder="E-mail"
+        placeholder="voce@empresa.com"
         error={errors.identifier}
-        className="border-[#d4d4e8] focus:border-[#6B46E5] focus:ring-[#6B46E5]/25"
       />
 
       <Input
@@ -84,50 +93,44 @@ export function KrakenLoginForm() {
         type={showPassword ? "text" : "password"}
         autoComplete="current-password"
         label="Senha"
-        labelSrOnly
-        placeholder="Senha"
+        placeholder="Sua senha"
         error={errors.password}
-        className="border-neutral-border bg-[#F5F5F7]"
         suffix={
           <button
             type="button"
-            className="rounded-md p-2 text-neutral-gray transition-colors hover:bg-black/[0.06] hover:text-neutral-black"
+            className={eyeButtonClass}
             onClick={() => setShowPassword((v) => !v)}
             aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
           >
             {showPassword ? (
-              <EyeOff className="h-5 w-5" aria-hidden />
+              <EyeOff className="h-[18px] w-[18px]" aria-hidden />
             ) : (
-              <Eye className="h-5 w-5" aria-hidden />
+              <Eye className="h-[18px] w-[18px]" aria-hidden />
             )}
           </button>
         }
       />
 
-      <div className="pt-0.5">
+      <div className="flex justify-end pt-0.5">
         <Link
           href="/cadastro"
-          className="text-sm font-semibold text-[#6B46E5] underline-offset-2 hover:underline"
+          className="text-sm font-semibold text-brand-purple-dark underline-offset-2 hover:underline"
         >
-          Criar conta com e-mail
+          Criar conta
         </Link>
       </div>
 
-      <Button
-        type="submit"
-        disabled={submitting}
-        className="w-full rounded-[10px] bg-[#6B46E5] py-3 text-base font-semibold text-white shadow-none hover:bg-[#5b21e6]"
-      >
-        {submitting ? "A entrar…" : "Continuar"}
+      <Button type="submit" variant="primary" className="w-full" disabled={submitting}>
+        {submitting ? "Entrando…" : "Entrar"}
       </Button>
 
-      <p className="pt-4 text-center text-sm leading-relaxed text-neutral-gray">
-        Ainda não consegue fazer login? Envie-nos um{" "}
+      <p className="pt-2 text-center text-sm leading-relaxed text-neutral-gray">
+        Precisa de ajuda?{" "}
         <a
           href="mailto:support@kraken.com"
-          className="font-semibold text-[#6B46E5] underline-offset-2 hover:underline"
+          className="font-semibold text-brand-purple-dark underline-offset-2 hover:underline"
         >
-          e-mail
+          Fale conosco
         </a>
       </p>
     </form>

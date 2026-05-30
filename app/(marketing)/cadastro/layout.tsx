@@ -4,7 +4,7 @@ import { KrakenLoginHeader } from "@/components/auth/KrakenLoginHeader";
 
 export default function CadastroLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="flex h-[100dvh] flex-col overflow-hidden bg-[#F9F9FB]">
+    <div className="landing-grain relative flex h-[100dvh] flex-col overflow-hidden bg-[#FAFAF7]">
       <KrakenLoginHeader ctaLabel="Entrar" ctaHref="/login" compact />
       <div className="flex min-h-0 flex-1 flex-col">{children}</div>
       <footer className="mx-auto hidden w-full max-w-6xl px-4 pb-3 pt-1 text-center sm:block sm:px-6 lg:px-8">
