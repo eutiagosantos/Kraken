@@ -1,10 +1,13 @@
 "use client";
 
 import { Bell, Menu, Search } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Badge } from "@/components/ui/Badge";
 import { cn } from "@/lib/utils";
 import { useKrakenUser } from "@/lib/hooks/useKrakenUser";
+import { useNotifications } from "@/lib/hooks/useNotifications";
 import { useSidebar } from "../sidebar/SidebarContext";
+import { NOTIF_LAST_SEEN_KEY, NotificationPanel } from "./NotificationPanel";
 
 const crumbLabels: Record<string, string> = {
   home: "Home",
@@ -31,11 +34,49 @@ function initialsFrom(name: string) {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
+function readLastSeen(): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem(NOTIF_LAST_SEEN_KEY);
+}
+
+function writeLastSeen(iso: string) {
+  localStorage.setItem(NOTIF_LAST_SEEN_KEY, iso);
+}
+
 export function Topbar({ pathname }: { pathname: string }) {
   const { setMobileOpen } = useSidebar();
   const { displayName, email } = useKrakenUser();
+  const { notifications, isLoading } = useNotifications();
   const crumbs = breadcrumbsFromPath(pathname);
   const initials = initialsFrom(displayName);
+
+  const [panelOpen, setPanelOpen] = useState(false);
+  const [lastSeenAt, setLastSeenAt] = useState<string | null>(null);
+  const bellRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    setLastSeenAt(readLastSeen());
+  }, []);
+
+  const unreadCount = useMemo(() => {
+    if (!notifications.length) return 0;
+    const seenMs = lastSeenAt ? new Date(lastSeenAt).getTime() : 0;
+    return notifications.filter((n) => new Date(n.createdAt).getTime() > seenMs).length;
+  }, [notifications, lastSeenAt]);
+
+  const markAllSeen = useCallback(() => {
+    const now = new Date().toISOString();
+    writeLastSeen(now);
+    setLastSeenAt(now);
+  }, []);
+
+  const togglePanel = useCallback(() => {
+    setPanelOpen((open) => {
+      const next = !open;
+      if (next) markAllSeen();
+      return next;
+    });
+  }, [markAllSeen]);
 
   return (
     <header
@@ -78,16 +119,30 @@ export function Topbar({ pathname }: { pathname: string }) {
       </div>
 
       <div className="ml-auto flex items-center gap-1 sm:gap-2">
-        <button
-          type="button"
-          className="relative rounded-lg p-2 text-neutral-gray transition-colors hover:bg-[rgba(148,151,169,0.08)] hover:text-neutral-black"
-          aria-label="Notificações"
-        >
-          <Bell className="h-5 w-5" />
-          <span className="absolute right-1 top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-brand-purple px-0.5 text-[10px] font-bold text-neutral-white">
-            3
-          </span>
-        </button>
+        <div className="relative">
+          <button
+            ref={bellRef}
+            type="button"
+            className="relative rounded-lg p-2 text-neutral-gray transition-colors hover:bg-[rgba(148,151,169,0.08)] hover:text-neutral-black"
+            aria-label="Notificações"
+            aria-expanded={panelOpen}
+            onClick={togglePanel}
+          >
+            <Bell className="h-5 w-5" />
+            {unreadCount > 0 ? (
+              <span className="absolute right-1 top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-brand-purple px-0.5 text-[10px] font-bold text-neutral-white">
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </span>
+            ) : null}
+          </button>
+          <NotificationPanel
+            open={panelOpen}
+            onClose={() => setPanelOpen(false)}
+            anchorRef={bellRef}
+            notifications={notifications}
+            isLoading={isLoading}
+          />
+        </div>
         <Badge variant="purple" className="hidden px-2 py-1 text-xs font-semibold sm:inline-flex">
           PRO
         </Badge>

@@ -1,0 +1,47 @@
+"use client";
+
+import useSWR from "swr";
+
+import { swrJsonFetcher } from "@/lib/hooks/swr-json-fetcher";
+import type { ActivityType } from "@/lib/mock-data";
+
+const SWR_DEDUP_MS = 30_000;
+
+export type NotificationItem = {
+  id: string;
+  type: ActivityType;
+  message: string;
+  account: string;
+  createdAt: string;
+};
+
+export function useNotifications() {
+  const { data, error, isLoading } = useSWR<{ data?: NotificationItem[] }>(
+    "/api/notifications",
+    swrJsonFetcher,
+    { dedupingInterval: SWR_DEDUP_MS }
+  );
+
+  type ApiRow = {
+    id: string;
+    type: string;
+    message: string;
+    account: string;
+    created_at: string;
+  };
+
+  const raw = (data?.data ?? []) as ApiRow[];
+  const notifications: NotificationItem[] = raw.map((n) => ({
+    id: n.id,
+    type: n.type as ActivityType,
+    message: n.message,
+    account: n.account,
+    createdAt: n.created_at,
+  }));
+
+  return {
+    notifications,
+    isLoading,
+    error: error instanceof Error ? error.message : error ? "Erro" : null,
+  };
+}
