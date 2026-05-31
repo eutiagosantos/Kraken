@@ -1,8 +1,13 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
+import { CalendarDays } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { Reveal } from "@/components/motion/Reveal";
+import {
+  RevealStagger,
+  getStaggerItemVariants,
+} from "@/components/motion/RevealStagger";
 import type { BillingCycle } from "@/lib/pricing";
 import { pricingPlans } from "@/lib/pricing";
 import { cn } from "@/lib/utils";
@@ -10,6 +15,7 @@ import { PricingCard } from "@/components/ui/PricingCard";
 
 export function Pricing() {
   const [billing, setBilling] = useState<BillingCycle>("monthly");
+  const itemVariants = getStaggerItemVariants("up");
 
   return (
     <section id="planos" className="bg-[#FAFAF7] py-24 pb-28">
@@ -21,7 +27,8 @@ export function Pricing() {
           <h2 className="mt-3 tracking-tight text-neutral-black">Planos e preços</h2>
           <p className="mt-4 text-lg leading-relaxed text-neutral-gray">
             Escolha o ritmo da sua operação. Todo plano inclui trial gratuito:{" "}
-            <span className="font-semibold text-brand-purple-dark">
+            <span className="inline-flex items-center gap-2 font-semibold text-brand-purple-dark">
+              <CalendarDays className="h-4 w-4 text-brand-purple" aria-hidden />
               14 dias ou 1.000 anúncios criados — o que vier primeiro
             </span>
             .
@@ -42,7 +49,16 @@ export function Pricing() {
                 <span className="flex items-center gap-2">
                   Anual
                   <motion.span
-                    layout
+                    animate={
+                      billing === "annual"
+                        ? { scale: [1, 1.05, 1] }
+                        : { scale: 1 }
+                    }
+                    transition={{
+                      duration: 2,
+                      repeat: billing === "annual" ? Infinity : 0,
+                      ease: "easeInOut",
+                    }}
                     className="rounded-[6px] bg-semantic-green-bg px-2 py-0.5 text-xs font-semibold text-semantic-green-dark"
                   >
                     −17%
@@ -54,9 +70,9 @@ export function Pricing() {
           <AnimatePresence mode="wait">
             <motion.p
               key={billing}
-              initial={{ opacity: 0, y: 6 }}
+              initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
+              exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.25 }}
               className="text-center text-sm font-medium leading-[1.43] text-neutral-gray"
             >
@@ -67,10 +83,14 @@ export function Pricing() {
           </AnimatePresence>
         </Reveal>
 
-        <div className="mt-14 grid gap-8 lg:grid-cols-3 lg:items-start">
+        <RevealStagger
+          className="mt-14 grid gap-8 lg:grid-cols-3 lg:items-start"
+          staggerDelay={0.15}
+        >
           {pricingPlans.map((plan) => (
-            <div
+            <motion.div
               key={plan.id}
+              variants={itemVariants}
               className={cn(
                 plan.highlighted && "max-lg:order-1",
                 plan.id === "starter" && "max-lg:order-2",
@@ -78,9 +98,9 @@ export function Pricing() {
               )}
             >
               <PricingCard plan={plan} billing={billing} />
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </RevealStagger>
       </div>
     </section>
   );

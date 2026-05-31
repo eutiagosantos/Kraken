@@ -1,33 +1,42 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { EyeOff, Link2, Shuffle } from "lucide-react";
 import { Reveal } from "@/components/motion/Reveal";
-import { RevealStagger, staggerItemVariants } from "@/components/motion/RevealStagger";
+import {
+  CamouflagedLinkIcon,
+  HiddenCreativeIcon,
+  ShufflePagesIcon,
+} from "@/components/icons/AntiSpyIcons";
+import {
+  RevealStagger,
+  getStaggerItemVariants,
+} from "@/components/motion/RevealStagger";
 
 const cards = [
   {
     title: "Randomize FanPages",
     desc: "Poucos anúncios por Fan Page para diluir padrões e reduzir correlações.",
-    icon: Shuffle,
+    Icon: ShufflePagesIcon,
   },
   {
     title: "Link de exibição camuflado",
     desc: "Evita rastreamento direto de Fan Pages e reduz exposição na biblioteca.",
-    icon: Link2,
+    Icon: CamouflagedLinkIcon,
   },
   {
     title: "Esconda seus Criativos",
     desc: "Modo catálogo e camadas adicionais dificultam cópia e espionagem.",
-    icon: EyeOff,
+    Icon: HiddenCreativeIcon,
   },
 ];
 
 export function AntiSpy() {
+  const itemVariants = getStaggerItemVariants("up");
+
   return (
     <section
       id="anti-spy"
-      className="relative overflow-hidden section-band-lavender py-24"
+      className="relative overflow-hidden section-band-lavender landing-grain py-24"
     >
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <div className="grid gap-14 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-start lg:gap-16">
@@ -44,28 +53,39 @@ export function AntiSpy() {
             </p>
           </Reveal>
 
-          <RevealStagger className="flex flex-col gap-4">
-            {cards.map((c, index) => (
+          <RevealStagger className="flex flex-col gap-4" staggerDelay={0.15}>
+            {cards.map((card, index) => (
               <motion.div
-                key={c.title}
-                variants={staggerItemVariants}
-                whileHover={{ x: 4 }}
-                className="group flex gap-5 rounded-2xl border border-white/80 bg-white/70 p-6 shadow-subtle backdrop-blur-sm transition-shadow hover:bg-white hover:shadow-micro"
+                key={card.title}
+                variants={itemVariants}
+                whileHover={{ scale: 1.03 }}
+                transition={{ duration: 0.2 }}
+                className="group relative flex gap-5 overflow-hidden rounded-2xl border border-white/80 bg-white/70 p-6 shadow-subtle backdrop-blur-sm transition-shadow hover:bg-white hover:shadow-micro"
               >
+                <span
+                  className="absolute bottom-0 left-0 top-0 w-1 origin-top scale-y-0 bg-brand-purple transition-transform duration-200 group-hover:scale-y-100"
+                  aria-hidden
+                />
                 <div className="flex shrink-0 flex-col items-center gap-3">
                   <span className="font-display text-xs font-bold tabular-nums text-brand-purple/50">
                     {String(index + 1).padStart(2, "0")}
                   </span>
-                  <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-brand-purple/15 bg-brand-purple-subtle text-brand-purple transition-colors group-hover:border-brand-purple/30 group-hover:bg-brand-purple group-hover:text-white">
-                    <c.icon className="h-5 w-5" strokeWidth={1.75} />
+                  <div className="flex h-14 w-14 items-center justify-center rounded-xl border border-brand-purple/15 bg-brand-purple-subtle text-brand-purple transition-colors group-hover:border-brand-purple/30 group-hover:bg-brand-purple group-hover:text-white">
+                    <motion.div
+                      className="h-8 w-8"
+                      whileHover={{ rotate: -8, scale: 1.1 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <card.Icon className="h-full w-full" />
+                    </motion.div>
                   </div>
                 </div>
                 <div className="min-w-0 flex-1 pt-0.5">
                   <h3 className="font-ui text-lg font-semibold leading-snug text-neutral-black">
-                    {c.title}
+                    {card.title}
                   </h3>
                   <p className="mt-2 text-sm leading-relaxed text-neutral-gray">
-                    {c.desc}
+                    {card.desc}
                   </p>
                 </div>
               </motion.div>

@@ -132,4 +132,93 @@
       #dedee5 100%
     );
   }
+
+  .nav-link-underline {
+    position: relative;
+    display: inline-block;
+  }
+
+  .nav-link-underline::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: -4px;
+    width: 100%;
+    height: 2px;
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.25s ease;
+    background: #7132f5;
+  }
+
+  .nav-link-underline:hover::after,
+  .nav-link-underline:focus-visible::after {
+    transform: scaleX(1);
+  }
+
+  .nav-link-underline-light::after {
+    background: rgba(255, 255, 255, 0.85);
+  }
+
+  .btn-shimmer {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-shimmer::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-120%) skewX(-18deg);
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.35),
+      transparent
+    );
+    transition: transform 0.6s ease;
+  }
+
+  .btn-shimmer:hover::after {
+    transform: translateX(120%) skewX(-18deg);
+  }
+
+  .pricing-card-pro {
+    background: conic-gradient(
+      from var(--pricing-border-angle, 0deg),
+      #7132f5,
+      #5741d8,
+      #9b6bff,
+      #7132f5
+    );
+    animation: border-rotate 4s linear infinite;
+  }
+
+  @property --pricing-border-angle {
+    syntax: "<angle>";
+    initial-value: 0deg;
+    inherits: false;
+  }
+
+  @keyframes border-rotate {
+    to {
+      --pricing-border-angle: 360deg;
+    }
+  }
+
+  @keyframes shimmer {
+    100% {
+      transform: translateX(120%) skewX(-18deg);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .pricing-card-pro {
+      animation: none;
+    }
+
+    .btn-shimmer::after {
+      display: none;
+    }
+  }
 }

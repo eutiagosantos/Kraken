@@ -17,7 +17,7 @@ const AVATAR_PALETTE = [
 ] as const;
 
 /** Deterministic index 0..palette-1 from any string (e.g. account name). */
-export function stringHashCode(s: string): number {
+function stringHashCode(s: string): number {
   let h = 0;
   for (let i = 0; i < s.length; i++) h = (Math.imul(31, h) + s.charCodeAt(i)) | 0;
   return Math.abs(h);

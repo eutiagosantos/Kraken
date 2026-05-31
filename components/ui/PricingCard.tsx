@@ -1,7 +1,7 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { Check } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Check, Star } from "lucide-react";
 import type { BillingCycle, PricingPlan } from "@/lib/pricing";
 import { formatBRL } from "@/lib/pricing";
 import { cn } from "@/lib/utils";
@@ -18,53 +18,39 @@ export function PricingCard({ plan, billing }: PricingCardProps) {
     billing === "monthly" ? plan.monthlyPrice : plan.annualPricePerMonth;
   const highlighted = plan.highlighted;
 
-  return (
-    <motion.div
-      layout
-      whileHover={{
-        y: highlighted ? -2 : -4,
-        boxShadow: highlighted
-          ? "0px 12px 40px rgba(113, 50, 245, 0.14)"
-          : "0px 4px 24px rgba(0, 0, 0, 0.05)",
-      }}
-      transition={{ duration: 0.25 }}
-      className={cn(
-        "relative flex h-full flex-col overflow-hidden rounded-card border bg-white p-8 max-sm:p-6",
-        highlighted
-          ? "z-[1] border-brand-purple shadow-card ring-1 ring-brand-purple/20"
-          : "border-neutral-border shadow-subtle"
-      )}
-    >
+  const cardContent = (
+    <>
       {highlighted && (
-        <div
-          className="absolute inset-x-0 top-0 h-1 bg-brand-purple"
-          aria-hidden
-        />
+        <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-brand-purple to-brand-purple-dark px-3 py-1 text-xs font-semibold text-white">
+          <Star className="h-3.5 w-3.5 fill-current" aria-hidden />
+          Mais Popular
+        </div>
       )}
 
       <div className="mb-6 flex flex-wrap items-center gap-2">
-        <Badge variant={highlighted ? "purple" : "neutral"}>
-          {plan.badge}
-        </Badge>
+        <Badge variant={highlighted ? "purple" : "neutral"}>{plan.badge}</Badge>
       </div>
       <h3 className="font-display text-2xl font-bold text-neutral-black">
         {plan.name}
       </h3>
       <p className="mt-2 text-sm text-neutral-gray">{plan.description}</p>
 
-      <div className="mt-8 flex flex-col gap-1">
-        <motion.div
-          key={`${plan.id}-${billing}`}
-          initial={{ opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, ease: "easeOut" }}
-          className="flex items-baseline gap-1"
-        >
-          <span className="font-display text-4xl font-extrabold tracking-tight text-neutral-black">
-            {formatBRL(price)}
-          </span>
-          <span className="text-neutral-gray">/mês</span>
-        </motion.div>
+      <div className="mt-8 flex min-h-[4.5rem] flex-col gap-1">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={`${plan.id}-${billing}`}
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
+            className="flex items-baseline gap-1"
+          >
+            <span className="font-display text-4xl font-extrabold tracking-tight text-neutral-black">
+              {formatBRL(price)}
+            </span>
+            <span className="text-neutral-gray">/mês</span>
+          </motion.div>
+        </AnimatePresence>
         {billing === "annual" && (
           <p className="text-xs font-medium text-semantic-green">
             Cobrança anual · equivalente ao valor mensal acima
@@ -78,13 +64,13 @@ export function PricingCard({ plan, billing }: PricingCardProps) {
       </p>
 
       <ul className="mt-8 flex flex-1 flex-col gap-3">
-        {plan.features.map((f) => (
-          <li key={f} className="flex gap-3 text-sm text-neutral-black">
+        {plan.features.map((feature) => (
+          <li key={feature} className="flex gap-3 text-sm text-neutral-black">
             <Check
               className="mt-0.5 h-5 w-5 shrink-0 text-brand-purple"
               aria-hidden
             />
-            <span>{f}</span>
+            <span>{feature}</span>
           </li>
         ))}
       </ul>
@@ -92,10 +78,31 @@ export function PricingCard({ plan, billing }: PricingCardProps) {
       <MarketingButton
         href={plan.id === "enterprise" ? undefined : "/cadastro"}
         variant={highlighted ? "primary" : "outlined"}
-        className="mt-10 w-full"
+        className={cn("mt-10 w-full", highlighted && "btn-shimmer")}
       >
         {plan.cta}
       </MarketingButton>
+    </>
+  );
+
+  return (
+    <motion.div
+      whileHover={{ y: -6 }}
+      transition={{ duration: 0.25 }}
+      className={cn(
+        "relative flex h-full flex-col",
+        highlighted && "pricing-card-pro rounded-card p-[2px]"
+      )}
+    >
+      {highlighted ? (
+        <div className="relative flex h-full flex-col overflow-hidden rounded-[14px] bg-white p-8 shadow-card max-sm:p-6">
+          {cardContent}
+        </div>
+      ) : (
+        <div className="relative flex h-full flex-col overflow-hidden rounded-card border border-neutral-border bg-white p-8 shadow-subtle max-sm:p-6">
+          {cardContent}
+        </div>
+      )}
     </motion.div>
   );
 }

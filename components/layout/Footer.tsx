@@ -1,6 +1,10 @@
+"use client";
+
 import Link from "next/link";
-import { KrakenMarkTile } from "@/components/branding/KrakenMarkTile";
+import { motion } from "framer-motion";
 import { Instagram, MessageCircle } from "lucide-react";
+import { KrakenMarkTile } from "@/components/branding/KrakenMarkTile";
+import { Reveal } from "@/components/motion/Reveal";
 
 const columns = [
   {
@@ -34,8 +38,20 @@ const columns = [
 
 export function Footer() {
   return (
-    <footer className="bg-neutral-black text-neutral-border">
-      <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
+    <footer className="relative bg-neutral-black text-neutral-border">
+      <svg
+        viewBox="0 0 1440 48"
+        preserveAspectRatio="none"
+        className="pointer-events-none absolute -top-px left-0 h-6 w-full text-neutral-black"
+        aria-hidden
+      >
+        <path
+          d="M0 24 C240 0 480 48 720 24 C960 0 1200 48 1440 24 L1440 48 L0 48 Z"
+          fill="currentColor"
+        />
+      </svg>
+
+      <Reveal className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8" direction="up">
         <div className="flex flex-col gap-12 lg:flex-row lg:justify-between">
           <div className="max-w-sm">
             <Link
@@ -58,13 +74,13 @@ export function Footer() {
                   {col.title}
                 </p>
                 <ul className="mt-4 space-y-3">
-                  {col.links.map((l) => (
-                    <li key={l.label}>
+                  {col.links.map((link) => (
+                    <li key={link.label}>
                       <Link
-                        href={l.href}
-                        className="text-sm text-neutral-silver transition-colors hover:text-neutral-white"
+                        href={link.href}
+                        className="nav-link-underline nav-link-underline-light text-sm text-neutral-silver transition-colors hover:text-neutral-white"
                       >
-                        {l.label}
+                        {link.label}
                       </Link>
                     </li>
                   ))}
@@ -74,7 +90,7 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="section-divider my-12 opacity-40" />
+        <div className="editorial-rule my-12 opacity-40" />
 
         <div className="flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-center">
           <p className="text-sm text-neutral-silver">
@@ -82,23 +98,27 @@ export function Footer() {
             reservados.
           </p>
           <div className="flex items-center gap-4">
-            <Link
-              href="https://instagram.com"
-              aria-label="Instagram"
-              className="rounded-full border border-white/10 p-2 text-neutral-silver transition-colors hover:border-brand-purple hover:text-neutral-white"
-            >
-              <Instagram className="h-5 w-5" />
-            </Link>
-            <Link
-              href="https://wa.me"
-              aria-label="WhatsApp"
-              className="rounded-full border border-white/10 p-2 text-neutral-silver transition-colors hover:border-brand-purple hover:text-neutral-white"
-            >
-              <MessageCircle className="h-5 w-5" />
-            </Link>
+            <motion.div whileHover={{ scale: 1.2, rotate: -10 }}>
+              <Link
+                href="https://instagram.com"
+                aria-label="Instagram"
+                className="inline-flex rounded-full border border-white/10 p-2 text-neutral-silver transition-colors hover:border-brand-purple hover:text-neutral-white"
+              >
+                <Instagram className="h-5 w-5" />
+              </Link>
+            </motion.div>
+            <motion.div whileHover={{ scale: 1.2, rotate: 10 }}>
+              <Link
+                href="https://wa.me"
+                aria-label="WhatsApp"
+                className="inline-flex rounded-full border border-white/10 p-2 text-neutral-silver transition-colors hover:border-brand-purple hover:text-neutral-white"
+              >
+                <MessageCircle className="h-5 w-5" />
+              </Link>
+            </motion.div>
           </div>
         </div>
-      </div>
+      </Reveal>
     </footer>
   );
 }

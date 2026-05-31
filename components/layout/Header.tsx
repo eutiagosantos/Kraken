@@ -36,9 +36,12 @@ export function Header() {
 
   return (
     <>
-      <header
+      <motion.header
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
         className={cn(
-          "sticky top-0 z-50 border-b border-neutral-border/60 bg-[#FAFAF7]/90 backdrop-blur-md transition-shadow duration-300",
+          "sticky top-0 z-50 border-b border-neutral-border/60 bg-[#FAFAF7]/90 backdrop-blur-md transition-[box-shadow] duration-300 ease-in-out",
           scrolled && "shadow-micro"
         )}
       >
@@ -57,7 +60,7 @@ export function Header() {
               <Link
                 key={item.href}
                 href={item.href}
-                className="text-sm font-semibold text-neutral-gray transition-colors hover:text-neutral-black"
+                className="nav-link-underline text-sm font-semibold text-neutral-gray transition-colors hover:text-neutral-black"
               >
                 {item.label}
               </Link>
@@ -75,14 +78,14 @@ export function Header() {
             <MarketingButton
               href="/cadastro"
               variant="subtle"
-              className="px-4 py-2.5 text-sm"
+              className="btn-shimmer px-4 py-2.5 text-sm"
             >
               Cadastrar
             </MarketingButton>
             <MarketingButton
               href="#planos"
               variant="primary"
-              className="px-4 py-2.5 text-sm"
+              className="btn-shimmer px-4 py-2.5 text-sm"
             >
               Ver Planos
             </MarketingButton>
@@ -92,12 +95,12 @@ export function Header() {
             type="button"
             className="inline-flex rounded-lg border border-neutral-border p-2 md:hidden"
             aria-label={open ? "Fechar menu" : "Abrir menu"}
-            onClick={() => setOpen((v) => !v)}
+            onClick={() => setOpen((value) => !value)}
           >
             {open ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
           </button>
         </div>
-      </header>
+      </motion.header>
 
       <AnimatePresence>
         {open && (
@@ -155,7 +158,7 @@ export function Header() {
                 <MarketingButton
                   href="/cadastro"
                   variant="subtle"
-                  className="w-full"
+                  className="btn-shimmer w-full"
                   onClick={() => setOpen(false)}
                 >
                   Cadastrar
@@ -163,7 +166,7 @@ export function Header() {
                 <MarketingButton
                   href="#planos"
                   variant="primary"
-                  className="w-full"
+                  className="btn-shimmer w-full"
                   onClick={() => setOpen(false)}
                 >
                   Ver Planos

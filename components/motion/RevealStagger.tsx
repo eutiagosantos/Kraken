@@ -1,18 +1,46 @@
 "use client";
 
-import { motion, useInView } from "framer-motion";
-import { useRef, type ReactNode } from "react";
+import { motion, useInView, useReducedMotion } from "framer-motion";
+import { useMemo, useRef, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
-import { containerVariants, fadeUpVariants } from "./variants";
+import {
+  createContainerVariants,
+  createStaggerItemVariants,
+  fadeUpVariants,
+  type RevealDirection,
+} from "./variants";
 
-type RevealStaggerProps = {
+export interface RevealStaggerProps {
   children: ReactNode;
   className?: string;
-};
+  staggerDelay?: number;
+  direction?: RevealDirection;
+  amount?: number;
+  once?: boolean;
+}
 
-export function RevealStagger({ children, className }: RevealStaggerProps) {
+export function RevealStagger({
+  children,
+  className,
+  staggerDelay = 0.12,
+  direction = "up",
+  amount = 0.2,
+  once = true,
+}: RevealStaggerProps) {
   const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: "-80px" });
+  const shouldReduceMotion = useReducedMotion();
+  const isInView = useInView(ref, { once, amount, margin: "-80px" });
+
+  const containerVariants = useMemo(() => {
+    if (shouldReduceMotion) {
+      return {
+        hidden: {},
+        visible: {},
+      };
+    }
+
+    return createContainerVariants(staggerDelay);
+  }, [shouldReduceMotion, staggerDelay]);
 
   return (
     <motion.div
@@ -20,6 +48,7 @@ export function RevealStagger({ children, className }: RevealStaggerProps) {
       initial="hidden"
       animate={isInView ? "visible" : "hidden"}
       variants={containerVariants}
+      data-stagger-direction={direction}
       className={cn(className)}
     >
       {children}
@@ -28,3 +57,7 @@ export function RevealStagger({ children, className }: RevealStaggerProps) {
 }
 
 export const staggerItemVariants = fadeUpVariants;
+
+export function getStaggerItemVariants(direction: RevealDirection = "up") {
+  return createStaggerItemVariants(direction);
+}

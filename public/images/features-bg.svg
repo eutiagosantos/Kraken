@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" fill="none" aria-hidden="true">
+  <defs>
+    <pattern id="iso-grid" width="48" height="28" patternUnits="userSpaceOnUse" patternTransform="skewY(-12)">
+      <path d="M0 14 H48 M24 0 V28" stroke="#7132f5" stroke-opacity="0.18" stroke-width="0.75"/>
+    </pattern>
+  </defs>
+  <rect width="800" height="600" fill="url(#iso-grid)"/>
+  <path d="M120 520 L280 440 L440 500 L600 420 L760 480" stroke="#7132f5" stroke-opacity="0.12" stroke-width="1"/>
+  <path d="M80 360 L240 300 L400 340 L560 280 L720 320" stroke="#7132f5" stroke-opacity="0.1" stroke-width="1"/>
+</svg>

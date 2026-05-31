@@ -1,8 +1,12 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { benefitIcons } from "@/components/icons/BenefitIcons";
 import { Reveal } from "@/components/motion/Reveal";
-import { RevealStagger, staggerItemVariants } from "@/components/motion/RevealStagger";
+import {
+  RevealStagger,
+  getStaggerItemVariants,
+} from "@/components/motion/RevealStagger";
 
 const benefits = [
   {
@@ -38,10 +42,12 @@ const benefits = [
 ];
 
 export function Benefits() {
+  const itemVariants = getStaggerItemVariants("up");
+
   return (
     <section id="beneficios" className="bg-[#FAFAF7] py-24">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-        <Reveal className="max-w-2xl">
+        <Reveal className="max-w-2xl" direction="left">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-silver">
             Benefícios
           </p>
@@ -54,31 +60,45 @@ export function Benefits() {
           </p>
         </Reveal>
 
-        <RevealStagger className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {benefits.map((b, index) => (
-            <motion.div
-              key={b.title}
-              variants={staggerItemVariants}
-              className={`group relative flex h-full flex-col overflow-hidden rounded-2xl border border-neutral-border bg-white p-6 transition-shadow hover:shadow-subtle ${b.span}`}
-            >
-              <div
-                className="absolute left-0 top-0 h-0.5 w-8 bg-brand-purple/30 transition-all group-hover:w-full group-hover:bg-brand-purple"
-                aria-hidden
-              />
-              <span
-                className="font-display text-4xl font-bold tabular-nums leading-none text-brand-purple/20 transition-colors group-hover:text-brand-purple/30"
-                aria-hidden
+        <RevealStagger
+          className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+          staggerDelay={0.1}
+        >
+          {benefits.map((benefit, index) => {
+            const Icon = benefitIcons[index] ?? benefitIcons[0];
+
+            return (
+              <motion.div
+                key={benefit.title}
+                variants={itemVariants}
+                className={`group relative flex h-full flex-col overflow-hidden rounded-2xl border border-neutral-border bg-transparent p-6 transition-all duration-300 hover:bg-brand-purple/[0.04] hover:shadow-md ${benefit.span}`}
               >
-                {String(index + 1).padStart(2, "0")}
-              </span>
-              <h3 className="mt-3 font-ui text-lg font-semibold leading-snug text-neutral-black">
-                {b.title}
-              </h3>
-              <p className="mt-2 flex-1 text-sm leading-relaxed text-neutral-gray">
-                {b.desc}
-              </p>
-            </motion.div>
-          ))}
+                <div
+                  className="absolute left-0 top-0 h-0.5 w-8 bg-brand-purple/30 transition-all group-hover:w-full group-hover:bg-brand-purple"
+                  aria-hidden
+                />
+                <motion.div
+                  className="flex h-11 w-11 items-center justify-center rounded-xl border border-brand-purple/15 bg-brand-purple-subtle text-brand-purple"
+                  whileHover={{ y: -4 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <Icon className="h-6 w-6" aria-hidden />
+                </motion.div>
+                <span
+                  className="mt-4 font-display text-4xl font-bold tabular-nums leading-none text-brand-purple/20 transition-colors group-hover:text-brand-purple/30"
+                  aria-hidden
+                >
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+                <h3 className="mt-3 font-ui text-lg font-semibold leading-snug text-neutral-black">
+                  {benefit.title}
+                </h3>
+                <p className="mt-2 flex-1 text-sm leading-relaxed text-neutral-gray">
+                  {benefit.desc}
+                </p>
+              </motion.div>
+            );
+          })}
         </RevealStagger>
       </div>
     </section>
