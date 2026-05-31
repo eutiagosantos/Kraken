@@ -5,12 +5,12 @@ export default defineConfig({
   test: {
     environment: "node",
     globals: false,
-    include: ["lib/**/*.test.ts"],
+    include: ["src/lib/**/*.test.ts"],
   },
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "."),
-      "server-only": path.resolve(__dirname, "lib/__mocks__/server-only.ts"),
+      "@": path.resolve(__dirname, "./src"),
+      "server-only": path.resolve(__dirname, "src/lib/__mocks__/server-only.ts"),
     },
   },
 });
