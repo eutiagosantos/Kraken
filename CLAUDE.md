@@ -83,6 +83,7 @@ SWR hooks in `lib/hooks/` (`useCampanhas`, `useContasMeta`, `useKrakenUser`, etc
 - Env: `KRAKEN_ENCRYPTION_KEY` (32 bytes, hex or UTF-8) — required to save secrets via `POST /api/user/meta-app`
   - Generate: `openssl rand -hex 32` (64 hex chars) or `openssl rand -base64 32`
   - Vercel: set on **Production** (not `NEXT_PUBLIC_`); **redeploy** after add/change — env vars are not injected into existing deployments
+- Env: `SUPABASE_JWT_SECRET` — JWT signing secret from Supabase **Project Settings → API → JWT Settings** (used by `/api/auth/supabase-token` for wizard Storage uploads with Clerk auth). Not the anon key. Redeploy after change.
 - UI: `/configuracoes` → **App Meta (Developer)**
 - `resolveMetaAppCredentials()` in `lib/meta/resolve-app-credentials.ts` — used by publish + `debug_token` / `appsecret_proof`; falls back to `META_APP_ID` / `META_APP_SECRET`
 
