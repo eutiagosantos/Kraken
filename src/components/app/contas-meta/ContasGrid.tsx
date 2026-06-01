@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import type { ContaMeta } from "@/lib/mock-contas";
+import type { ContaMeta } from "@/libs/mock-contas";
 import { ConnectNewCard } from "./ConnectNewCard";
 import { ContaCard } from "./ContaCard";
 

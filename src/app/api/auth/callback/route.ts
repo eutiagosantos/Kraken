@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 
-import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { createServerSupabaseClient } from "@/libs/supabase/server";
 
 function safeInternalPath(next: string | null): string {
   const fallback = "/home";

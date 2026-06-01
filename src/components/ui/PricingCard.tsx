@@ -2,9 +2,9 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { Check, Star } from "lucide-react";
-import type { BillingCycle, PricingPlan } from "@/lib/pricing";
-import { formatBRL } from "@/lib/pricing";
-import { cn } from "@/lib/utils";
+import type { BillingCycle, PricingPlan } from "@/libs/pricing";
+import { formatBRL } from "@/libs/pricing";
+import { cn } from "@/libs/utils";
 import { Badge } from "./Badge";
 import { MarketingButton } from "./MarketingButton";
 

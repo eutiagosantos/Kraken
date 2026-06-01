@@ -1,6 +1,6 @@
 "use client";
 
-import { cn, avatarBgColorForName, avatarInitials } from "@/lib/utils";
+import { cn, avatarBgColorForName, avatarInitials } from "@/libs/utils";
 
 const sizeClass = {
   sm: "h-9 w-9 text-xs",

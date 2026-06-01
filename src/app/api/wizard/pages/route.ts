@@ -1,16 +1,16 @@
 import { NextResponse } from "next/server";
 
-import { getSessionUser } from "@/lib/api/session";
-import { fetchUserFacebookPages, mapUserFacebookPagesToPublic } from "@/lib/meta/graph-user-pages";
-import { getMetaGraphAccessToken } from "@/lib/meta/graph-token";
+import { getSessionUser } from "@/libs/api/session";
+import { fetchUserFacebookPages, mapUserFacebookPagesToPublic } from "@/libs/meta/graph-user-pages";
+import { getMetaGraphAccessToken } from "@/libs/meta/graph-token";
 
 export async function GET() {
-  const { supabase, user } = await getSessionUser();
+  const { user } = await getSessionUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
-  const tokenRes = await getMetaGraphAccessToken(supabase, user.id);
+  const tokenRes = await getMetaGraphAccessToken(user.id);
   if ("error" in tokenRes) {
     return NextResponse.json({ error: tokenRes.error }, { status: 400 });
   }

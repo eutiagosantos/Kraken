@@ -1,5 +1,5 @@
 import { Play, X } from "lucide-react";
-import type { Creative } from "@/lib/stores/wizardStore";
+import type { Creative } from "@/libs/stores/wizardStore";
 
 const META_PRIMARY_TEXT_MAX = 2000;
 const META_CREATIVE_NAME_MAX = 256;

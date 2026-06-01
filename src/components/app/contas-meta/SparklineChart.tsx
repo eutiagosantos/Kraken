@@ -1,7 +1,7 @@
 "use client";
 
 import { Area, AreaChart, ResponsiveContainer, Tooltip } from "recharts";
-import { useIsClient } from "@/lib/hooks/use-is-client";
+import { useIsClient } from "@/libs/hooks/use-is-client";
 
 export function SparklineChart({
   data,

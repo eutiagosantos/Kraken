@@ -3,9 +3,9 @@
 import useSWR from "swr";
 
 import { PublicationQueuePanel } from "@/components/publication-queue/PublicationQueuePanel";
-import type { PublicationQueueSummary } from "@/lib/publication-queue/compute-panel-summary";
-import { swrJsonFetcher } from "@/lib/hooks/swr-json-fetcher";
-import { cn } from "@/lib/utils";
+import type { PublicationQueueSummary } from "@/libs/publication-queue/compute-panel-summary";
+import { swrJsonFetcher } from "@/libs/hooks/swr-json-fetcher";
+import { cn } from "@/libs/utils";
 
 type ApiResponse = {
   data?: PublicationQueueSummary;

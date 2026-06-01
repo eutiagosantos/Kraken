@@ -5,9 +5,9 @@ import { useState } from "react";
 import { mutate } from "swr";
 
 import { Button } from "@/components/ui/Button";
-import { useUserMetaApp } from "@/lib/hooks/useUserMetaApp";
-import { REQUIRED_TOKEN_SCOPES } from "@/lib/meta/required-token-scopes";
-import { cn } from "@/lib/utils";
+import { useUserMetaApp } from "@/libs/hooks/useUserMetaApp";
+import { REQUIRED_TOKEN_SCOPES } from "@/libs/meta/required-token-scopes";
+import { cn } from "@/libs/utils";
 
 export const META_ACCESS_TOKEN_SETTINGS_HREF = "/configuracoes#meta-access-token";
 

@@ -4,8 +4,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Copy, Download, Eye, MoreHorizontal, Pause, Pencil, Play, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { useClickOutside } from "@/lib/hooks/useClickOutside";
-import type { Campanha } from "@/lib/mock-campanhas";
+import { useClickOutside } from "@/libs/hooks/useClickOutside";
+import type { Campanha } from "@/libs/mock-campanhas";
 
 const MENU_MIN_WIDTH = 220;
 const MENU_GAP = 4;

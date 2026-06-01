@@ -14,12 +14,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/Tooltip";
-import { formatBrl } from "@/lib/format-currency";
-import { cn } from "@/lib/utils";
+import { formatBrl } from "@/libs/format-currency";
+import { cn } from "@/libs/utils";
 import type {
   UploadJobErrorDetailsV1,
   UploadJobSummaryV1,
-} from "@/lib/api/upload-job-summary-schema";
+} from "@/libs/api/upload-job-summary-schema";
 
 export type UploadJobListRow = {
   id: string;

@@ -2,7 +2,6 @@
 //
 // Escopo de agendamento (voo, dayparting, frequência): aplicado apenas na criação via este POST.
 // Alterar campanhas/conjuntos já existentes no Meta (PATCH / UI Campanhas) está fora do âmbito actual.
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
@@ -10,28 +9,34 @@ export const runtime = "nodejs";
 // no Vercel Hobby; 300 s é o máximo permitido no plano Pro.
 export const maxDuration = 300;
 
-import { getSessionUser } from "@/lib/api/session";
-import { invalidateUserDataShortCache } from "@/lib/api/user-data-short-cache";
-import { normalizeActId } from "@/lib/meta/graph-campaign-publish";
-import { fetchUserFacebookPages, pageIdInUserPages } from "@/lib/meta/graph-user-pages";
-import { getMetaGraphAccessToken } from "@/lib/meta/graph-token";
-import { wizardPublishPayloadSchema } from "@/lib/meta/map-wizard-to-graph";
-import { GraphApiError } from "@/lib/meta/graph-client";
+import { getSessionUser } from "@/libs/api/session";
+import { invalidateUserDataShortCache } from "@/libs/api/user-data-short-cache";
+import { listMetaAdAccountsByMetaIdsForUser } from "@/libs/database/queries/meta-ad-accounts";
+import {
+  getUploadJobForPublish,
+  getUploadJobStatus,
+  markUploadJobError,
+} from "@/libs/database/queries/upload-jobs";
+import { normalizeActId } from "@/libs/meta/graph-campaign-publish";
+import { fetchUserFacebookPages, pageIdInUserPages } from "@/libs/meta/graph-user-pages";
+import { getMetaGraphAccessToken } from "@/libs/meta/graph-token";
+import { wizardPublishPayloadSchema } from "@/libs/meta/map-wizard-to-graph";
+import { GraphApiError } from "@/libs/meta/graph-client";
 import {
   humanizeMetaObjectNotFoundError,
   isMetaObjectNotFoundError,
-} from "@/lib/meta/humanize-graph-publish-error";
-import { scheduleBackgroundWork } from "@/lib/api/schedule-background-work";
-import { shouldDeferWizardPublish } from "@/lib/meta/publish-concurrency";
-import { adsetAndAdsCountsForWizardShape } from "@/lib/meta/map-wizard-to-graph";
-import { resolveMetaAppCredentials } from "@/lib/meta/resolve-app-credentials";
-import { runWizardPublish, type PublishUnitResult } from "@/lib/meta/publish-campaigns";
-import type { Database } from "@/lib/supabase/types";
+} from "@/libs/meta/humanize-graph-publish-error";
+import { scheduleBackgroundWork } from "@/libs/api/schedule-background-work";
+import { shouldDeferWizardPublish } from "@/libs/meta/publish-concurrency";
+import { adsetAndAdsCountsForWizardShape } from "@/libs/meta/map-wizard-to-graph";
+import { resolveMetaAppCredentials } from "@/libs/meta/resolve-app-credentials";
+import { runWizardPublish, type PublishUnitResult } from "@/libs/meta/publish-campaigns";
+import { getStorageSupabaseClient } from "@/libs/supabase/storage-server";
 import {
   humanizeWizardCreativeStorageDownloadError,
   validateCreativeStoragePathsForUser,
   WIZARD_CREATIVES_BUCKET,
-} from "@/lib/wizard/wizard-creatives-bucket";
+} from "@/libs/wizard/wizard-creatives-bucket";
 
 function orderSelectedAccounts(
   selectedRaw: string[],
@@ -55,11 +60,9 @@ function mimeFromCreativeType(type: "image" | "video", blobType: string | undefi
   return type === "image" ? "image/jpeg" : "video/mp4";
 }
 
-async function removeStorageObjects(
-  supabase: SupabaseClient<Database>,
-  paths: string[]
-): Promise<void> {
+async function removeStorageObjects(paths: string[]): Promise<void> {
   if (paths.length === 0) return;
+  const supabase = getStorageSupabaseClient();
   const { error } = await supabase.storage.from(WIZARD_CREATIVES_BUCKET).remove(paths);
   if (error) {
     console.warn("[wizard/publish] storage cleanup:", error.message);
@@ -67,7 +70,7 @@ async function removeStorageObjects(
 }
 
 export async function POST(request: Request) {
-  const { supabase, user } = await getSessionUser();
+  const { user } = await getSessionUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
@@ -106,14 +109,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: pathErr }, { status: 400 });
     }
 
-    const { data: pendingJob, error: jobLookupErr } = await supabase
-      .from("upload_jobs")
-      .select("id,status")
-      .eq("id", parsed.data.publishOperationId)
-      .eq("user_id", user.id)
-      .maybeSingle();
+    const pendingJob = await getUploadJobForPublish(user.id, parsed.data.publishOperationId);
 
-    if (jobLookupErr || !pendingJob) {
+    if (!pendingJob) {
       return NextResponse.json(
         { error: "Operação de publicação inválida ou não encontrada." },
         { status: 400 }
@@ -142,7 +140,7 @@ export async function POST(request: Request) {
       process.env.META_AD_LINK_URL?.trim() ||
       "https://www.facebook.com/business";
 
-    const tokenRes = await getMetaGraphAccessToken(supabase, user.id);
+    const tokenRes = await getMetaGraphAccessToken(user.id);
     if ("error" in tokenRes) {
       return NextResponse.json({ error: tokenRes.error }, { status: 400 });
     }
@@ -167,16 +165,14 @@ export async function POST(request: Request) {
     }
 
     const normIds = Array.from(new Set(parsed.data.selectedAccountIds.map((id) => normalizeActId(id))));
-    const { data: accountRows, error: accErr } = await supabase
-      .from("meta_ad_accounts")
-      .select("meta_account_id, name")
-      .eq("user_id", user.id)
-      .in("meta_account_id", normIds);
-
-    if (accErr) {
-      return NextResponse.json({ error: accErr.message }, { status: 500 });
+    let accountRows: Array<{ meta_account_id: string; name: string }>;
+    try {
+      accountRows = await listMetaAdAccountsByMetaIdsForUser(user.id, normIds);
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "query_failed";
+      return NextResponse.json({ error: message }, { status: 500 });
     }
-    if (!accountRows?.length || accountRows.length !== normIds.length) {
+    if (!accountRows.length || accountRows.length !== normIds.length) {
       return NextResponse.json(
         { error: "Uma ou mais contas selecionadas não existem ou não pertencem ao teu utilizador." },
         { status: 400 }
@@ -185,11 +181,12 @@ export async function POST(request: Request) {
 
     const accountsOrdered = orderSelectedAccounts(parsed.data.selectedAccountIds, accountRows);
     const storagePaths = parsed.data.creativeStoragePaths;
+    const storage = getStorageSupabaseClient();
     const creativeFilesByIndex = new Map<number, { buffer: Buffer; mimeType: string }>();
 
     for (let i = 0; i < parsed.data.creatives.length; i++) {
       const path = storagePaths[i];
-      const { data: blob, error: dlErr } = await supabase.storage.from(WIZARD_CREATIVES_BUCKET).download(path);
+      const { data: blob, error: dlErr } = await storage.storage.from(WIZARD_CREATIVES_BUCKET).download(path);
       if (dlErr || !blob) {
         return NextResponse.json(
           {
@@ -213,10 +210,9 @@ export async function POST(request: Request) {
       parsed.data.structure,
       parsed.data.customStructure
     );
-    const metaAppCredentials = await resolveMetaAppCredentials(supabase, user.id);
+    const metaAppCredentials = await resolveMetaAppCredentials(user.id);
 
     const publishCtx = {
-      supabase,
       userId: user.id,
       accessToken: tokenRes.accessToken,
       payload: parsed.data,
@@ -240,15 +236,7 @@ export async function POST(request: Request) {
         await executePublish();
       } catch (e) {
         const message = e instanceof Error ? e.message : "publish_failed";
-        await supabase
-          .from("upload_jobs")
-          .update({
-            status: "error",
-            finished_at: new Date().toISOString(),
-            error_details: { v: 1, message } as never,
-          })
-          .eq("id", parsed.data.publishOperationId)
-          .eq("user_id", user.id);
+        await markUploadJobError(user.id, parsed.data.publishOperationId, { v: 1, message });
       }
     };
 
@@ -270,11 +258,7 @@ export async function POST(request: Request) {
     }
 
     if (!out) {
-      const { data: job } = await supabase
-        .from("upload_jobs")
-        .select("status, error_details")
-        .eq("id", parsed.data.publishOperationId)
-        .single();
+      const job = await getUploadJobStatus(user.id, parsed.data.publishOperationId);
       const errMsg =
         job?.status === "error" && job.error_details && typeof job.error_details === "object"
           ? String((job.error_details as { message?: string }).message ?? "publish_failed")
@@ -306,7 +290,7 @@ export async function POST(request: Request) {
     );
   } finally {
     if (deleteCreativesAfterPublish) {
-      await removeStorageObjects(supabase, cleanupPaths);
+      await removeStorageObjects(cleanupPaths);
     }
   }
 }

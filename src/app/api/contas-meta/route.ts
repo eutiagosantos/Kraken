@@ -1,19 +1,21 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import { devLogRouteMs } from "@/lib/api/dev-route-timing";
-import { getSessionUser } from "@/lib/api/session";
+import { devLogRouteMs } from "@/libs/api/dev-route-timing";
+import { getSessionUser } from "@/libs/api/session";
+import { upsertMetaUserToken } from "@/libs/database/queries/meta-user-tokens";
 import {
   getCachedContasMetaRows,
   invalidateUserDataShortCache,
   setCachedContasMetaRows,
-} from "@/lib/api/user-data-short-cache";
-import { rowToContaMeta } from "@/lib/contas-meta-map";
-import { fetchGraphAdAccounts } from "@/lib/meta/graph-ad-accounts";
-import { inspectTokenScopes } from "@/lib/meta/graph-inspect-token";
-import { resolveMetaAppCredentials } from "@/lib/meta/resolve-app-credentials";
-import { invalidatePageCache } from "@/lib/meta/graph-user-pages";
-import { syncMetaAdAccountsForUser } from "@/lib/meta/sync-ad-accounts";
+} from "@/libs/api/user-data-short-cache";
+import { rowToContaMeta } from "@/libs/contas-meta-map";
+import { listMetaAdAccountsForUser } from "@/libs/database/queries/meta-ad-accounts";
+import { fetchGraphAdAccounts } from "@/libs/meta/graph-ad-accounts";
+import { inspectTokenScopes } from "@/libs/meta/graph-inspect-token";
+import { resolveMetaAppCredentials } from "@/libs/meta/resolve-app-credentials";
+import { invalidatePageCache } from "@/libs/meta/graph-user-pages";
+import { syncMetaAdAccountsForUser } from "@/libs/meta/sync-ad-accounts";
 
 const postBodySchema = z.union([
   z.object({ action: z.literal("sync") }),
@@ -23,25 +25,21 @@ const postBodySchema = z.union([
 
 export async function GET() {
   const startedAt = Date.now();
-  const { supabase, user } = await getSessionUser();
+  const { user } = await getSessionUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
   let rows = getCachedContasMetaRows(user.id);
   if (!rows) {
-    const { data, error } = await supabase
-      .from("meta_ad_accounts")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("connected_at", { ascending: false });
-
-    if (error) {
+    try {
+      rows = await listMetaAdAccountsForUser(user.id);
+      setCachedContasMetaRows(user.id, rows);
+    } catch (e) {
       devLogRouteMs("GET /api/contas-meta (error)", startedAt);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      const message = e instanceof Error ? e.message : "query_failed";
+      return NextResponse.json({ error: message }, { status: 500 });
     }
-    rows = data ?? [];
-    setCachedContasMetaRows(user.id, rows);
   }
 
   devLogRouteMs("GET /api/contas-meta", startedAt);
@@ -49,7 +47,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const { supabase, user } = await getSessionUser();
+  const { user } = await getSessionUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
@@ -60,7 +58,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid payload." }, { status: 400 });
   }
 
-  const metaAppCredentials = await resolveMetaAppCredentials(supabase, user.id);
+  const metaAppCredentials = await resolveMetaAppCredentials(user.id);
 
   if (parsed.data.action === "inspect_token") {
     try {
@@ -83,32 +81,13 @@ export async function POST(request: Request) {
   }
 
   if (parsed.data.action === "sync") {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    const providerToken = session?.provider_token;
-    if (!providerToken) {
-      return NextResponse.json(
-        { error: "Sem token Meta na sessão. Entre com Meta ou reconecte." },
-        { status: 400 }
-      );
-    }
-    const tokenExpiresAtIso =
-      session.expires_at != null
-        ? new Date(session.expires_at * 1000).toISOString()
-        : null;
-    const result = await syncMetaAdAccountsForUser(
-      supabase,
-      user.id,
-      providerToken,
-      tokenExpiresAtIso
+    return NextResponse.json(
+      {
+        error:
+          "Sincronização via sessão OAuth não está disponível com Clerk. Use «Reconectar conta» com um token Meta (sync_with_token).",
+      },
+      { status: 400 }
     );
-    if (result.error) {
-      return NextResponse.json({ error: result.error, synced: result.synced }, { status: 502 });
-    }
-    invalidatePageCache(providerToken);
-    invalidateUserDataShortCache(user.id);
-    return NextResponse.json({ ok: true, synced: result.synced });
   }
 
   if (parsed.data.action === "sync_with_token") {
@@ -126,19 +105,13 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
-    const { error: tokenErr } = await supabase.from("meta_user_tokens").upsert(
-      {
-        user_id: user.id,
-        access_token: token,
-        token_expires_at: null,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "user_id" }
-    );
-    if (tokenErr) {
-      return NextResponse.json({ error: tokenErr.message }, { status: 500 });
+    try {
+      await upsertMetaUserToken(user.id, token, null);
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "token_save_failed";
+      return NextResponse.json({ error: message }, { status: 500 });
     }
-    const result = await syncMetaAdAccountsForUser(supabase, user.id, token, null);
+    const result = await syncMetaAdAccountsForUser(user.id, token, null);
     if (result.error) {
       return NextResponse.json({ error: result.error, synced: result.synced }, { status: 502 });
     }

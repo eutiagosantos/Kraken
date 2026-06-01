@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Lightbulb } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/libs/utils";
 
 type DocsTipProps = {
   children: ReactNode;

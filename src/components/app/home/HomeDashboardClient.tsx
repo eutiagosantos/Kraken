@@ -7,8 +7,8 @@ import { CreativesSummary } from "@/components/app/home/CreativesSummary";
 import { MetricsChart } from "@/components/app/home/MetricsChart";
 import { StatsRow } from "@/components/app/home/StatsRow";
 import { PublicationQueuePanelLive } from "@/components/publication-queue/PublicationQueuePanelLive";
-import { swrJsonFetcher } from "@/lib/hooks/swr-json-fetcher";
-import type { MetricsChartPoint, MockActiveUpload, MockActivity, MockCreativeLibraryItem, MockStat } from "@/lib/mock-data";
+import { swrJsonFetcher } from "@/libs/hooks/swr-json-fetcher";
+import type { MetricsChartPoint, MockActiveUpload, MockActivity, MockCreativeLibraryItem, MockStat } from "@/libs/mock-data";
 
 type Period = "7D" | "30D" | "90D";
 

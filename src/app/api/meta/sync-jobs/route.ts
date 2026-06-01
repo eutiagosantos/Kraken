@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import { getSessionUser } from "@/lib/api/session";
-import { enqueueMetaSyncJob } from "@/lib/meta/meta-sync-jobs";
-import type { ProductFeedRow } from "@/lib/meta/validate-product-feed";
+import { getSessionUser } from "@/libs/api/session";
+import { enqueueMetaSyncJob } from "@/libs/meta/meta-sync-jobs";
+import type { ProductFeedRow } from "@/libs/meta/validate-product-feed";
 
 const postBody = z.discriminatedUnion("jobType", [
   z.object({
@@ -20,7 +20,7 @@ const postBody = z.discriminatedUnion("jobType", [
 ]);
 
 export async function POST(request: Request) {
-  const { supabase, user } = await getSessionUser();
+  const { user } = await getSessionUser();
   if (!user) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
 
   const raw = await request.json().catch(() => ({}));
@@ -31,7 +31,7 @@ export async function POST(request: Request) {
 
   if (parsed.data.jobType === "feed_validate") {
     const rows = parsed.data.rows as ProductFeedRow[];
-    const enq = await enqueueMetaSyncJob(supabase, {
+    const enq = await enqueueMetaSyncJob({
       userId: user.id,
       jobType: "feed_validate",
       payload: { rows },
@@ -41,7 +41,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, jobId: enq.id });
   }
 
-  const enq = await enqueueMetaSyncJob(supabase, {
+  const enq = await enqueueMetaSyncJob({
     userId: user.id,
     jobType: "feed_sync_url",
     payload: { feedId: parsed.data.feedId, url: parsed.data.url },

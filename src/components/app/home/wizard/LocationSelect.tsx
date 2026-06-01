@@ -3,8 +3,8 @@
 import { useMemo } from "react";
 import AsyncSelect from "react-select/async";
 import type { GroupBase, MultiValue, StylesConfig } from "react-select";
-import type { Localidade } from "@/lib/stores/wizardStore";
-import type { LocationOption } from "@/lib/meta/types";
+import type { Localidade } from "@/libs/stores/wizardStore";
+import type { LocationOption } from "@/libs/meta/types";
 
 const SEARCH_DEBOUNCE_MS = 350;
 

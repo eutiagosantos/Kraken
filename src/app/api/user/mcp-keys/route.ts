@@ -1,8 +1,13 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import { assertProtectedApiRoute } from "@/lib/api/route-protection";
-import { generateApiKey } from "@/lib/mcp/api-key";
+import { assertProtectedApiRoute } from "@/libs/api/route-protection";
+import {
+  insertMcpApiKey,
+  listActiveMcpApiKeysByUserId,
+} from "@/libs/database/queries/mcp-api-keys";
+import { postgresErrorMessage } from "@/libs/database/postgres-error";
+import { generateApiKey } from "@/libs/mcp/api-key";
 
 const postBodySchema = z.object({
   name: z.string().trim().min(1).max(80).optional(),
@@ -11,26 +16,20 @@ const postBodySchema = z.object({
 export async function GET() {
   const protection = await assertProtectedApiRoute();
   if (!protection.ok) return protection.response;
-  const { supabase, user } = protection;
+  const { user } = protection;
 
-  const { data, error } = await supabase
-    .from("mcp_api_keys")
-    .select("id, name, key_prefix, last_used_at, created_at, revoked_at")
-    .eq("user_id", user.id)
-    .is("revoked_at", null)
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  try {
+    const data = await listActiveMcpApiKeysByUserId(user.id);
+    return NextResponse.json({ data });
+  } catch (err) {
+    return NextResponse.json({ error: postgresErrorMessage(err) }, { status: 500 });
   }
-
-  return NextResponse.json({ data: data ?? [] });
 }
 
 export async function POST(request: Request) {
   const protection = await assertProtectedApiRoute();
   if (!protection.ok) return protection.response;
-  const { supabase, user } = protection;
+  const { user } = protection;
 
   const raw = await request.json().catch(() => ({}));
   const parsed = postBodySchema.safeParse(raw);
@@ -41,28 +40,24 @@ export async function POST(request: Request) {
   const { plaintext, prefix, hash } = generateApiKey();
   const name = parsed.data.name?.trim() || "Chave MCP";
 
-  const { data, error } = await supabase
-    .from("mcp_api_keys")
-    .insert({
-      user_id: user.id,
+  try {
+    const data = await insertMcpApiKey({
+      userId: user.id,
       name,
-      key_prefix: prefix,
-      key_hash: hash,
-    })
-    .select("id, name, key_prefix, created_at")
-    .single();
+      keyPrefix: prefix,
+      keyHash: hash,
+    });
 
-  if (error || !data) {
-    return NextResponse.json({ error: error?.message ?? "Falha ao criar chave." }, { status: 500 });
+    return NextResponse.json({
+      data: {
+        id: data.id,
+        name: data.name,
+        keyPrefix: data.key_prefix,
+        createdAt: data.created_at,
+        plaintext,
+      },
+    });
+  } catch (err) {
+    return NextResponse.json({ error: postgresErrorMessage(err) }, { status: 500 });
   }
-
-  return NextResponse.json({
-    data: {
-      id: data.id,
-      name: data.name,
-      keyPrefix: data.key_prefix,
-      createdAt: data.created_at,
-      plaintext,
-    },
-  });
 }

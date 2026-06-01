@@ -1,7 +1,7 @@
 "use client";
 
-import { cn } from "@/lib/utils";
-import type { ContaStatus } from "@/lib/mock-contas";
+import { cn } from "@/libs/utils";
+import type { ContaStatus } from "@/libs/mock-contas";
 import { HealthIndicator } from "./HealthIndicator";
 
 const statusConfig: Record<

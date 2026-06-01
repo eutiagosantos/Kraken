@@ -1,8 +1,8 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 
-import { createServiceSupabaseClient } from "@/lib/supabase/admin";
-import type { Json } from "@/lib/supabase/types";
+import { insertMetaWebhookEvent } from "@/libs/database/queries/meta-webhook-events";
+import type { Json } from "@/models/schema";
 
 export const runtime = "nodejs";
 
@@ -52,14 +52,12 @@ export async function POST(request: Request) {
     payload = { raw: rawBody.slice(0, 2000) } as unknown as Json;
   }
 
-  const service = createServiceSupabaseClient();
-  if (service) {
-    await service.from("meta_webhook_events").insert({
-      topic,
-      payload,
-      signature_valid: !appSecret || signatureValid,
-    });
-  }
+  await insertMetaWebhookEvent({
+    topic,
+    payload,
+    signatureValid: !appSecret || signatureValid,
+    receivedAt: new Date().toISOString(),
+  });
 
   return NextResponse.json({ ok: true });
 }

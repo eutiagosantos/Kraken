@@ -5,7 +5,7 @@ import { ModalPortal } from "@/components/app/ui/ModalPortal";
 import { AlertTriangle, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
-import type { ContaMeta } from "@/lib/mock-contas";
+import type { ContaMeta } from "@/libs/mock-contas";
 
 const CONFIRM_WORD = "desconectar";
 

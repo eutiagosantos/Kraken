@@ -5,7 +5,7 @@ import { ModalPortal } from "@/components/app/ui/ModalPortal";
 import { Download } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
-import type { Campanha } from "@/lib/mock-campanhas";
+import type { Campanha } from "@/libs/mock-campanhas";
 
 const fieldOptions = [
   "Nome e ID das campanhas",

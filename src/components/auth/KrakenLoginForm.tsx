@@ -6,9 +6,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { messageForSignInAuthError } from "@/lib/auth/supabase-auth-error-message";
-import { useSupabase } from "@/lib/hooks/useSupabase";
-import { cn } from "@/lib/utils";
+import { messageForSignInAuthError } from "@/libs/auth/supabase-auth-error-message";
+import { useSupabase } from "@/libs/hooks/useSupabase";
+import { cn } from "@/libs/utils";
 
 export function KrakenLoginForm() {
   const router = useRouter();

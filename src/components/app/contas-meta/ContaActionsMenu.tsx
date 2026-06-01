@@ -11,8 +11,8 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { useClickOutside } from "@/lib/hooks/useClickOutside";
-import type { ContaMeta } from "@/lib/mock-contas";
+import { useClickOutside } from "@/libs/hooks/useClickOutside";
+import type { ContaMeta } from "@/libs/mock-contas";
 
 const MENU_MIN_WIDTH = 220;
 const MENU_GAP = 4;

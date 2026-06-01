@@ -9,10 +9,10 @@ import { Input } from "@/components/ui/Input";
 import {
   DUPLICATE_SIGN_UP_MESSAGE,
   isDuplicateSignUpResponse,
-} from "@/lib/auth/sign-up-response";
-import { messageForSignUpAuthError } from "@/lib/auth/supabase-auth-error-message";
-import { useSupabase } from "@/lib/hooks/useSupabase";
-import { cn } from "@/lib/utils";
+} from "@/libs/auth/sign-up-response";
+import { messageForSignUpAuthError } from "@/libs/auth/supabase-auth-error-message";
+import { useSupabase } from "@/libs/hooks/useSupabase";
+import { cn } from "@/libs/utils";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 

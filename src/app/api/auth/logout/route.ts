@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { createServerSupabaseClient } from "@/libs/supabase/server";
 
 const bodySchema = z
   .object({ scope: z.enum(["local", "global"]).optional() })

@@ -6,24 +6,24 @@ import { MetaAppDevModePublishHelp } from "@/components/app/fila/MetaAppDevModeP
 import { UploadJobsList, type UploadJobListRow } from "@/components/app/fila/UploadJobsList";
 import { PublicationQueuePanelLive } from "@/components/publication-queue/PublicationQueuePanelLive";
 import { ProgressBar } from "@/components/app/ui/ProgressBar";
-import type { PublishProgressEvent } from "@/lib/wizard/data-adapter";
-import { mockWizardDataAdapter } from "@/lib/wizard/data-adapter";
-import { buildWizardPublishPayload } from "@/lib/wizard/build-wizard-publish-payload";
-import { getWizardPublishSliceFromStore } from "@/lib/wizard/get-wizard-publish-slice";
+import type { PublishProgressEvent } from "@/libs/wizard/data-adapter";
+import { mockWizardDataAdapter } from "@/libs/wizard/data-adapter";
+import { buildWizardPublishPayload } from "@/libs/wizard/build-wizard-publish-payload";
+import { getWizardPublishSliceFromStore } from "@/libs/wizard/get-wizard-publish-slice";
 import {
   partitionUploadJobsByActive,
   UPLOAD_JOB_POLL_MAX_AGE_MS,
   uploadJobShouldPollForUpdates,
-} from "@/lib/wizard/upload-jobs-in-flight";
-import { parseUploadJobErrorDetails } from "@/lib/api/upload-job-summary-schema";
-import { useWizardStore, type WizardQueuePublish } from "@/lib/stores/wizardStore";
+} from "@/libs/wizard/upload-jobs-in-flight";
+import { parseUploadJobErrorDetails } from "@/libs/api/upload-job-summary-schema";
+import { useWizardStore, type WizardQueuePublish } from "@/libs/stores/wizardStore";
 import {
   computeUnifiedPublishProgress,
   publishPhaseLabelPt,
   queuePublishFieldsFromProgressEvent,
   serverJobToPublishProgress,
   type QueuePublishProgressFields,
-} from "@/lib/wizard/unified-publish-progress";
+} from "@/libs/wizard/unified-publish-progress";
 
 type UploadJobsApiResponse = {
   data?: { jobs: UploadJobListRow[] };

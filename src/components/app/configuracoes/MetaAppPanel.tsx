@@ -7,7 +7,7 @@ import { MetaAccessTokenSection } from "@/components/app/meta/MetaAccessTokenSec
 import { useSuccessFeedback } from "@/components/app/ui/SuccessFeedback";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { useUserMetaApp } from "@/lib/hooks/useUserMetaApp";
+import { useUserMetaApp } from "@/libs/hooks/useUserMetaApp";
 
 export function MetaAppPanel() {
   const { configured, appId, loading, refetch } = useUserMetaApp();

@@ -5,8 +5,8 @@ import Link from "next/link";
 
 import { META_ACCESS_TOKEN_SETTINGS_HREF } from "@/components/app/meta/MetaAccessTokenSection";
 import { buttonVariantClasses } from "@/components/ui/Button";
-import { useUserMetaApp } from "@/lib/hooks/useUserMetaApp";
-import { cn } from "@/lib/utils";
+import { useUserMetaApp } from "@/libs/hooks/useUserMetaApp";
+import { cn } from "@/libs/utils";
 
 export type MetaSetupChecklistVariant = "contas" | "upload";
 

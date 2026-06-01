@@ -27,8 +27,8 @@ import {
   getCampanhasByStatus,
   type Campanha,
   type CampanhaTabId,
-} from "@/lib/mock-campanhas";
-import { useCampanhas } from "@/lib/hooks/useCampanhas";
+} from "@/libs/mock-campanhas";
+import { useCampanhas } from "@/libs/hooks/useCampanhas";
 
 const defaultFilters: CampanhaFiltersState = {
   search: "",

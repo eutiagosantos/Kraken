@@ -8,9 +8,9 @@ import { mutate } from "swr";
 import { MetaAccessTokenSection } from "@/components/app/meta/MetaAccessTokenSection";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { useUserMetaApp } from "@/lib/hooks/useUserMetaApp";
-import { useWorkspaces } from "@/lib/hooks/useWorkspaces";
-import { cn } from "@/lib/utils";
+import { useUserMetaApp } from "@/libs/hooks/useUserMetaApp";
+import { useWorkspaces } from "@/libs/hooks/useWorkspaces";
+import { cn } from "@/libs/utils";
 
 const STEPS = [
   { id: 1, label: "Workspace" },

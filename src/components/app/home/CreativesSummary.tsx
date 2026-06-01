@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ImageIcon } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
-import type { CreativeLibraryStatus, MockCreativeLibraryItem } from "@/lib/mock-data";
+import type { CreativeLibraryStatus, MockCreativeLibraryItem } from "@/libs/mock-data";
 
 function statusBadge(status: CreativeLibraryStatus) {
   switch (status) {

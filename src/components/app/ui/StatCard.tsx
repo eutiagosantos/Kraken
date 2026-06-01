@@ -1,7 +1,7 @@
 "use client";
 
-import { cn } from "@/lib/utils";
-import type { StatDeltaType } from "@/lib/mock-data";
+import { cn } from "@/libs/utils";
+import type { StatDeltaType } from "@/libs/mock-data";
 
 export function StatCard({
   label,

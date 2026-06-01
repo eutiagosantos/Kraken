@@ -14,9 +14,9 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { cn } from "@/lib/utils";
-import type { MockWorkspace } from "@/lib/mock-data";
-import { useWorkspaces } from "@/lib/hooks/useWorkspaces";
+import { cn } from "@/libs/utils";
+import type { MockWorkspace } from "@/libs/mock-data";
+import { useWorkspaces } from "@/libs/hooks/useWorkspaces";
 import { SidebarItem } from "./SidebarItem";
 import { useSidebar } from "./SidebarContext";
 import { SidebarProfileMenu } from "./SidebarProfileMenu";

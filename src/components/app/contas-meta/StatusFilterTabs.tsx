@@ -1,8 +1,8 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { cn } from "@/lib/utils";
-import type { ContaTabId } from "@/lib/mock-contas";
+import { cn } from "@/libs/utils";
+import type { ContaTabId } from "@/libs/mock-contas";
 
 const tabs: { id: ContaTabId; label: string; color: string }[] = [
   { id: "todas", label: "Todas", color: "#686b82" },

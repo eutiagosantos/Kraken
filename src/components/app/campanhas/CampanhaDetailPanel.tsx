@@ -10,8 +10,8 @@ import { Button } from "@/components/ui/Button";
 import { ProgressBar } from "@/components/app/ui/ProgressBar";
 import { InfoRow } from "@/components/app/ui/InfoRow";
 import { PanelFooter } from "@/components/app/ui/PanelFooter";
-import { cn } from "@/lib/utils";
-import type { Campanha } from "@/lib/mock-campanhas";
+import { cn } from "@/libs/utils";
+import type { Campanha } from "@/libs/mock-campanhas";
 import { StatusBadge } from "./StatusBadge";
 
 function CreativeSquare({ cr }: { cr: Campanha["creatives"][number] }) {

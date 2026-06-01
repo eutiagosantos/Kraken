@@ -2,13 +2,13 @@
 
 import { useEffect } from "react";
 
-import type { CampaignSchedule } from "@/lib/meta/campaign-schedule";
+import type { CampaignSchedule } from "@/libs/meta/campaign-schedule";
 import {
   datetimeLocalInputToIso,
   isoToDatetimeLocalInput,
   minutesToTimeInput,
   timeInputToMinutes,
-} from "@/lib/wizard/datetime-local-iso";
+} from "@/libs/wizard/datetime-local-iso";
 
 const WEEK = [
   { day: 1 as const, label: "Seg" },

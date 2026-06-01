@@ -7,7 +7,7 @@ import { ToolCard } from "@/components/docs/ToolCard";
 import {
   MCP_DOCS_TOOLS,
   MCP_ENDPOINT_SNIPPETS,
-} from "@/lib/docs/mcp-tools-data";
+} from "@/libs/docs/mcp-tools-data";
 
 const PUBLISH_FLOW_STEPS = [
   {

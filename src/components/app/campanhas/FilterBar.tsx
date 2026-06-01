@@ -3,7 +3,7 @@
 import { Filter, Search, X } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
-import { cn } from "@/lib/utils";
+import { cn } from "@/libs/utils";
 
 export type PeriodFilterId = "7d" | "30d" | "month" | "prev_month" | "custom" | "all";
 

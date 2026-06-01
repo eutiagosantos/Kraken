@@ -1,23 +1,22 @@
 import { NextResponse } from "next/server";
 
-import type { MockAccount } from "@/lib/mock-data";
-import { getSessionUser } from "@/lib/api/session";
-import { rowToContaMeta } from "@/lib/contas-meta-map";
+import type { MockAccount } from "@/libs/mock-data";
+import { getSessionUser } from "@/libs/api/session";
+import { rowToContaMeta } from "@/libs/contas-meta-map";
+import { listMetaAdAccountsForUserByName } from "@/libs/database/queries/meta-ad-accounts";
 
 export async function GET() {
-  const { supabase, user } = await getSessionUser();
+  const { user } = await getSessionUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
-  const { data, error } = await supabase
-    .from("meta_ad_accounts")
-    .select("*")
-    .eq("user_id", user.id)
-    .order("name");
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  let data;
+  try {
+    data = await listMetaAdAccountsForUserByName(user.id);
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "query_failed";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 
   const spendFmt = new Intl.NumberFormat("pt-BR", {

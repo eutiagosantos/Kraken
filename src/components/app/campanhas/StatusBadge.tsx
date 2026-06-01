@@ -1,7 +1,7 @@
 "use client";
 
-import { cn } from "@/lib/utils";
-import type { CampanhaStatus } from "@/lib/mock-campanhas";
+import { cn } from "@/libs/utils";
+import type { CampanhaStatus } from "@/libs/mock-campanhas";
 
 const statusConfig: Record<
   CampanhaStatus,

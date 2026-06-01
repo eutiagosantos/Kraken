@@ -5,7 +5,7 @@ import Link from "next/link";
 
 import { META_ACCESS_TOKEN_SETTINGS_HREF } from "@/components/app/meta/MetaAccessTokenSection";
 import { buttonVariantClasses } from "@/components/ui/Button";
-import { cn } from "@/lib/utils";
+import { cn } from "@/libs/utils";
 
 export function ContasHeader({
   total,

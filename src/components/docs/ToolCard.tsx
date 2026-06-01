@@ -1,7 +1,7 @@
 import { ChevronDown } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { CodeBlock } from "@/components/docs/CodeBlock";
-import type { McpToolDoc } from "@/lib/docs/mcp-tools-data";
+import type { McpToolDoc } from "@/libs/docs/mcp-tools-data";
 
 const categoryVariant = {
   Leitura: "neutral",

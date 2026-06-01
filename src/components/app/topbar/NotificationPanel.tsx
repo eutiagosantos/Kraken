@@ -5,10 +5,10 @@ import { ptBR } from "date-fns/locale";
 import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 import { useRef } from "react";
 
-import { useClickOutside } from "@/lib/hooks/useClickOutside";
-import type { NotificationItem } from "@/lib/hooks/useNotifications";
-import type { ActivityType } from "@/lib/mock-data";
-import { cn } from "@/lib/utils";
+import { useClickOutside } from "@/libs/hooks/useClickOutside";
+import type { NotificationItem } from "@/libs/hooks/useNotifications";
+import type { ActivityType } from "@/libs/mock-data";
+import { cn } from "@/libs/utils";
 
 const NOTIF_LAST_SEEN_KEY = "notif_last_seen";
 

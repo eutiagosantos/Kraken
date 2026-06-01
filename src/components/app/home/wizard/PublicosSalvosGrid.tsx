@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/Button";
-import type { Publico } from "@/lib/stores/wizardStore";
+import type { Publico } from "@/libs/stores/wizardStore";
 
 interface PublicosSalvosGridProps {
   publicos: Publico[];

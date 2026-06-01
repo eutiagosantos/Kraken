@@ -4,8 +4,8 @@ import Link from "next/link";
 import { ArrowRight, Menu, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { KrakenMarkTile } from "@/components/branding/KrakenMarkTile";
-import { MCP_DOCS_SECTIONS } from "@/lib/docs/mcp-tools-data";
-import { cn } from "@/lib/utils";
+import { MCP_DOCS_SECTIONS } from "@/libs/docs/mcp-tools-data";
+import { cn } from "@/libs/utils";
 
 type DocsSidebarProps = {
   className?: string;

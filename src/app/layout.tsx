@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
+import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 
 const ibmPlexSans = localFont({
@@ -57,8 +58,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR" className={ibmPlexSans.variable}>
-      <body>{children}</body>
-    </html>
+    <ClerkProvider>
+      <html lang="pt-BR" className={ibmPlexSans.variable}>
+        <body>{children}</body>
+      </html>
+    </ClerkProvider>
   );
 }

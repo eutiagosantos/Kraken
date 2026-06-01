@@ -1,9 +1,9 @@
-import { AntiSpy } from "@/components/sections/AntiSpy";
-import { Benefits } from "@/components/sections/Benefits";
-import { Features } from "@/components/sections/Features";
-import { Hero } from "@/components/sections/Hero";
-import { HowItWorks } from "@/components/sections/HowItWorks";
-import { Pricing } from "@/components/sections/Pricing";
+import { AntiSpy } from "@/templates/AntiSpy";
+import { Benefits } from "@/templates/Benefits";
+import { Features } from "@/templates/Features";
+import { Hero } from "@/templates/Hero";
+import { HowItWorks } from "@/templates/HowItWorks";
+import { Pricing } from "@/templates/Pricing";
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
 

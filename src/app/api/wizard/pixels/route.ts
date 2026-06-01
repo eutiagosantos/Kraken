@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 
-import { getSessionUser } from "@/lib/api/session";
-import { graphJsonGet } from "@/lib/meta/graph-client";
-import { normalizeActId } from "@/lib/meta/graph-campaign-publish";
-import { getMetaGraphAccessToken } from "@/lib/meta/graph-token";
-import type { WizardPixel } from "@/lib/mock-data/wizard";
+import { getSessionUser } from "@/libs/api/session";
+import { listMetaAccountIdsForUser } from "@/libs/database/queries/meta-ad-accounts";
+import { graphJsonGet } from "@/libs/meta/graph-client";
+import { normalizeActId } from "@/libs/meta/graph-campaign-publish";
+import { getMetaGraphAccessToken } from "@/libs/meta/graph-token";
+import type { WizardPixel } from "@/libs/mock-data/wizard";
 
 type AdsPixelsPage = {
   data?: Array<{ id?: string; name?: string }>;
@@ -51,12 +52,12 @@ function parseAccountIdsParam(raw: string | null): string[] | null {
 }
 
 export async function GET(request: Request) {
-  const { supabase, user } = await getSessionUser();
+  const { user } = await getSessionUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
-  const tokenRes = await getMetaGraphAccessToken(supabase, user.id);
+  const tokenRes = await getMetaGraphAccessToken(user.id);
   if ("error" in tokenRes) {
     return NextResponse.json({ error: tokenRes.error }, { status: 400 });
   }
@@ -68,15 +69,12 @@ export async function GET(request: Request) {
   if (fromQuery) {
     accountIds = fromQuery;
   } else {
-    const { data: accountRows, error } = await supabase
-      .from("meta_ad_accounts")
-      .select("meta_account_id")
-      .eq("user_id", user.id)
-      .order("name");
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    try {
+      accountIds = await listMetaAccountIdsForUser(user.id);
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "query_failed";
+      return NextResponse.json({ error: message }, { status: 500 });
     }
-    accountIds = (accountRows ?? []).map((r) => r.meta_account_id).filter(Boolean);
   }
 
   const seenPixelIds = new Set<string>();

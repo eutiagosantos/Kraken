@@ -1,9 +1,9 @@
 import { DollarSign, ImageIcon, Layers, Rocket, ShieldCheck, Users } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import type { GroupBase, StylesConfig } from "react-select";
-import type { InterestOption, LocationOption } from "@/lib/meta/types";
-import type { Publico } from "@/lib/stores/wizardStore";
-import { getPublicoGeoValidationErrorPt, publicoGeoHelpTextPt } from "@/lib/wizard/publico-geo-validation";
+import type { InterestOption, LocationOption } from "@/libs/meta/types";
+import type { Publico } from "@/libs/stores/wizardStore";
+import { getPublicoGeoValidationErrorPt, publicoGeoHelpTextPt } from "@/libs/wizard/publico-geo-validation";
 import { InterestSelect } from "./InterestSelect";
 import { LocationSelect } from "./LocationSelect";
 import { PublicosSalvosGrid } from "./PublicosSalvosGrid";

@@ -10,8 +10,8 @@ import { useEffect } from "react";
 
 import { META_ACCESS_TOKEN_SETTINGS_HREF } from "@/components/app/meta/MetaAccessTokenSection";
 import { Button, buttonVariantClasses } from "@/components/ui/Button";
-import type { ContaMeta } from "@/lib/mock-contas";
-import { cn } from "@/lib/utils";
+import type { ContaMeta } from "@/libs/mock-contas";
+import { cn } from "@/libs/utils";
 
 export function ReconectarModal({
   conta,

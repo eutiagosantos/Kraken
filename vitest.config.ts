@@ -5,12 +5,13 @@ export default defineConfig({
   test: {
     environment: "node",
     globals: false,
-    include: ["src/lib/**/*.test.ts"],
+    setupFiles: ["./vitest.setup.ts"],
+    include: ["src/libs/**/*.test.ts"],
   },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
-      "server-only": path.resolve(__dirname, "src/lib/__mocks__/server-only.ts"),
+      "server-only": path.resolve(__dirname, "src/libs/__mocks__/server-only.ts"),
     },
   },
 });

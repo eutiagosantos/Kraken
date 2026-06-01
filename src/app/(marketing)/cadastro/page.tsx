@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { SignUp } from "@clerk/nextjs";
 import { KrakenMarkTile } from "@/components/branding/KrakenMarkTile";
-import { RegisterForm } from "@/components/auth/RegisterForm";
 
 export const metadata: Metadata = {
   title: "Cadastro | Kraken",
@@ -83,7 +83,21 @@ export default function CadastroPage() {
             </p>
 
             <div className="mt-3 lg:mt-4">
-              <RegisterForm />
+              <SignUp
+                routing="path"
+                path="/cadastro"
+                signInUrl="/login"
+                forceRedirectUrl="/onboarding"
+                appearance={{
+                  elements: {
+                    rootBox: "w-full",
+                    card: "shadow-none border-0 p-0 gap-4",
+                    headerTitle: "hidden",
+                    headerSubtitle: "hidden",
+                    footer: "hidden",
+                  },
+                }}
+              />
             </div>
           </div>
 

@@ -1,12 +1,12 @@
 "use client";
 
+import { useClerk } from "@clerk/nextjs";
 import { ChevronDown, History, LogOut, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
-import { cn } from "@/lib/utils";
-import { useKrakenUser } from "@/lib/hooks/useKrakenUser";
-import { useSupabase } from "@/lib/hooks/useSupabase";
+import { cn } from "@/libs/utils";
+import { useKrakenUser } from "@/libs/hooks/useKrakenUser";
 
 type Props = {
   collapsed: boolean;
@@ -21,7 +21,7 @@ function initialsFrom(name: string) {
 
 export function SidebarProfileMenu({ collapsed }: Props) {
   const router = useRouter();
-  const supabase = useSupabase();
+  const { signOut } = useClerk();
   const { displayName, email } = useKrakenUser();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -49,8 +49,7 @@ export function SidebarProfileMenu({ collapsed }: Props) {
   const initials = initialsFrom(displayName);
 
   const logout = async () => {
-    await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
-    await supabase.auth.signOut();
+    await signOut({ redirectUrl: "/login" });
     close();
     router.push("/login");
     router.refresh();

@@ -3,8 +3,8 @@
 import { Check, ChevronDown, GripVertical } from "lucide-react";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { KrakenMarkTile } from "@/components/branding/KrakenMarkTile";
-import { cn } from "@/lib/utils";
-import type { MockWorkspace } from "@/lib/mock-data";
+import { cn } from "@/libs/utils";
+import type { MockWorkspace } from "@/libs/mock-data";
 
 type Props = {
   workspaces: MockWorkspace[];

@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { processMetaSyncJobsBatch } from "@/lib/meta/meta-sync-job-worker";
-import { createServiceSupabaseClient } from "@/lib/supabase/admin";
+import { processMetaSyncJobsBatch } from "@/libs/meta/meta-sync-job-worker";
 
 export const runtime = "nodejs";
 
@@ -19,11 +18,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
-  const service = createServiceSupabaseClient();
-  if (!service) {
-    return NextResponse.json({ error: "SUPABASE_SERVICE_ROLE_KEY em falta." }, { status: 503 });
-  }
-
-  const result = await processMetaSyncJobsBatch(service, 20);
+  const result = await processMetaSyncJobsBatch(20);
   return NextResponse.json(result);
 }

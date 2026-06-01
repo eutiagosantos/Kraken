@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import { invalidateUserDataShortCache } from "@/lib/api/user-data-short-cache";
-import { getSessionUser } from "@/lib/api/session";
-import { normalizeActId } from "@/lib/meta/graph-campaign-publish";
-import { getMetaGraphAccessToken } from "@/lib/meta/graph-token";
-import { fetchUserFacebookPages, invalidatePageCache, pageIdInUserPages } from "@/lib/meta/graph-user-pages";
+import { invalidateUserDataShortCache } from "@/libs/api/user-data-short-cache";
+import { getSessionUser } from "@/libs/api/session";
+import {
+  listOwnedMetaAccountIds,
+  updateFacebookPageForMetaAccounts,
+} from "@/libs/database/queries/meta-ad-accounts";
+import { normalizeActId } from "@/libs/meta/graph-campaign-publish";
+import { getMetaGraphAccessToken } from "@/libs/meta/graph-token";
+import { fetchUserFacebookPages, invalidatePageCache, pageIdInUserPages } from "@/libs/meta/graph-user-pages";
 
 const bodySchema = z.object({
   pageId: z.string().min(1).max(64),
@@ -13,7 +17,7 @@ const bodySchema = z.object({
 });
 
 export async function POST(request: Request) {
-  const { supabase, user } = await getSessionUser();
+  const { user } = await getSessionUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
@@ -32,7 +36,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Indica pelo menos uma conta de anúncios." }, { status: 400 });
   }
 
-  const tokenRes = await getMetaGraphAccessToken(supabase, user.id);
+  const tokenRes = await getMetaGraphAccessToken(user.id);
   if ("error" in tokenRes) {
     return NextResponse.json({ error: tokenRes.error }, { status: 400 });
   }
@@ -58,17 +62,15 @@ export async function POST(request: Request) {
   const pageName =
     userPages.find((p) => p.id.trim() === pageId)?.name?.trim().slice(0, 512) ?? null;
 
-  const { data: owned, error: selErr } = await supabase
-    .from("meta_ad_accounts")
-    .select("meta_account_id")
-    .eq("user_id", user.id)
-    .in("meta_account_id", uniqueActs);
-
-  if (selErr) {
-    return NextResponse.json({ error: selErr.message }, { status: 500 });
+  let owned: string[];
+  try {
+    owned = await listOwnedMetaAccountIds(user.id, uniqueActs);
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "query_failed";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 
-  const ownedSet = new Set((owned ?? []).map((r) => r.meta_account_id));
+  const ownedSet = new Set(owned);
   for (const act of uniqueActs) {
     if (!ownedSet.has(act)) {
       return NextResponse.json(
@@ -79,18 +81,15 @@ export async function POST(request: Request) {
   }
 
   const now = new Date().toISOString();
-  const { error: updErr } = await supabase
-    .from("meta_ad_accounts")
-    .update({
+  try {
+    await updateFacebookPageForMetaAccounts(user.id, uniqueActs, {
       facebook_page_id: pageId,
       facebook_page_name: pageName,
       updated_at: now,
-    })
-    .eq("user_id", user.id)
-    .in("meta_account_id", uniqueActs);
-
-  if (updErr) {
-    return NextResponse.json({ error: updErr.message }, { status: 500 });
+    });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "query_failed";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 
   invalidateUserDataShortCache(user.id);

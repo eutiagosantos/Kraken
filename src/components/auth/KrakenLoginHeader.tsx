@@ -4,7 +4,7 @@ import { Globe } from "lucide-react";
 import Link from "next/link";
 import { KrakenMarkTile } from "@/components/branding/KrakenMarkTile";
 import { buttonVariantClasses } from "@/components/ui/Button";
-import { cn } from "@/lib/utils";
+import { cn } from "@/libs/utils";
 
 type KrakenLoginHeaderProps = {
   ctaLabel?: string;

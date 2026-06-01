@@ -3,13 +3,14 @@ import { NextResponse } from "next/server";
 export const runtime = "nodejs";
 export const maxDuration = 300;
 
-import { getSessionUser } from "@/lib/api/session";
-import { fetchUserFacebookPages, pageIdInUserPages } from "@/lib/meta/graph-user-pages";
-import { getMetaGraphAccessToken } from "@/lib/meta/graph-token";
-import { inspectTokenScopes, REQUIRED_TOKEN_SCOPES_FOR_CATALOG } from "@/lib/meta/graph-inspect-token";
-import { catalogPublishPayloadSchema } from "@/lib/meta/catalog-publish-payload";
-import { normalizeActId } from "@/lib/meta/graph-campaign-publish";
-import { runCatalogPublish } from "@/lib/meta/publish-catalog-campaigns";
+import { getSessionUser } from "@/libs/api/session";
+import { listMetaAdAccountsIdAndName } from "@/libs/database/queries/meta-ad-accounts";
+import { fetchUserFacebookPages, pageIdInUserPages } from "@/libs/meta/graph-user-pages";
+import { getMetaGraphAccessToken } from "@/libs/meta/graph-token";
+import { inspectTokenScopes, REQUIRED_TOKEN_SCOPES_FOR_CATALOG } from "@/libs/meta/graph-inspect-token";
+import { catalogPublishPayloadSchema } from "@/libs/meta/catalog-publish-payload";
+import { normalizeActId } from "@/libs/meta/graph-campaign-publish";
+import { runCatalogPublish } from "@/libs/meta/publish-catalog-campaigns";
 
 function orderSelectedAccounts(
   selectedRaw: string[],
@@ -29,7 +30,7 @@ function orderSelectedAccounts(
 }
 
 export async function POST(request: Request) {
-  const { supabase, user } = await getSessionUser();
+  const { user } = await getSessionUser();
   if (!user) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
 
   const raw = await request.json().catch(() => ({}));
@@ -38,7 +39,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid payload.", issues: parsed.error.flatten() }, { status: 400 });
   }
 
-  const tok = await getMetaGraphAccessToken(supabase, user.id);
+  const tok = await getMetaGraphAccessToken(user.id);
   if ("error" in tok) return NextResponse.json({ error: tok.error }, { status: 400 });
 
   const scopes = await inspectTokenScopes(tok.accessToken, { requiredScopes: REQUIRED_TOKEN_SCOPES_FOR_CATALOG });
@@ -55,21 +56,21 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "pageId não pertence às tuas páginas Facebook." }, { status: 400 });
   }
 
-  const { data: accRows, error: accErr } = await supabase
-    .from("meta_ad_accounts")
-    .select("meta_account_id,name")
-    .eq("user_id", user.id);
+  let accRows;
+  try {
+    accRows = await listMetaAdAccountsIdAndName(user.id);
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "query_failed";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 
-  if (accErr) return NextResponse.json({ error: accErr.message }, { status: 500 });
-
-  const accounts = orderSelectedAccounts(parsed.data.selectedAccountIds, accRows ?? []);
+  const accounts = orderSelectedAccounts(parsed.data.selectedAccountIds, accRows);
   if (accounts.length === 0) {
     return NextResponse.json({ error: "Nenhuma conta de anúncios válida para os IDs selecionados." }, { status: 400 });
   }
 
   try {
     const { results, warnings } = await runCatalogPublish({
-      supabase,
       userId: user.id,
       accessToken: tok.accessToken,
       payload: parsed.data,

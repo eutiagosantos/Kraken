@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/libs/utils";
 import {
   formatBrlInputValue,
   formatBrlTypingDisplay,
   parseBrlToNumber,
   sanitizeBrlTyping,
-} from "@/lib/brl-money-input";
+} from "@/libs/brl-money-input";
 
 export interface CurrencyInputBrlProps {
   id: string;

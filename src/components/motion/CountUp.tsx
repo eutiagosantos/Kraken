@@ -12,8 +12,8 @@ import { useEffect, useRef } from "react";
 import {
   formatCountUpValue,
   parseCountUpEnd,
-} from "@/lib/motion/count-up-utils";
-import { cn } from "@/lib/utils";
+} from "@/libs/motion/count-up-utils";
+import { cn } from "@/libs/utils";
 
 export interface CountUpProps {
   end: number | string;

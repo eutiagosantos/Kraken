@@ -8,8 +8,8 @@ import {
   filterAndSortContas,
   hasActiveContasFilters,
   type ContasPageFiltersState,
-} from "@/lib/contas-meta-filters";
-import { hasTokenExpiringSoonBanner, tabCounts, type ContaMeta, type ContaTabId } from "@/lib/mock-contas";
+} from "@/libs/contas-meta-filters";
+import { hasTokenExpiringSoonBanner, tabCounts, type ContaMeta, type ContaTabId } from "@/libs/mock-contas";
 import { META_ACCESS_TOKEN_SETTINGS_HREF } from "@/components/app/meta/MetaAccessTokenSection";
 import { MetaSetupChecklist } from "@/components/app/meta/MetaSetupChecklist";
 import { ContasGrid } from "@/components/app/contas-meta/ContasGrid";
@@ -24,7 +24,7 @@ import { ReconectarModal } from "@/components/app/contas-meta/ReconectarModal";
 import { StatusFilterTabs } from "@/components/app/contas-meta/StatusFilterTabs";
 import { Button } from "@/components/ui/Button";
 import { useSuccessFeedback } from "@/components/app/ui/SuccessFeedback";
-import { useContasMeta } from "@/lib/hooks/useContasMeta";
+import { useContasMeta } from "@/libs/hooks/useContasMeta";
 
 type OpenModal = "editar" | "reconectar" | "desconectar" | null;
 

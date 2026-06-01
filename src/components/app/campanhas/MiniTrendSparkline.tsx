@@ -1,7 +1,7 @@
 "use client";
 
 import { Line, LineChart, ResponsiveContainer, YAxis } from "recharts";
-import { useIsClient } from "@/lib/hooks/use-is-client";
+import { useIsClient } from "@/libs/hooks/use-is-client";
 
 export function MiniTrendSparkline({ data }: { data: number[] }) {
   const chartData = data.map((v, i) => ({ i, v }));

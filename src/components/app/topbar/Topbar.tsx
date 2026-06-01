@@ -3,9 +3,9 @@
 import { Bell, Menu, Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Badge } from "@/components/ui/Badge";
-import { cn } from "@/lib/utils";
-import { useKrakenUser } from "@/lib/hooks/useKrakenUser";
-import { useNotifications } from "@/lib/hooks/useNotifications";
+import { cn } from "@/libs/utils";
+import { useKrakenUser } from "@/libs/hooks/useKrakenUser";
+import { useNotifications } from "@/libs/hooks/useNotifications";
 import { useSidebar } from "../sidebar/SidebarContext";
 import { NOTIF_LAST_SEEN_KEY, NotificationPanel } from "./NotificationPanel";
 

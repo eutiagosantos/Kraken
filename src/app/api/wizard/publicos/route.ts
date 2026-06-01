@@ -1,8 +1,13 @@
 import { NextResponse } from "next/server";
 
-import { getSessionUser } from "@/lib/api/session";
-import type { Json } from "@/lib/supabase/types";
-import type { Publico } from "@/lib/stores/wizardStore";
+import { getSessionUser } from "@/libs/api/session";
+import { postgresErrorMessage } from "@/libs/database/postgres-error";
+import {
+  insertSavedPublico,
+  listSavedPublicoPayloadsByUserId,
+} from "@/libs/database/queries/saved-publicos";
+import type { Json } from "@/models/schema";
+import type { Publico } from "@/libs/stores/wizardStore";
 
 function isPublico(raw: unknown): raw is Publico {
   if (!raw || typeof raw !== "object") return false;
@@ -11,29 +16,22 @@ function isPublico(raw: unknown): raw is Publico {
 }
 
 export async function GET() {
-  const { supabase, user } = await getSessionUser();
+  const { user } = await getSessionUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
-  const { data, error } = await supabase
-    .from("saved_publicos")
-    .select("payload")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false })
-    .limit(50);
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  try {
+    const payloads = await listSavedPublicoPayloadsByUserId(user.id, 50);
+    const list = payloads.filter(isPublico);
+    return NextResponse.json({ data: list });
+  } catch (err) {
+    return NextResponse.json({ error: postgresErrorMessage(err) }, { status: 500 });
   }
-
-  const list = (data ?? []).map((row) => row.payload).filter(isPublico);
-
-  return NextResponse.json({ data: list });
 }
 
 export async function POST(request: Request) {
-  const { supabase, user } = await getSessionUser();
+  const { user } = await getSessionUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
@@ -45,14 +43,10 @@ export async function POST(request: Request) {
 
   const publico: Publico = { ...raw, type: "saved" };
 
-  const { error } = await supabase.from("saved_publicos").insert({
-    user_id: user.id,
-    payload: publico as unknown as Json,
-  });
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  try {
+    await insertSavedPublico(user.id, publico as unknown as Json);
+    return NextResponse.json({ data: publico }, { status: 201 });
+  } catch (err) {
+    return NextResponse.json({ error: postgresErrorMessage(err) }, { status: 500 });
   }
-
-  return NextResponse.json({ data: publico }, { status: 201 });
 }

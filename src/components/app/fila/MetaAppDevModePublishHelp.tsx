@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 
-import { messageIndicatesMetaAppDevelopmentMode } from "@/lib/meta/humanize-graph-publish-error";
+import { messageIndicatesMetaAppDevelopmentMode } from "@/libs/meta/humanize-graph-publish-error";
 
 type Props = {
   errorMessage: string;

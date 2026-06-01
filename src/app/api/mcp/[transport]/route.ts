@@ -1,9 +1,9 @@
 import { createMcpHandler } from "mcp-handler";
 
-import { resolveUserFromApiKey } from "@/lib/mcp/api-key";
-import { createMcpContext } from "@/lib/mcp/context";
-import { registerKrakenMcpTools } from "@/lib/mcp/register-tools";
-import { runWithMcpContext } from "@/lib/mcp/request-context";
+import { resolveUserFromApiKey } from "@/libs/mcp/api-key";
+import { createMcpContext } from "@/libs/mcp/context";
+import { registerKrakenMcpTools } from "@/libs/mcp/register-tools";
+import { runWithMcpContext } from "@/libs/mcp/request-context";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -31,22 +31,11 @@ function unauthorizedResponse(): Response {
   });
 }
 
-function serviceUnavailableResponse(): Response {
-  return new Response(
-    JSON.stringify({
-      error: "SUPABASE_SERVICE_ROLE_KEY não configurada no servidor.",
-    }),
-    { status: 503, headers: { "Content-Type": "application/json" } }
-  );
-}
-
 async function withMcpAuth(request: Request): Promise<Response> {
   const resolved = await resolveUserFromApiKey(request.headers.get("authorization"));
   if (!resolved) return unauthorizedResponse();
 
   const ctx = createMcpContext(resolved.userId);
-  if (!ctx) return serviceUnavailableResponse();
-
   return runWithMcpContext(ctx, () => baseHandler(request));
 }
 

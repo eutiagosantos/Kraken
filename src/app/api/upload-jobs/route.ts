@@ -4,8 +4,9 @@ import { z } from "zod";
 import {
   parseUploadJobErrorDetails,
   parseUploadJobSummary,
-} from "@/lib/api/upload-job-summary-schema";
-import { getSessionUser } from "@/lib/api/session";
+} from "@/libs/api/upload-job-summary-schema";
+import { getSessionUser } from "@/libs/api/session";
+import { listUploadJobsForApi } from "@/libs/database/queries/upload-jobs";
 
 export const runtime = "nodejs";
 
@@ -14,7 +15,7 @@ const querySchema = z.object({
 });
 
 export async function GET(request: Request) {
-  const { supabase, user } = await getSessionUser();
+  const { user } = await getSessionUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
@@ -23,28 +24,23 @@ export async function GET(request: Request) {
   const q = querySchema.safeParse({ limit: url.searchParams.get("limit") ?? undefined });
   const limit = q.success ? q.data.limit : 50;
 
-  const { data, error } = await supabase
-    .from("upload_jobs")
-    .select("id,account_name,total,done,status,started_at,finished_at,summary,error_details")
-    .eq("user_id", user.id)
-    .order("started_at", { ascending: false })
-    .limit(limit);
+  try {
+    const rows = await listUploadJobsForApi(user.id, limit);
+    const jobs = rows.map((row) => ({
+      id: row.id,
+      account_name: row.account_name,
+      total: row.total,
+      done: row.done,
+      status: row.status,
+      started_at: row.started_at,
+      finished_at: row.finished_at,
+      summary: parseUploadJobSummary(row.summary),
+      error_details: parseUploadJobErrorDetails(row.error_details),
+    }));
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ data: { jobs } });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "query_failed";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
-
-  const jobs = (data ?? []).map((row) => ({
-    id: row.id,
-    account_name: row.account_name,
-    total: row.total,
-    done: row.done,
-    status: row.status,
-    started_at: row.started_at,
-    finished_at: row.finished_at,
-    summary: parseUploadJobSummary(row.summary),
-    error_details: parseUploadJobErrorDetails(row.error_details),
-  }));
-
-  return NextResponse.json({ data: { jobs } });
 }

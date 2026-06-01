@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { cn } from "@/lib/utils";
+import { cn } from "@/libs/utils";
 
 /** Intrinsic dimensions of `public/kraken-logo.png` (square wordmark). */
 const LOGO_SRC = "/kraken-logo.png" as const;

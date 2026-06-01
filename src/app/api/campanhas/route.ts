@@ -1,8 +1,13 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import { campanhaToInsert, rowToCampanha } from "@/lib/campanhas-map";
-import { getSessionUser } from "@/lib/api/session";
+import { campanhaToInsert, rowToCampanha } from "@/libs/campanhas-map";
+import { getSessionUser } from "@/libs/api/session";
+import {
+  insertCampanha,
+  listCampanhasByUserId,
+} from "@/libs/database/queries/campanhas";
+import { postgresErrorMessage } from "@/libs/database/postgres-error";
 
 const structureEnum = z.union([
   z.enum(["1-50-1", "1-250-1", "1-3-5", "1-1-5"]),
@@ -35,26 +40,21 @@ const campanhaCreateSchema = z.object({
 });
 
 export async function GET() {
-  const { supabase, user } = await getSessionUser();
+  const { user } = await getSessionUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
-  const { data, error } = await supabase
-    .from("campanhas")
-    .select("*")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  try {
+    const data = await listCampanhasByUserId(user.id);
+    return NextResponse.json({ data: data.map(rowToCampanha) });
+  } catch (err) {
+    return NextResponse.json({ error: postgresErrorMessage(err) }, { status: 500 });
   }
-
-  return NextResponse.json({ data: (data ?? []).map(rowToCampanha) });
 }
 
 export async function POST(request: Request) {
-  const { supabase, user } = await getSessionUser();
+  const { user } = await getSessionUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
@@ -70,11 +70,27 @@ export async function POST(request: Request) {
     workspaceId: parsed.data.workspaceId,
   });
 
-  const { data, error } = await supabase.from("campanhas").insert(row).select("*").single();
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  try {
+    const data = await insertCampanha({
+      user_id: row.user_id,
+      workspace_id: row.workspace_id ?? null,
+      name: row.name,
+      account_name: row.account_name,
+      account_meta_id: row.account_meta_id,
+      structure: row.structure,
+      objective: row.objective,
+      daily_budget: row.daily_budget ?? 0,
+      anti_spy: row.anti_spy ?? false,
+      status: row.status ?? "rascunho",
+      ads_created: row.ads_created ?? 0,
+      ads_total: row.ads_total ?? 0,
+      trend: row.trend ?? [],
+      creatives: row.creatives ?? [],
+      errors: row.errors ?? null,
+      meta_ids: row.meta_ids ?? null,
+    });
+    return NextResponse.json({ data: rowToCampanha(data) }, { status: 201 });
+  } catch (err) {
+    return NextResponse.json({ error: postgresErrorMessage(err) }, { status: 500 });
   }
-
-  return NextResponse.json({ data: rowToCampanha(data) }, { status: 201 });
 }

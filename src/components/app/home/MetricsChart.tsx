@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useIsClient } from "@/lib/hooks/use-is-client";
+import { useIsClient } from "@/libs/hooks/use-is-client";
 import {
   Area,
   AreaChart,

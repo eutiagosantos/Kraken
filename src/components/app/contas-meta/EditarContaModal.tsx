@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { CurrencyInputBrl } from "@/components/ui/CurrencyInputBrl";
 import { Input } from "@/components/ui/Input";
-import type { ContaMeta } from "@/lib/mock-contas";
+import type { ContaMeta } from "@/libs/mock-contas";
 
 const structures = ["1-50-1", "1-250-1", "1-3-5", "1-1-5", "Nenhuma"] as const;
 

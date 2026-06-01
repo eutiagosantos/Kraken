@@ -2,7 +2,7 @@
 
 import { motion, useReducedMotion } from "framer-motion";
 import { useMemo } from "react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/libs/utils";
 
 export interface FloatingParticlesProps {
   count?: number;

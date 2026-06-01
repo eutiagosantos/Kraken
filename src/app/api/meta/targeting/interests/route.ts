@@ -1,8 +1,8 @@
 import { z } from "zod";
 import { NextResponse } from "next/server";
 
-import { assertProtectedApiRoute } from "@/lib/api/route-protection";
-import { searchTargetingInterests } from "@/lib/meta/targeting";
+import { assertProtectedApiRoute } from "@/libs/api/route-protection";
+import { searchTargetingInterests } from "@/libs/meta/targeting";
 
 const bodySchema = z.object({
   q: z.string().trim().min(2).max(120),

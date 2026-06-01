@@ -1,14 +1,17 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import { invalidateUserDataShortCache } from "@/lib/api/user-data-short-cache";
-import { getSessionUser } from "@/lib/api/session";
-import { rowToContaMeta } from "@/lib/contas-meta-map";
-import { getMetaGraphAccessToken } from "@/lib/meta/graph-token";
-import { invalidatePageCache } from "@/lib/meta/graph-user-pages";
-import type { Database } from "@/lib/supabase/types";
-
-type MetaAdAccountUpdate = Database["public"]["Tables"]["meta_ad_accounts"]["Update"];
+import { invalidateUserDataShortCache } from "@/libs/api/user-data-short-cache";
+import { getSessionUser } from "@/libs/api/session";
+import { rowToContaMeta } from "@/libs/contas-meta-map";
+import {
+  deleteMetaAdAccountById,
+  getMetaAdAccountById,
+  updateMetaAdAccountById,
+  type MetaAdAccountUpdate,
+} from "@/libs/database/queries/meta-ad-accounts";
+import { getMetaGraphAccessToken } from "@/libs/meta/graph-token";
+import { invalidatePageCache } from "@/libs/meta/graph-user-pages";
 
 const patchSchema = z.object({
   nickname: z.string().max(120).optional().nullable(),
@@ -20,30 +23,25 @@ const patchSchema = z.object({
 });
 
 export async function GET(_: Request, { params }: { params: { id: string } }) {
-  const { supabase, user } = await getSessionUser();
+  const { user } = await getSessionUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
-  const { data, error } = await supabase
-    .from("meta_ad_accounts")
-    .select("*")
-    .eq("id", params.id)
-    .eq("user_id", user.id)
-    .maybeSingle();
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  try {
+    const data = await getMetaAdAccountById(user.id, params.id);
+    if (!data) {
+      return NextResponse.json({ error: "Not found." }, { status: 404 });
+    }
+    return NextResponse.json({ data: rowToContaMeta(data) });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "query_failed";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
-  if (!data) {
-    return NextResponse.json({ error: "Not found." }, { status: 404 });
-  }
-
-  return NextResponse.json({ data: rowToContaMeta(data) });
 }
 
 export async function PATCH(request: Request, { params }: { params: { id: string } }) {
-  const { supabase, user } = await getSessionUser();
+  const { user } = await getSessionUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
@@ -68,50 +66,42 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     updates.facebook_page_name = t && t.length > 0 ? t : null;
   }
 
-  const { data, error } = await supabase
-    .from("meta_ad_accounts")
-    .update(updates)
-    .eq("id", params.id)
-    .eq("user_id", user.id)
-    .select("*")
-    .maybeSingle();
+  try {
+    const data = await updateMetaAdAccountById(user.id, params.id, updates);
+    if (!data) {
+      return NextResponse.json({ error: "Not found." }, { status: 404 });
+    }
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-  if (!data) {
-    return NextResponse.json({ error: "Not found." }, { status: 404 });
-  }
+    if (parsed.data.facebookPageId !== undefined || parsed.data.facebookPageName !== undefined) {
+      invalidateUserDataShortCache(user.id);
+    }
 
-  if (parsed.data.facebookPageId !== undefined || parsed.data.facebookPageName !== undefined) {
-    invalidateUserDataShortCache(user.id);
+    return NextResponse.json({ data: rowToContaMeta(data) });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "query_failed";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
-
-  return NextResponse.json({ data: rowToContaMeta(data) });
 }
 
 export async function DELETE(_: Request, { params }: { params: { id: string } }) {
-  const { supabase, user } = await getSessionUser();
+  const { user } = await getSessionUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
-  const { data: deleted, error } = await supabase
-    .from("meta_ad_accounts")
-    .delete()
-    .eq("id", params.id)
-    .eq("user_id", user.id)
-    .select("id");
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  let deleted: boolean;
+  try {
+    deleted = await deleteMetaAdAccountById(user.id, params.id);
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "query_failed";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
-  if (!deleted?.length) {
+  if (!deleted) {
     return NextResponse.json({ error: "Not found." }, { status: 404 });
   }
 
   invalidateUserDataShortCache(user.id);
-  const tokenRes = await getMetaGraphAccessToken(supabase, user.id);
+  const tokenRes = await getMetaGraphAccessToken(user.id);
   if ("accessToken" in tokenRes) {
     invalidatePageCache(tokenRes.accessToken);
   }

@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import { getSessionUser } from "@/lib/api/session";
-import { graphListOwnedProductCatalogs } from "@/lib/meta/catalog-graph";
-import { getMetaGraphAccessToken } from "@/lib/meta/graph-token";
-import { inspectTokenScopes, REQUIRED_TOKEN_SCOPES_FOR_CATALOG } from "@/lib/meta/graph-inspect-token";
+import { getSessionUser } from "@/libs/api/session";
+import { insertMetaCatalog } from "@/libs/database/queries/meta-catalogs";
+import { graphListOwnedProductCatalogs } from "@/libs/meta/catalog-graph";
+import { getMetaGraphAccessToken } from "@/libs/meta/graph-token";
+import { inspectTokenScopes, REQUIRED_TOKEN_SCOPES_FOR_CATALOG } from "@/libs/meta/graph-inspect-token";
 
 const getQuery = z.object({
   businessId: z.string().min(1),
@@ -19,7 +20,7 @@ const postBody = z.object({
 });
 
 export async function GET(request: Request) {
-  const { supabase, user } = await getSessionUser();
+  const { user } = await getSessionUser();
   if (!user) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
 
   const url = new URL(request.url);
@@ -28,7 +29,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Query businessId é obrigatório." }, { status: 400 });
   }
 
-  const tok = await getMetaGraphAccessToken(supabase, user.id);
+  const tok = await getMetaGraphAccessToken(user.id);
   if ("error" in tok) return NextResponse.json({ error: tok.error }, { status: 400 });
 
   const scopes = await inspectTokenScopes(tok.accessToken, { requiredScopes: REQUIRED_TOKEN_SCOPES_FOR_CATALOG });
@@ -53,7 +54,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const { supabase, user } = await getSessionUser();
+  const { user } = await getSessionUser();
   if (!user) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
 
   const raw = await request.json().catch(() => ({}));
@@ -62,7 +63,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid payload.", issues: parsed.error.flatten() }, { status: 400 });
   }
 
-  const tok = await getMetaGraphAccessToken(supabase, user.id);
+  const tok = await getMetaGraphAccessToken(user.id);
   if ("error" in tok) return NextResponse.json({ error: tok.error }, { status: 400 });
 
   const scopes = await inspectTokenScopes(tok.accessToken, { requiredScopes: REQUIRED_TOKEN_SCOPES_FOR_CATALOG });
@@ -74,7 +75,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const { error } = await supabase.from("meta_catalogs").insert({
+  const result = await insertMetaCatalog({
     user_id: user.id,
     workspace_id: parsed.data.workspaceId ?? null,
     meta_ad_account_id: parsed.data.metaAdAccountId ?? null,
@@ -83,11 +84,11 @@ export async function POST(request: Request) {
     name: parsed.data.name,
   });
 
-  if (error) {
-    if (error.code === "23505") {
+  if (!result.ok) {
+    if (result.duplicate) {
       return NextResponse.json({ error: "Este catálogo já está guardado." }, { status: 409 });
     }
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: result.error }, { status: 500 });
   }
 
   return NextResponse.json({ ok: true });

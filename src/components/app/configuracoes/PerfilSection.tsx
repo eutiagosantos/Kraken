@@ -6,8 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useSuccessFeedback } from "@/components/app/ui/SuccessFeedback";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { useKrakenUser } from "@/lib/hooks/useKrakenUser";
-import { useSupabase } from "@/lib/hooks/useSupabase";
+import { useKrakenUser } from "@/libs/hooks/useKrakenUser";
 
 function initialsFrom(name: string) {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -17,7 +16,6 @@ function initialsFrom(name: string) {
 }
 
 export function PerfilSection() {
-  const supabase = useSupabase();
   const { user, displayName, email, loading, refetch } = useKrakenUser();
   const { showSuccess } = useSuccessFeedback();
 
@@ -46,13 +44,16 @@ export function PerfilSection() {
     if (!canSave || !user?.id) return;
     setSaving(true);
     setError(null);
-    const { error: updateError } = await supabase
-      .from("profiles")
-      .update({ full_name: trimmed })
-      .eq("id", user.id);
+    const res = await fetch("/api/profile", {
+      method: "PATCH",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ full_name: trimmed }),
+    });
+    const json = (await res.json().catch(() => ({}))) as { error?: string };
     setSaving(false);
-    if (updateError) {
-      setError(updateError.message || "Não foi possível salvar as alterações.");
+    if (!res.ok) {
+      setError(json.error || "Não foi possível salvar as alterações.");
       return;
     }
     setInitialFullName(trimmed);

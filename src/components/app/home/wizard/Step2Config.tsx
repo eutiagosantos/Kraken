@@ -10,18 +10,18 @@ import type {
   NomenclatureToken,
   Structure,
   WizardStatus,
-} from "@/lib/stores/wizardStore";
-import type { CampaignSchedule } from "@/lib/meta/campaign-schedule";
-import type { WizardAdSetBillingEvent } from "@/lib/meta/billing-event";
+} from "@/libs/stores/wizardStore";
+import type { CampaignSchedule } from "@/libs/meta/campaign-schedule";
+import type { WizardAdSetBillingEvent } from "@/libs/meta/billing-event";
 import {
   defaultBillingEventForOptimizationGoal,
   validBillingEventsForOptimizationGoal,
-} from "@/lib/meta/billing-event";
-import { selectOptimizationForObjective } from "@/lib/meta/map-wizard-to-graph";
+} from "@/libs/meta/billing-event";
+import { selectOptimizationForObjective } from "@/libs/meta/map-wizard-to-graph";
 import {
   buildNomenclaturePreview,
   type NomenclaturePreviewContext,
-} from "@/lib/wizard/nomenclature-preview";
+} from "@/libs/wizard/nomenclature-preview";
 import { CurrencyInputBrl } from "@/components/ui/CurrencyInputBrl";
 import { BidStrategyCard } from "./BidStrategyCard";
 import { CampaignTypeCard } from "./CampaignTypeCard";

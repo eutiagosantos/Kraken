@@ -9,8 +9,8 @@ import {
   formatEtaLabel,
   formatPanelNumber,
   type PublicationQueueSummary,
-} from "@/lib/publication-queue/compute-panel-summary";
-import { cn } from "@/lib/utils";
+} from "@/libs/publication-queue/compute-panel-summary";
+import { cn } from "@/libs/utils";
 
 export type PublicationQueuePanelVariant = "app" | "marketing";
 

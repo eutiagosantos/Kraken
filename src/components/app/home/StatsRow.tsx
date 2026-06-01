@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { StatCard } from "@/components/app/ui/StatCard";
-import type { MockStat } from "@/lib/mock-data";
+import type { MockStat } from "@/libs/mock-data";
 
 const container = {
   hidden: {},

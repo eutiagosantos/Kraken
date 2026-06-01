@@ -3,8 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Wand2, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import type { WizardPreset } from "@/lib/mock-data/wizard";
-import type { NomenclatureToken } from "@/lib/stores/wizardStore";
+import type { WizardPreset } from "@/libs/mock-data/wizard";
+import type { NomenclatureToken } from "@/libs/stores/wizardStore";
 import { VariableChip } from "./VariableChip";
 import { VariableGroup } from "./VariableGroup";
 

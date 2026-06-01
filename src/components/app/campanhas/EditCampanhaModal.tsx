@@ -11,8 +11,8 @@ import {
   CAMPANHA_STRUCTURE_PRESETS,
   isCampanhaStructurePreset,
   type CampanhaStructurePreset,
-} from "@/lib/campanhas-structure";
-import type { Campanha, CampanhaCreative, CampanhaError, CampanhaStatus, CampanhaStructure } from "@/lib/mock-campanhas";
+} from "@/libs/campanhas-structure";
+import type { Campanha, CampanhaCreative, CampanhaError, CampanhaStatus, CampanhaStructure } from "@/libs/mock-campanhas";
 
 const objectives = ["Conversões", "Tráfego", "Vendas", "Leads", "Engajamento", "Instalações", "Visualizações"];
 

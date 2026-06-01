@@ -1,17 +1,24 @@
-import type { NextRequest } from "next/server";
+import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
-import { updateSession } from "@/lib/supabase/middleware";
+const isPublicRoute = createRouteMatcher([
+  "/",
+  "/login(.*)",
+  "/cadastro(.*)",
+  "/privacidade(.*)",
+  "/privacy-policy(.*)",
+  "/docs(.*)",
+  "/api/webhooks(.*)",
+  "/api/health(.*)",
+  "/robots.txt",
+]);
 
-export async function middleware(request: NextRequest) {
-  return updateSession(request);
-}
+export default clerkMiddleware((auth, request) => {
+  if (isPublicRoute(request)) return;
+  auth().protect();
+});
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except static assets and images.
-     * Needed so Supabase can refresh the session on navigation.
-     */
     "/((?!_next/static|_next/image|favicon.ico|privacidade(?:/|$)|privacy-policy(?:/|$)|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

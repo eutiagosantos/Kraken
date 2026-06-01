@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { KrakenMarkTile } from "@/components/branding/KrakenMarkTile";
 import { MarketingButton } from "@/components/ui/MarketingButton";
-import { cn } from "@/lib/utils";
+import { cn } from "@/libs/utils";
 
 const nav = [
   { label: "Home", href: "#inicio" },

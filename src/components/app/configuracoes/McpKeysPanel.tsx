@@ -7,7 +7,7 @@ import { useCallback, useState } from "react";
 import { useSuccessFeedback } from "@/components/app/ui/SuccessFeedback";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { useMcpKeys } from "@/lib/hooks/useMcpKeys";
+import { useMcpKeys } from "@/libs/hooks/useMcpKeys";
 
 function formatLastUsed(iso: string | null): string {
   if (!iso) return "Nunca";

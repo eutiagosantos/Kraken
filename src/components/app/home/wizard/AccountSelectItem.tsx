@@ -1,6 +1,6 @@
 import { Check } from "lucide-react";
-import type { MockAccount } from "@/lib/mock-data";
-import { cn } from "@/lib/utils";
+import type { MockAccount } from "@/libs/mock-data";
+import { cn } from "@/libs/utils";
 
 interface AccountSelectItemProps {
   account: MockAccount;

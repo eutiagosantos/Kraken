@@ -3,8 +3,8 @@
 import { useMemo } from "react";
 import AsyncSelect from "react-select/async";
 import type { GroupBase, MultiValue, StylesConfig } from "react-select";
-import type { PublicoInterest } from "@/lib/stores/wizardStore";
-import type { InterestOption } from "@/lib/meta/types";
+import type { PublicoInterest } from "@/libs/stores/wizardStore";
+import type { InterestOption } from "@/libs/meta/types";
 
 const SEARCH_DEBOUNCE_MS = 350;
 

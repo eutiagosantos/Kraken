@@ -20,8 +20,8 @@ import {
 import { AnimatePresence, motion, Variants } from "framer-motion";
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
-import { cn } from "@/lib/utils";
-import type { ContaMeta, ContaStatus } from "@/lib/mock-contas";
+import { cn } from "@/libs/utils";
+import type { ContaMeta, ContaStatus } from "@/libs/mock-contas";
 import { AccountAvatar } from "./AccountAvatar";
 import { ContaActionsMenu } from "./ContaActionsMenu";
 import { ContaStatusBadge } from "./ContaStatusBadge";

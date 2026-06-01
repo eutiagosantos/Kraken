@@ -3,9 +3,9 @@
 import { Filter, Search, X } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
-import { cn } from "@/lib/utils";
-import type { ContaSortId, ContaStatusFilterId } from "@/lib/mock-contas";
-import type { ContasPageFiltersState } from "@/lib/contas-meta-filters";
+import { cn } from "@/libs/utils";
+import type { ContaSortId, ContaStatusFilterId } from "@/libs/mock-contas";
+import type { ContasPageFiltersState } from "@/libs/contas-meta-filters";
 
 const selectClass =
   "rounded-lg border border-dashboard-border bg-neutral-white px-3 py-2 text-sm font-medium text-neutral-black outline-none transition-[border-color,box-shadow] focus:border-brand-purple focus:ring-2 focus:ring-brand-purple/20";

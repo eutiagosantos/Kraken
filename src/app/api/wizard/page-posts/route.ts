@@ -1,31 +1,29 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 
-import { getSessionUser } from "@/lib/api/session";
+import { getSessionUser } from "@/libs/api/session";
 import {
   inspectTokenScopes,
   REQUIRED_PAGE_TOKEN_SCOPES_FOR_ENGAGEMENT_POSTS,
   validatePastedPageAccessToken,
-} from "@/lib/meta/graph-inspect-token";
-import { clampPagePostsLimit, fetchPagePostsWithEngagement } from "@/lib/meta/graph-page-posts";
-import { enrichPostsWithLifetimeInsights } from "@/lib/meta/graph-post-insights";
-import { getMetaGraphAccessToken } from "@/lib/meta/graph-token";
+} from "@/libs/meta/graph-inspect-token";
+import { clampPagePostsLimit, fetchPagePostsWithEngagement } from "@/libs/meta/graph-page-posts";
+import { enrichPostsWithLifetimeInsights } from "@/libs/meta/graph-post-insights";
+import { getMetaGraphAccessToken } from "@/libs/meta/graph-token";
 import {
   fetchUserFacebookPages,
   pageIdInUserPages,
   resolvePageAccessTokenForPosts,
-} from "@/lib/meta/graph-user-pages";
+} from "@/libs/meta/graph-user-pages";
 
 export const dynamic = "force-dynamic";
 
 async function respondPagePosts(
-  supabase: SupabaseClient,
   userId: string,
   pageId: string,
   limit: number,
   pastedPageAccessToken?: string
 ): Promise<NextResponse> {
-  const tokenRes = await getMetaGraphAccessToken(supabase, userId);
+  const tokenRes = await getMetaGraphAccessToken(userId);
   if ("error" in tokenRes) {
     return NextResponse.json({ error: tokenRes.error }, { status: 400 });
   }
@@ -133,7 +131,7 @@ async function respondPagePosts(
 }
 
 export async function GET(request: Request) {
-  const { supabase, user } = await getSessionUser();
+  const { user } = await getSessionUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
@@ -149,11 +147,11 @@ export async function GET(request: Request) {
     limitParam != null && limitParam !== "" ? Number(limitParam) : undefined;
   const limit = clampPagePostsLimit(Number.isFinite(parsed) ? parsed : undefined);
 
-  return respondPagePosts(supabase, user.id, pageId, limit, undefined);
+  return respondPagePosts(user.id, pageId, limit, undefined);
 }
 
 export async function POST(request: Request) {
-  const { supabase, user } = await getSessionUser();
+  const { user } = await getSessionUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
@@ -189,5 +187,5 @@ export async function POST(request: Request) {
       ? raw.pageAccessToken.trim()
       : undefined;
 
-  return respondPagePosts(supabase, user.id, pageId, limit, pageAccessToken);
+  return respondPagePosts(user.id, pageId, limit, pageAccessToken);
 }

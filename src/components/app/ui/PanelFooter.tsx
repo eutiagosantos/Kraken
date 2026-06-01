@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/libs/utils";
 
 export function PanelFooter({ className, children }: { className?: string; children: ReactNode }) {
   return (

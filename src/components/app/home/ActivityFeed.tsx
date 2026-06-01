@@ -1,7 +1,7 @@
 "use client";
 
-import { cn } from "@/lib/utils";
-import type { ActivityType, MockActivity } from "@/lib/mock-data";
+import { cn } from "@/libs/utils";
+import type { ActivityType, MockActivity } from "@/libs/mock-data";
 
 function dotClass(type: ActivityType) {
   switch (type) {

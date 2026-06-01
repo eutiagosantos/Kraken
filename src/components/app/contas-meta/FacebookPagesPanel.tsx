@@ -6,8 +6,8 @@ import { Check, Copy, ExternalLink, ImageOff, Loader2, Play } from "lucide-react
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { AccountAvatar } from "@/components/app/contas-meta/AccountAvatar";
-import type { PagePostMediaType } from "@/lib/meta/graph-page-posts";
-import { cn } from "@/lib/utils";
+import type { PagePostMediaType } from "@/libs/meta/graph-page-posts";
+import { cn } from "@/libs/utils";
 
 type FbPageRow = { id: string; name: string; pictureUrl?: string };
 

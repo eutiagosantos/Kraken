@@ -2,14 +2,19 @@ import { format, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { NextResponse } from "next/server";
 
-import { devLogRouteMs } from "@/lib/api/dev-route-timing";
-import { getSessionUser } from "@/lib/api/session";
+import { devLogRouteMs } from "@/libs/api/dev-route-timing";
+import { getSessionUser } from "@/libs/api/session";
 import {
   getCachedHomeDashboardRows,
   setCachedHomeDashboardRows,
-} from "@/lib/api/user-data-short-cache";
-import type { MetricsChartPoint } from "@/lib/mock-data";
-import type { MockActiveUpload, MockActivity, MockCreativeLibraryItem, MockStat } from "@/lib/mock-data";
+} from "@/libs/api/user-data-short-cache";
+import { listActivityEventsByUserId } from "@/libs/database/queries/activity-events";
+import { listCreativeLibraryItemsByUserId } from "@/libs/database/queries/creative-library-items";
+import { listHomeKpisByUserId } from "@/libs/database/queries/home-kpis";
+import { listUploadJobs } from "@/libs/database/queries/upload-jobs";
+import { postgresErrorMessage } from "@/libs/database/postgres-error";
+import type { MetricsChartPoint } from "@/libs/mock-data";
+import type { MockActiveUpload, MockActivity, MockCreativeLibraryItem, MockStat } from "@/libs/mock-data";
 
 function emptyWeek(): MetricsChartPoint[] {
   return ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"].map((name) => ({
@@ -38,38 +43,32 @@ function emptyMetrics() {
 
 export async function GET() {
   const startedAt = Date.now();
-  const { supabase, user } = await getSessionUser();
+  const { user } = await getSessionUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
   let rows = getCachedHomeDashboardRows(user.id);
   if (!rows) {
-    const [kpisRes, uploadsRes, activitiesRes, creativesRes] = await Promise.all([
-      supabase.from("home_kpis").select("*").eq("user_id", user.id).order("label"),
-      supabase.from("upload_jobs").select("*").eq("user_id", user.id).order("started_at", { ascending: false }).limit(12),
-      supabase.from("activity_events").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(25),
-      supabase.from("creative_library_items").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(12),
-    ]);
+    try {
+      const [kpis, uploads, activities, creatives] = await Promise.all([
+        listHomeKpisByUserId(user.id),
+        listUploadJobs(user.id, 12),
+        listActivityEventsByUserId(user.id, 25),
+        listCreativeLibraryItemsByUserId(user.id, 12),
+      ]);
 
-    if (kpisRes.error || uploadsRes.error || activitiesRes.error || creativesRes.error) {
-      const msg =
-        kpisRes.error?.message ||
-        uploadsRes.error?.message ||
-        activitiesRes.error?.message ||
-        creativesRes.error?.message ||
-        "query_failed";
+      rows = {
+        kpis,
+        uploads,
+        activities,
+        creatives,
+      };
+      setCachedHomeDashboardRows(user.id, rows);
+    } catch (err) {
       devLogRouteMs("GET /api/home/dashboard (error)", startedAt);
-      return NextResponse.json({ error: msg }, { status: 500 });
+      return NextResponse.json({ error: postgresErrorMessage(err) }, { status: 500 });
     }
-
-    rows = {
-      kpis: kpisRes.data ?? [],
-      uploads: uploadsRes.data ?? [],
-      activities: activitiesRes.data ?? [],
-      creatives: creativesRes.data ?? [],
-    };
-    setCachedHomeDashboardRows(user.id, rows);
   }
 
   const stats: MockStat[] = rows.kpis.map((k) => ({

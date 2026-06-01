@@ -6,12 +6,12 @@ import { ptBR } from "date-fns/locale";
 import { Pencil, RefreshCw, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis } from "recharts";
-import { useIsClient } from "@/lib/hooks/use-is-client";
+import { useIsClient } from "@/libs/hooks/use-is-client";
 import { Button } from "@/components/ui/Button";
 import { InfoRow } from "@/components/app/ui/InfoRow";
 import { PanelFooter } from "@/components/app/ui/PanelFooter";
-import { cn } from "@/lib/utils";
-import type { ContaMeta } from "@/lib/mock-contas";
+import { cn } from "@/libs/utils";
+import type { ContaMeta } from "@/libs/mock-contas";
 import { AccountAvatar } from "./AccountAvatar";
 import { ContaStatusBadge } from "./ContaStatusBadge";
 

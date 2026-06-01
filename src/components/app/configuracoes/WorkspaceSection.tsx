@@ -7,7 +7,7 @@ import { mutate } from "swr";
 import { useSuccessFeedback } from "@/components/app/ui/SuccessFeedback";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { useWorkspaces } from "@/lib/hooks/useWorkspaces";
+import { useWorkspaces } from "@/libs/hooks/useWorkspaces";
 
 export function WorkspaceSection() {
   const { workspaces, loading, refetch } = useWorkspaces();

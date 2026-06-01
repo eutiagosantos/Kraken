@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import { rowToCampanha } from "@/lib/campanhas-map";
-import { getSessionUser } from "@/lib/api/session";
-import type { Database } from "@/lib/supabase/types";
-
-type CampanhaUpdate = Database["public"]["Tables"]["campanhas"]["Update"];
+import { rowToCampanha } from "@/libs/campanhas-map";
+import { getSessionUser } from "@/libs/api/session";
+import {
+  deleteCampanhaForUser,
+  getCampanhaByIdForUser,
+  updateCampanhaForUser,
+  type CampanhaUpdate,
+} from "@/libs/database/queries/campanhas";
+import { postgresErrorMessage } from "@/libs/database/postgres-error";
 
 const patchSchema = z
   .object({
@@ -30,30 +34,24 @@ const patchSchema = z
   .strict();
 
 export async function GET(_: Request, { params }: { params: { id: string } }) {
-  const { supabase, user } = await getSessionUser();
+  const { user } = await getSessionUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
-  const { data, error } = await supabase
-    .from("campanhas")
-    .select("*")
-    .eq("id", params.id)
-    .eq("user_id", user.id)
-    .maybeSingle();
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  try {
+    const data = await getCampanhaByIdForUser(user.id, params.id);
+    if (!data) {
+      return NextResponse.json({ error: "Not found." }, { status: 404 });
+    }
+    return NextResponse.json({ data: rowToCampanha(data) });
+  } catch (err) {
+    return NextResponse.json({ error: postgresErrorMessage(err) }, { status: 500 });
   }
-  if (!data) {
-    return NextResponse.json({ error: "Not found." }, { status: 404 });
-  }
-
-  return NextResponse.json({ data: rowToCampanha(data) });
 }
 
 export async function PATCH(request: Request, { params }: { params: { id: string } }) {
-  const { supabase, user } = await getSessionUser();
+  const { user } = await getSessionUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
@@ -84,35 +82,27 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     return NextResponse.json({ error: "No fields to update." }, { status: 400 });
   }
 
-  const { data, error } = await supabase
-    .from("campanhas")
-    .update(updates)
-    .eq("id", params.id)
-    .eq("user_id", user.id)
-    .select("*")
-    .maybeSingle();
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  try {
+    const data = await updateCampanhaForUser(user.id, params.id, updates);
+    if (!data) {
+      return NextResponse.json({ error: "Not found." }, { status: 404 });
+    }
+    return NextResponse.json({ data: rowToCampanha(data) });
+  } catch (err) {
+    return NextResponse.json({ error: postgresErrorMessage(err) }, { status: 500 });
   }
-  if (!data) {
-    return NextResponse.json({ error: "Not found." }, { status: 404 });
-  }
-
-  return NextResponse.json({ data: rowToCampanha(data) });
 }
 
 export async function DELETE(_: Request, { params }: { params: { id: string } }) {
-  const { supabase, user } = await getSessionUser();
+  const { user } = await getSessionUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
-  const { error } = await supabase.from("campanhas").delete().eq("id", params.id).eq("user_id", user.id);
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  try {
+    await deleteCampanhaForUser(user.id, params.id);
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    return NextResponse.json({ error: postgresErrorMessage(err) }, { status: 500 });
   }
-
-  return NextResponse.json({ ok: true });
 }

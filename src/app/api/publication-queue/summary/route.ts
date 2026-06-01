@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 
-import { assertProtectedApiRoute } from "@/lib/api/route-protection";
-import { computePublicationQueueSummary } from "@/lib/publication-queue/compute-panel-summary";
+import { assertProtectedApiRoute } from "@/libs/api/route-protection";
+import { countMetaAdAccountsForUser } from "@/libs/database/queries/meta-ad-accounts";
+import { listUploadJobsForQueueSummary } from "@/libs/database/queries/upload-jobs";
+import { computePublicationQueueSummary } from "@/libs/publication-queue/compute-panel-summary";
 
 export const runtime = "nodejs";
 
@@ -9,32 +11,14 @@ export async function GET() {
   const auth = await assertProtectedApiRoute();
   if (!auth.ok) return auth.response;
 
-  const { supabase, user } = auth;
+  const { user } = auth;
 
-  const [jobsRes, accountsRes] = await Promise.all([
-    supabase
-      .from("upload_jobs")
-      .select("total,done,status,started_at,finished_at")
-      .eq("user_id", user.id)
-      .order("started_at", { ascending: false })
-      .limit(50),
-    supabase
-      .from("meta_ad_accounts")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", user.id),
+  const [jobs, connectedAccounts] = await Promise.all([
+    listUploadJobsForQueueSummary(user.id, 50),
+    countMetaAdAccountsForUser(user.id),
   ]);
 
-  if (jobsRes.error) {
-    return NextResponse.json({ error: jobsRes.error.message }, { status: 500 });
-  }
-  if (accountsRes.error) {
-    return NextResponse.json({ error: accountsRes.error.message }, { status: 500 });
-  }
-
-  const summary = computePublicationQueueSummary(
-    jobsRes.data ?? [],
-    accountsRes.count ?? 0
-  );
+  const summary = computePublicationQueueSummary(jobs, connectedAccounts);
 
   return NextResponse.json({ data: summary });
 }

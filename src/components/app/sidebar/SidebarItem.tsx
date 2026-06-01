@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { ComponentType, SVGProps } from "react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/libs/utils";
 
 export type SidebarNavIcon = ComponentType<SVGProps<SVGSVGElement>>;
 

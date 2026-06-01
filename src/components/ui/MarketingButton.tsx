@@ -4,7 +4,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { buttonVariantClasses, type ButtonVariant } from "@/components/ui/Button";
-import { cn } from "@/lib/utils";
+import { cn } from "@/libs/utils";
 
 const MotionLink = motion.create(Link);
 

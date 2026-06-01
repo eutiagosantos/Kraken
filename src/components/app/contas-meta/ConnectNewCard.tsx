@@ -5,7 +5,7 @@ import Link from "next/link";
 import { motion, Variants } from "framer-motion";
 
 import { META_ACCESS_TOKEN_SETTINGS_HREF } from "@/components/app/meta/MetaAccessTokenSection";
-import { cn } from "@/lib/utils";
+import { cn } from "@/libs/utils";
 
 export function ConnectNewCard({
   href = META_ACCESS_TOKEN_SETTINGS_HREF,

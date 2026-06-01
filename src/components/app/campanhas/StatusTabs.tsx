@@ -1,8 +1,8 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { cn } from "@/lib/utils";
-import type { CampanhaTabId } from "@/lib/mock-campanhas";
+import { cn } from "@/libs/utils";
+import type { CampanhaTabId } from "@/libs/mock-campanhas";
 
 export function StatusTabs({
   activeTab,

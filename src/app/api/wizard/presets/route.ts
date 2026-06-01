@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
-import type { WizardPreset } from "@/lib/mock-data/wizard";
-import { getSessionUser } from "@/lib/api/session";
+import type { WizardPreset } from "@/libs/mock-data/wizard";
+import { getSessionUser } from "@/libs/api/session";
 
 export async function GET() {
   const { user } = await getSessionUser();

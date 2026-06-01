@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { SignIn } from "@clerk/nextjs";
 import { KrakenMarkTile } from "@/components/branding/KrakenMarkTile";
-import { KrakenLoginForm } from "@/components/auth/KrakenLoginForm";
 
 export const metadata: Metadata = {
   title: "Login | Kraken",
@@ -84,7 +84,21 @@ export default function LoginPage() {
             </p>
 
             <div className="mt-3 lg:mt-4">
-              <KrakenLoginForm />
+              <SignIn
+                routing="path"
+                path="/login"
+                signUpUrl="/cadastro"
+                forceRedirectUrl="/home"
+                appearance={{
+                  elements: {
+                    rootBox: "w-full",
+                    card: "shadow-none border-0 p-0 gap-4",
+                    headerTitle: "hidden",
+                    headerSubtitle: "hidden",
+                    footer: "hidden",
+                  },
+                }}
+              />
             </div>
           </div>
 
