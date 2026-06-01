@@ -32,7 +32,9 @@ Next.js 14 App Router, TypeScript, Supabase (Postgres + Auth + Storage), Upstash
 - `app/api/` — API routes (all protected via `assertProtectedApiRoute`)
 
 ### Auth flow
-`middleware.ts` → `lib/supabase/middleware.ts` refreshes Supabase session on every request. API routes call `assertProtectedApiRoute()` from `lib/api/route-protection.ts`, which calls `getSessionUser()` and returns `{ ok, supabase, user }`.
+`src/middleware.ts` → `clerkMiddleware` (Clerk). Rotas públicas: `/`, `/login`, `/cadastro`, `/docs`, `/api/webhooks`, `/api/health`. API routes call `assertProtectedApiRoute()` from `src/libs/api/route-protection.ts` → `getSessionUser()` (Clerk `auth()` + perfil Drizzle).
+
+**Clerk env (obrigatório em produção):** `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` (`pk_live_`), `CLERK_SECRET_KEY` (`sk_live_`), `NEXT_PUBLIC_CLERK_SIGN_IN_URL=/login`, `NEXT_PUBLIC_CLERK_SIGN_UP_URL=/cadastro`, `NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/home`, `NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/home`. Chaves `pk_test_`/`sk_test_` quebram na Vercel (`MIDDLEWARE_INVOCATION_FAILED`). Ver [docs/clerk-production-deploy.md](docs/clerk-production-deploy.md). Health: `GET /api/health/clerk`.
 
 ### Meta Ads publish pipeline
 The most complex flow in the codebase:

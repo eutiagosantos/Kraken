@@ -19,6 +19,8 @@
     "db:generate": "drizzle-kit generate",
     "db:studio": "drizzle-kit studio",
     "migrate:clerk": "node scripts/migrate-users-to-clerk.mjs",
+    "check:clerk-env": "node scripts/check-clerk-env.mjs",
+    "check:clerk-env:prod": "node scripts/check-clerk-env.mjs --production",
     "prepare": "lefthook install",
     "generate-test-creatives": "node scripts/generate-test-creatives.mjs"
   },
