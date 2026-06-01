@@ -1,0 +1,15 @@
+pre-commit:
+  commands:
+    oxlint:
+      run: npx oxlint .
+    test:
+      run: npm run test:run
+
+commit-msg:
+  commands:
+    conventional:
+      run: |
+        if ! head -1 {1} | grep -qE '^(feat|fix|chore|docs|refactor|test|build|ci|perf|style)(\(.+\))?: .+'; then
+          echo "Commit message must follow Conventional Commits (e.g. feat: add thing)"
+          exit 1
+        fi

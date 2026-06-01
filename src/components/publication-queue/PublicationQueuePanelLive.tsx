@@ -1,0 +1,78 @@
+"use client";
+
+import useSWR from "swr";
+
+import { PublicationQueuePanel } from "@/components/publication-queue/PublicationQueuePanel";
+import type { PublicationQueueSummary } from "@/libs/publication-queue/compute-panel-summary";
+import { swrJsonFetcher } from "@/libs/hooks/swr-json-fetcher";
+import { cn } from "@/libs/utils";
+
+type ApiResponse = {
+  data?: PublicationQueueSummary;
+  error?: string;
+};
+
+type Props = {
+  /** Link target; pass `false` to disable. Default: `/fila-de-processamento` */
+  href?: string | false;
+  className?: string;
+  /** Poll faster while queue is active */
+  pollWhenActiveMs?: number;
+  pollIdleMs?: number;
+};
+
+const DEFAULT_ACTIVE_MS = 5000;
+const DEFAULT_IDLE_MS = 30_000;
+
+export function PublicationQueuePanelLive({
+  href = "/fila-de-processamento",
+  className,
+  pollWhenActiveMs = DEFAULT_ACTIVE_MS,
+  pollIdleMs = DEFAULT_IDLE_MS,
+}: Props) {
+  const { data, error, isLoading } = useSWR<ApiResponse>(
+    "/api/publication-queue/summary",
+    swrJsonFetcher,
+    {
+      refreshInterval: (latest) => {
+        const active = latest?.data?.isActive ?? false;
+        return active ? pollWhenActiveMs : pollIdleMs;
+      },
+    }
+  );
+
+  if (isLoading && !data?.data) {
+    return (
+      <div
+        className={cn(
+          "flex min-h-[280px] items-center justify-center rounded-card border border-dashboard-border bg-dashboard-surface p-8 text-sm text-dashboard-muted shadow-subtle",
+          className
+        )}
+      >
+        A carregar fila de publicação…
+      </div>
+    );
+  }
+
+  if (error || data?.error || !data?.data) {
+    return (
+      <div
+        className={cn(
+          "rounded-card border border-semantic-red/20 bg-semantic-red-bg/40 p-6 text-sm text-neutral-black",
+          className
+        )}
+      >
+        {error instanceof Error ? error.message : data?.error ?? "Erro ao carregar o painel."}
+      </div>
+    );
+  }
+
+  return (
+    <PublicationQueuePanel
+      variant="app"
+      summary={data.data}
+      href={href === false ? undefined : href}
+      className={className}
+    />
+  );
+}

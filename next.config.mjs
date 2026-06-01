@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  async redirects() {
+    return [{ source: "/privacy-policy", destination: "/privacidade", permanent: true }];
+  },
   images: {
     unoptimized: true,
   },
@@ -8,6 +11,9 @@ const nextConfig = {
   },
   experimental: {
     optimizePackageImports: ["lucide-react", "date-fns", "recharts", "framer-motion"],
+    serverActions: {
+      bodySizeLimit: "32mb",
+    },
   },
 };
 

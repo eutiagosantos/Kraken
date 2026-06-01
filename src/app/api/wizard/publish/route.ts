@@ -1,0 +1,296 @@
+// Publicação do assistente → Meta. Sandbox com app em Development: docs/meta-publicacao-app-development.md
+//
+// Escopo de agendamento (voo, dayparting, frequência): aplicado apenas na criação via este POST.
+// Alterar campanhas/conjuntos já existentes no Meta (PATCH / UI Campanhas) está fora do âmbito actual.
+import { NextResponse } from "next/server";
+
+export const runtime = "nodejs";
+// Chunked upload de vídeos + espera de processamento pode ultrapassar o default de 10 s
+// no Vercel Hobby; 300 s é o máximo permitido no plano Pro.
+export const maxDuration = 300;
+
+import { getSessionUser } from "@/libs/api/session";
+import { invalidateUserDataShortCache } from "@/libs/api/user-data-short-cache";
+import { listMetaAdAccountsByMetaIdsForUser } from "@/libs/database/queries/meta-ad-accounts";
+import {
+  getUploadJobForPublish,
+  getUploadJobStatus,
+  markUploadJobError,
+} from "@/libs/database/queries/upload-jobs";
+import { normalizeActId } from "@/libs/meta/graph-campaign-publish";
+import { fetchUserFacebookPages, pageIdInUserPages } from "@/libs/meta/graph-user-pages";
+import { getMetaGraphAccessToken } from "@/libs/meta/graph-token";
+import { wizardPublishPayloadSchema } from "@/libs/meta/map-wizard-to-graph";
+import { GraphApiError } from "@/libs/meta/graph-client";
+import {
+  humanizeMetaObjectNotFoundError,
+  isMetaObjectNotFoundError,
+} from "@/libs/meta/humanize-graph-publish-error";
+import { scheduleBackgroundWork } from "@/libs/api/schedule-background-work";
+import { shouldDeferWizardPublish } from "@/libs/meta/publish-concurrency";
+import { adsetAndAdsCountsForWizardShape } from "@/libs/meta/map-wizard-to-graph";
+import { resolveMetaAppCredentials } from "@/libs/meta/resolve-app-credentials";
+import { runWizardPublish, type PublishUnitResult } from "@/libs/meta/publish-campaigns";
+import { getStorageSupabaseClient } from "@/libs/supabase/storage-server";
+import {
+  humanizeWizardCreativeStorageDownloadError,
+  validateCreativeStoragePathsForUser,
+  WIZARD_CREATIVES_BUCKET,
+} from "@/libs/wizard/wizard-creatives-bucket";
+
+function orderSelectedAccounts(
+  selectedRaw: string[],
+  rows: Array<{ meta_account_id: string; name: string }>
+): Array<{ meta_account_id: string; name: string }> {
+  const byNorm = new Map(rows.map((r) => [normalizeActId(r.meta_account_id), r]));
+  const seen = new Set<string>();
+  const ordered: Array<{ meta_account_id: string; name: string }> = [];
+  for (const raw of selectedRaw) {
+    const n = normalizeActId(raw);
+    if (seen.has(n)) continue;
+    seen.add(n);
+    const row = byNorm.get(n);
+    if (row) ordered.push(row);
+  }
+  return ordered;
+}
+
+function mimeFromCreativeType(type: "image" | "video", blobType: string | undefined): string {
+  if (blobType && blobType.trim()) return blobType;
+  return type === "image" ? "image/jpeg" : "video/mp4";
+}
+
+async function removeStorageObjects(paths: string[]): Promise<void> {
+  if (paths.length === 0) return;
+  const supabase = getStorageSupabaseClient();
+  const { error } = await supabase.storage.from(WIZARD_CREATIVES_BUCKET).remove(paths);
+  if (error) {
+    console.warn("[wizard/publish] storage cleanup:", error.message);
+  }
+}
+
+export async function POST(request: Request) {
+  const { user } = await getSessionUser();
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+  }
+
+  const contentType = request.headers.get("content-type") || "";
+  if (!contentType.includes("application/json")) {
+    return NextResponse.json(
+      { error: "Content-Type deve ser application/json (inclui creativeStoragePaths)." },
+      { status: 400 }
+    );
+  }
+
+  let jsonBody: unknown;
+  try {
+    jsonBody = await request.json();
+  } catch {
+    return NextResponse.json({ error: "JSON inválido." }, { status: 400 });
+  }
+
+  const parsed = wizardPublishPayloadSchema.safeParse(jsonBody);
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Invalid payload.", issues: parsed.error.flatten() }, { status: 400 });
+  }
+
+  const cleanupPaths = [...parsed.data.creativeStoragePaths];
+  const deleteCreativesAfterPublish = process.env.WIZARD_DELETE_CREATIVES_AFTER_PUBLISH === "true";
+
+  try {
+    const pathErr = validateCreativeStoragePathsForUser(
+      user.id,
+      parsed.data.creativeStoragePaths,
+      parsed.data.creatives.length,
+      parsed.data.publishOperationId
+    );
+    if (pathErr) {
+      return NextResponse.json({ error: pathErr }, { status: 400 });
+    }
+
+    const pendingJob = await getUploadJobForPublish(user.id, parsed.data.publishOperationId);
+
+    if (!pendingJob) {
+      return NextResponse.json(
+        { error: "Operação de publicação inválida ou não encontrada." },
+        { status: 400 }
+      );
+    }
+    if (pendingJob.status !== "awaiting_creatives") {
+      return NextResponse.json(
+        { error: "Esta operação já foi iniciada ou concluída. Inicia uma nova publicação." },
+        { status: 400 }
+      );
+    }
+
+    const pageId = parsed.data.pageId?.trim() || process.env.META_DEFAULT_PAGE_ID?.trim();
+    if (!pageId) {
+      return NextResponse.json(
+        {
+          error:
+            "Escolhe uma Página Facebook no passo dos criativos (ou define META_DEFAULT_PAGE_ID só para desenvolvimento local).",
+        },
+        { status: 400 }
+      );
+    }
+
+    const adLinkUrl =
+      parsed.data.destinationUrl?.trim() ||
+      process.env.META_AD_LINK_URL?.trim() ||
+      "https://www.facebook.com/business";
+
+    const tokenRes = await getMetaGraphAccessToken(user.id);
+    if ("error" in tokenRes) {
+      return NextResponse.json({ error: tokenRes.error }, { status: 400 });
+    }
+
+    try {
+      const userPages = await fetchUserFacebookPages(tokenRes.accessToken);
+      if (!pageIdInUserPages(pageId, userPages)) {
+        return NextResponse.json(
+          {
+            error:
+              "Este pageId não corresponde a nenhuma Página Facebook à qual a tua conta Meta tem acesso. Escolhe outra página no assistente ou reconecta o Meta (permissões pages_show_list e pages_manage_ads).",
+          },
+          { status: 400 }
+        );
+      }
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "pages_fetch_failed";
+      return NextResponse.json(
+        { error: `Não foi possível validar a Página Facebook: ${message}` },
+        { status: 502 }
+      );
+    }
+
+    const normIds = Array.from(new Set(parsed.data.selectedAccountIds.map((id) => normalizeActId(id))));
+    let accountRows: Array<{ meta_account_id: string; name: string }>;
+    try {
+      accountRows = await listMetaAdAccountsByMetaIdsForUser(user.id, normIds);
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "query_failed";
+      return NextResponse.json({ error: message }, { status: 500 });
+    }
+    if (!accountRows.length || accountRows.length !== normIds.length) {
+      return NextResponse.json(
+        { error: "Uma ou mais contas selecionadas não existem ou não pertencem ao teu utilizador." },
+        { status: 400 }
+      );
+    }
+
+    const accountsOrdered = orderSelectedAccounts(parsed.data.selectedAccountIds, accountRows);
+    const storagePaths = parsed.data.creativeStoragePaths;
+    const storage = getStorageSupabaseClient();
+    const creativeFilesByIndex = new Map<number, { buffer: Buffer; mimeType: string }>();
+
+    for (let i = 0; i < parsed.data.creatives.length; i++) {
+      const path = storagePaths[i];
+      const { data: blob, error: dlErr } = await storage.storage.from(WIZARD_CREATIVES_BUCKET).download(path);
+      if (dlErr || !blob) {
+        return NextResponse.json(
+          {
+            error: humanizeWizardCreativeStorageDownloadError(path, dlErr?.message),
+          },
+          { status: 400, headers: { "X-Kraken-Publish-Phase": "creative_storage_download" } }
+        );
+      }
+      const buf = Buffer.from(await blob.arrayBuffer());
+      if (!buf.length) {
+        return NextResponse.json({ error: `Ficheiro vazio em «${path}».` }, { status: 400 });
+      }
+      const creative = parsed.data.creatives[i];
+      creativeFilesByIndex.set(i, {
+        buffer: buf,
+        mimeType: mimeFromCreativeType(creative.type, blob.type),
+      });
+    }
+
+    const { adsets } = adsetAndAdsCountsForWizardShape(
+      parsed.data.structure,
+      parsed.data.customStructure
+    );
+    const metaAppCredentials = await resolveMetaAppCredentials(user.id);
+
+    const publishCtx = {
+      userId: user.id,
+      accessToken: tokenRes.accessToken,
+      payload: parsed.data,
+      creativeFilesByIndex,
+      pageId,
+      adLinkUrl,
+      accounts: accountsOrdered,
+      existingPublishJobId: parsed.data.publishOperationId,
+      metaAppCredentials,
+    };
+
+    let out: Awaited<ReturnType<typeof runWizardPublish>> | null = null;
+
+    const executePublish = async () => {
+      out = await runWizardPublish(publishCtx);
+      invalidateUserDataShortCache(user.id);
+    };
+
+    const runPublishWithJobError = async () => {
+      try {
+        await executePublish();
+      } catch (e) {
+        const message = e instanceof Error ? e.message : "publish_failed";
+        await markUploadJobError(user.id, parsed.data.publishOperationId, { v: 1, message });
+      }
+    };
+
+    if (shouldDeferWizardPublish(adsets)) {
+      const deferred = await scheduleBackgroundWork(runPublishWithJobError);
+      if (deferred) {
+        return NextResponse.json(
+          {
+            publishId: parsed.data.publishOperationId,
+            deferred: true,
+            message:
+              "Publicação em curso em segundo plano. Acompanha o progresso na fila de processamento.",
+          },
+          { status: 202 }
+        );
+      }
+    } else {
+      await runPublishWithJobError();
+    }
+
+    if (!out) {
+      const job = await getUploadJobStatus(user.id, parsed.data.publishOperationId);
+      const errMsg =
+        job?.status === "error" && job.error_details && typeof job.error_details === "object"
+          ? String((job.error_details as { message?: string }).message ?? "publish_failed")
+          : "Publicação não devolveu resultado.";
+      return NextResponse.json({ error: errMsg }, { status: 500 });
+    }
+    const resolved = out as { publishId: string; results: PublishUnitResult[]; warnings: string[] };
+    const okCount = resolved.results.filter((r) => r.ok).length;
+    const body = {
+      publishId: resolved.publishId,
+      results: resolved.results,
+      warnings: resolved.warnings,
+      ...(okCount === 0
+        ? { error: "Nenhuma publicação concluiu com sucesso no Meta." as const }
+        : {}),
+    };
+    if (okCount === 0) {
+      return NextResponse.json(body, { status: 422 });
+    }
+    return NextResponse.json(body);
+  } catch (e) {
+    let message = e instanceof Error ? e.message : "publish_failed";
+    if (e instanceof GraphApiError && isMetaObjectNotFoundError(e)) {
+      message = humanizeMetaObjectNotFoundError(e);
+    }
+    return NextResponse.json(
+      { error: message },
+      { status: 500, headers: { "X-Kraken-Publish-Phase": "meta_publish" } }
+    );
+  } finally {
+    if (deleteCreativesAfterPublish) {
+      await removeStorageObjects(cleanupPaths);
+    }
+  }
+}
