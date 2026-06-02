@@ -34,8 +34,11 @@ O middleware ([`src/middleware.ts`](../src/middleware.ts)) usa `clerkMiddleware`
 | `NEXT_PUBLIC_CLERK_SIGN_UP_URL` | `/cadastro` |
 | `NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL` | `/home` |
 | `NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL` | `/home` |
+| `NEXT_PUBLIC_APP_URL` | `https://kraken-sigma-three.vercel.app` |
 
 Referência completa: [`.env.example`](../.env.example).
+
+> `NEXT_PUBLIC_APP_URL` fixa a URL canônica para redirects do Clerk e para enviar previews da Vercel para produção (ver secção abaixo).
 
 Validar localmente (sem expor segredos no log):
 
@@ -53,8 +56,22 @@ Env vars **não** entram em deployments já publicados.
 ### 4. Domínio no Clerk
 
 1. Clerk Dashboard → **Configure → Domains**
-2. Na instância **Production**, adicione o domínio da Vercel (ex.: `kraken.vercel.app` ou domínio custom)
-3. Siga DNS / verificação se usar domínio próprio
+2. Na instância **Production**, defina como primário: `kraken-sigma-three.vercel.app` (ou domínio custom)
+3. Remova URLs wildcard de preview (`*.vercel.app` de branch/PR) se estiverem listadas
+4. Em **Redirect URLs**, permita `https://kraken-sigma-three.vercel.app/*` para sign-in e sign-up
+5. Siga DNS / verificação se usar domínio próprio
+
+### 4b. Preview deployments (Vercel)
+
+URLs do tipo `kraken-git-*-*.vercel.app` são **deploys de PR**, não produção. Sem configuração, cadastro/login e links de e-mail do Clerk podem abrir nesse host.
+
+O middleware ([`src/middleware.ts`](../src/middleware.ts)) redireciona previews para `NEXT_PUBLIC_APP_URL` (ou `VERCEL_PROJECT_PRODUCTION_URL`). Configure na Vercel em **Production** e **Preview**:
+
+| Variável | Valor |
+|----------|--------|
+| `NEXT_PUBLIC_APP_URL` | `https://kraken-sigma-three.vercel.app` |
+
+**Hábito:** testar cadastro e login só em `https://kraken-sigma-three.vercel.app`, não em “Visit Deployment” de PR na Vercel.
 
 ### 5. Verificar após deploy
 

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { SignIn } from "@clerk/nextjs";
+import { SignInWithCanonicalRedirect } from "@/components/auth/SignInWithCanonicalRedirect";
 import { KrakenMarkTile } from "@/components/branding/KrakenMarkTile";
 
 export const metadata: Metadata = {
@@ -84,21 +84,7 @@ export default function LoginPage() {
             </p>
 
             <div className="mt-3 lg:mt-4">
-              <SignIn
-                routing="path"
-                path="/login"
-                signUpUrl="/cadastro"
-                forceRedirectUrl="/home"
-                appearance={{
-                  elements: {
-                    rootBox: "w-full",
-                    card: "shadow-none border-0 p-0 gap-4",
-                    headerTitle: "hidden",
-                    headerSubtitle: "hidden",
-                    footer: "hidden",
-                  },
-                }}
-              />
+              <SignInWithCanonicalRedirect />
             </div>
           </div>
 

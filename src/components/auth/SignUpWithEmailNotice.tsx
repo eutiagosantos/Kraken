@@ -2,6 +2,7 @@
 
 import { SignUp, useSignUp } from "@clerk/nextjs";
 import { Mail } from "lucide-react";
+import { clerkForceRedirectAfterSignUp } from "@/components/auth/clerk-auth-redirect-urls";
 import { cn } from "@/libs/utils";
 
 function isAwaitingEmailVerification(signUp: ReturnType<typeof useSignUp>["signUp"]) {
@@ -48,7 +49,7 @@ export function SignUpWithEmailNotice() {
         routing="path"
         path="/cadastro"
         signInUrl="/login"
-        forceRedirectUrl="/onboarding"
+        forceRedirectUrl={clerkForceRedirectAfterSignUp()}
         appearance={{
           elements: {
             rootBox: "w-full",

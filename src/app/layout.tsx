@@ -58,7 +58,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider>
+    <ClerkProvider
+      signInFallbackRedirectUrl={
+        process.env.NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL ?? "/home"
+      }
+      signUpFallbackRedirectUrl={
+        process.env.NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL ?? "/home"
+      }
+    >
       <html lang="pt-BR" className={ibmPlexSans.variable}>
         <body>{children}</body>
       </html>
