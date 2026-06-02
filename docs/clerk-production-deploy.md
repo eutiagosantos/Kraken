@@ -1,13 +1,41 @@
 # Clerk em produção (Vercel)
 
-Erro típico após deploy sem configurar Clerk:
+## Site fora do ar (`MIDDLEWARE_INVOCATION_FAILED`)
+
+Sintoma: qualquer página em `https://kraken-sigma-three.vercel.app` retorna:
 
 ```
 500: INTERNAL_SERVER_ERROR
 Code: MIDDLEWARE_INVOCATION_FAILED
 ```
 
-O middleware ([`src/middleware.ts`](../src/middleware.ts)) usa `clerkMiddleware`. Sem chaves válidas no ambiente de produção, o Edge Runtime falha em **todas** as rotas protegidas pelo matcher.
+**Causa mais comum:** chaves Clerk de **teste** (`pk_test_` / `sk_test_`) ou variáveis ausentes no ambiente **Production** da Vercel. O [`clerkMiddleware`](../src/middleware.ts) falha na inicialização antes de servir a página.
+
+**Diagnóstico** (rota de health não passa pelo Clerk middleware):
+
+```bash
+curl -sS "https://kraken-sigma-three.vercel.app/api/health/clerk"
+```
+
+| Resposta | Significado |
+|----------|-------------|
+| `{"ok":true,"publishableKeyPrefix":"pk_live_",...}` | Clerk OK — investigar outro erro |
+| `503` com `"issues":["test_keys_in_production"]` | Trocar para `pk_live_` / `sk_live_` na Vercel Production |
+| `503` com `missing_publishable_key` ou `missing_secret_key` | Adicionar variáveis na Vercel Production |
+| Ainda `MIDDLEWARE_INVOCATION_FAILED` | Deploy antigo; faça redeploy após alterar env |
+
+**Correção rápida:**
+
+1. Clerk Dashboard → instância **Production** → copiar `pk_live_...` e `sk_live_...`
+2. Vercel → **Settings → Environment Variables** → ambiente **Production** → atualizar `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` e `CLERK_SECRET_KEY`
+3. **Redeploy** (obrigatório — env não atualiza deploy existente)
+4. Repetir o `curl` acima até `ok: true`
+
+Detalhes completos na checklist abaixo.
+
+---
+
+O middleware ([`src/middleware.ts`](../src/middleware.ts)) usa `clerkMiddleware`. Sem chaves válidas no ambiente de produção, o Edge Runtime falha nas rotas que passam pelo matcher (exceto `/api/health/*`, usado só para diagnóstico).
 
 ## Checklist
 
